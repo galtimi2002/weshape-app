@@ -1,3 +1,7 @@
+// Named widget_test.dart on purpose: `flutter create` writes a counter-app
+// test under this name unless the file already exists, and that test does
+// not compile against this app.
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
