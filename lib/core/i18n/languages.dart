@@ -38,9 +38,14 @@ abstract final class AppLanguages {
     AppLanguage('pl', 'Polski', 'PL'),
     AppLanguage('hr', 'Hrvatski', 'HR'),
     AppLanguage('fi', 'Suomi', 'FI'),
+    AppLanguage('sv', 'Svenska', 'SE'),
+    AppLanguage('da', 'Dansk', 'DK'),
+    AppLanguage('el', 'Ελληνικά', 'GR'),
     AppLanguage('ru', 'Русский', 'RU'),
     AppLanguage('tr', 'Türkçe', 'TR'),
+    // Mandarin, written in simplified characters.
     AppLanguage('zh', '中文', 'CN'),
+    AppLanguage('ja', '日本語', 'JP'),
   ];
 
   static final Map<String, AppLanguage> _byCode = {for (final l in all) l.code: l};
@@ -67,9 +72,13 @@ abstract final class AppLanguages {
       'pl': ['PL'],
       'hr': ['HR', 'BA'],
       'fi': ['FI'],
+      'sv': ['SE', 'AX'],
+      'da': ['DK', 'GL', 'FO'],
+      'el': ['GR', 'CY'],
       'ru': ['RU', 'BY', 'KZ', 'KG'],
       'tr': ['TR'],
       'zh': ['CN', 'TW', 'HK', 'MO'],
+      'ja': ['JP'],
     }.entries)
       for (final country in entry.value) country: entry.key,
   };

@@ -13,7 +13,7 @@ import pathlib
 from babel import Locale
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-LANGS = ["en", "hu", "ro", "de", "fr", "es", "it", "pt", "nl", "pl", "hr", "fi", "ru", "tr", "zh"]
+LANGS = ["en", "hu", "ro", "de", "fr", "es", "it", "pt", "nl", "pl", "hr", "fi", "sv", "da", "el", "ru", "tr", "zh", "ja"]
 ISO = (ROOT / "tool" / "iso_countries.txt").read_text().strip().split(",")
 
 

@@ -43,8 +43,9 @@ flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080 --dart-de
   any device and comes back at the next sign-in.
 - Theme starts as "follow the system"; the switch pins light or dark.
 
-15 languages: English, Magyar, Română, Deutsch, Français, Español, Italiano,
-Português, Nederlands, Polski, Hrvatski, Suomi, Русский, Türkçe, 中文.
+19 languages: English, Magyar, Română, Deutsch, Français, Español, Italiano,
+Português, Nederlands, Polski, Hrvatski, Suomi, Svenska, Dansk, Ελληνικά,
+Русский, Türkçe, 中文 (Mandarin, simplified), 日本語.
 
 ### Changing texts
 
