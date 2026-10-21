@@ -24,14 +24,18 @@ class PrimaryButton extends StatelessWidget {
         duration: const Duration(milliseconds: 150),
         opacity: onPressed == null ? 0.6 : 1,
         child: DecoratedBox(
-          decoration: BoxDecoration(gradient: p.primaryGradient, borderRadius: BorderRadius.circular(10)),
+          decoration: BoxDecoration(
+            gradient: p.primaryGradient,
+            borderRadius: BorderRadius.circular(11),
+            boxShadow: [BoxShadow(color: p.buttonShadow, blurRadius: 22, offset: const Offset(0, 8), spreadRadius: -10)],
+          ),
           child: Material(
             type: MaterialType.transparency,
             child: InkWell(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(11),
               onTap: enabled ? onPressed : null,
               child: SizedBox(
-                height: 46,
+                height: 44,
                 child: Center(
                   child: busy
                       ? SizedBox(

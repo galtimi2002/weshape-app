@@ -30,7 +30,7 @@ abstract final class WeShapeTheme {
 
     final base = ThemeData(brightness: brightness, colorScheme: scheme, useMaterial3: true);
     final textTheme = useGoogleFonts ? GoogleFonts.plusJakartaSansTextTheme(base.textTheme) : base.textTheme;
-    final radius = BorderRadius.circular(10);
+    final radius = BorderRadius.circular(11);
 
     OutlineInputBorder border(Color color, [double width = 1]) =>
         OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: color, width: width));
@@ -44,15 +44,15 @@ abstract final class WeShapeTheme {
       dividerTheme: DividerThemeData(color: p.border, thickness: 1, space: 1),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: p.input,
+        fillColor: p.fieldFill,
         isDense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
         hintStyle: TextStyle(color: p.muted, fontSize: 14),
         labelStyle: TextStyle(color: p.muted, fontSize: 14),
         floatingLabelStyle: TextStyle(color: p.primary),
         errorStyle: TextStyle(color: p.error, fontSize: 12),
-        border: border(p.border),
-        enabledBorder: border(p.border),
+        border: border(p.fieldBorder),
+        enabledBorder: border(p.fieldBorder),
         focusedBorder: border(p.primary, 1.5),
         errorBorder: border(p.error),
         focusedErrorBorder: border(p.error, 1.5),
@@ -60,9 +60,9 @@ abstract final class WeShapeTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: p.text,
-          backgroundColor: p.surface,
-          minimumSize: const Size.fromHeight(44),
-          side: BorderSide(color: p.border),
+          backgroundColor: p.fieldFill,
+          minimumSize: const Size.fromHeight(42),
+          side: BorderSide(color: p.fieldBorder),
           shape: RoundedRectangleBorder(borderRadius: radius),
           textStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
         ),

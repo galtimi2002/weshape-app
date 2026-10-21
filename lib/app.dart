@@ -26,7 +26,9 @@ class WeShapeApp extends StatelessWidget {
       theme: WeShapeTheme.light(),
       darkTheme: WeShapeTheme.dark(),
       themeMode: settings.themeMode,
-      themeAnimationDuration: const Duration(milliseconds: 300),
+      // Every colour, the gradients included, blends from one theme to the other.
+      themeAnimationDuration: const Duration(milliseconds: 600),
+      themeAnimationCurve: Curves.easeInOut,
       locale: settings.locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: const [

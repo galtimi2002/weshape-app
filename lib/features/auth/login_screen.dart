@@ -112,22 +112,14 @@ class _LoginScreenState extends State<LoginScreen> {
     final busy = context.watch<AuthController>().busy;
 
     return AuthLayout(
-      footer: Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text(t.noAccount, style: TextStyle(color: p.muted, fontSize: 13)),
-          TextButton(onPressed: busy ? null : widget.onRegister, child: Text(t.createAccount)),
-        ],
-      ),
       child: AutofillGroup(
         child: Form(
           key: _form,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AuthHeading(title: t.welcomeBack, subtitle: t.signInSubtitle),
-              const SizedBox(height: 20),
+              AuthHeading(title: t.signInSubtitle),
+              const SizedBox(height: 16),
               LabeledField(
                 label: t.email,
                 child: TextFormField(
@@ -139,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: (v) => Validators.email(t, v),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
               LabeledField(
                 label: t.password,
                 child: TextFormField(
@@ -160,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               if (_failure != null) ...[const SizedBox(height: 12), ErrorBanner(_failure!.message(t))],
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Row(
                 children: [
                   SizedBox(
@@ -178,12 +170,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextButton(onPressed: busy ? null : _forgotPassword, child: Text(t.forgotPassword)),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
               PrimaryButton(label: t.signIn, busy: busy, onPressed: _signIn),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               OrDivider(t.orDivider),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               GoogleButton(label: t.continueWithGoogle, onPressed: busy ? null : _google),
+              const SizedBox(height: 6),
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(t.noAccount, style: TextStyle(color: p.muted, fontSize: 12.5)),
+                  TextButton(onPressed: busy ? null : widget.onRegister, child: Text(t.createAccount)),
+                ],
+              ),
             ],
           ),
         ),

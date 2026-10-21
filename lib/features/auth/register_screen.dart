@@ -106,7 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final p = context.palette;
     final busy = context.watch<AuthController>().busy;
     final language = context.watch<SettingsController>().languageCode;
-    final wide = MediaQuery.sizeOf(context).width >= 600;
+    final wide = MediaQuery.sizeOf(context).width >= 700;
 
     final firstName = LabeledField(
       label: t.firstName,
@@ -129,108 +129,107 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
 
-    return AuthLayout(
-      footer: Wrap(
-        alignment: WrapAlignment.center,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          Text(t.haveAccount, style: TextStyle(color: p.muted, fontSize: 13)),
-          TextButton(onPressed: busy ? null : widget.onSignIn, child: Text(t.signIn)),
-        ],
+    final email = LabeledField(
+      label: t.email,
+      child: TextFormField(
+        controller: _email,
+        keyboardType: TextInputType.emailAddress,
+        autofillHints: const [AutofillHints.email],
+        textInputAction: TextInputAction.next,
+        decoration: const InputDecoration(hintText: 'name@company.com'),
+        validator: (v) => Validators.email(t, v),
       ),
+    );
+    final country = LabeledField(
+      label: t.country,
+      child: CountryField(
+        initialValue: _country,
+        onChanged: _onCountry,
+        validator: (v) => v == null ? t.fieldRequired : null,
+      ),
+    );
+    final languageField = LabeledField(
+      label: t.language,
+      child: LanguageField(
+        value: language,
+        onChanged: (code) => context.read<ProfileController>().changeLanguage(code),
+      ),
+    );
+    final password = LabeledField(
+      label: t.password,
+      child: TextFormField(
+        controller: _password,
+        obscureText: _obscure,
+        autofillHints: const [AutofillHints.newPassword],
+        textInputAction: TextInputAction.next,
+        decoration: InputDecoration(
+          hintText: t.passwordHint,
+          suffixIcon: IconButton(
+            tooltip: t.password,
+            icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 20, color: p.muted),
+            onPressed: () => setState(() => _obscure = !_obscure),
+          ),
+        ),
+        validator: (v) => Validators.newPassword(t, v),
+      ),
+    );
+    final confirm = LabeledField(
+      label: t.confirmPassword,
+      child: TextFormField(
+        controller: _confirm,
+        obscureText: _obscure,
+        autofillHints: const [AutofillHints.newPassword],
+        textInputAction: TextInputAction.done,
+        onFieldSubmitted: (_) => _register(),
+        validator: (v) => v != _password.text ? t.passwordsDoNotMatch : null,
+      ),
+    );
+
+    // Two fields side by side on wide screens, stacked on phones.
+    List<Widget> pair(Widget a, Widget b) => wide
+        ? [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [Expanded(child: a), const SizedBox(width: 12), Expanded(child: b)],
+            ),
+          ]
+        : [a, const SizedBox(height: 12), b];
+
+    return AuthLayout(
+      maxWidth: wide ? 520 : 340,
       child: AutofillGroup(
         child: Form(
           key: _form,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AuthHeading(title: t.createAccountTitle, subtitle: t.signUpSubtitle),
-              const SizedBox(height: 20),
-              if (wide)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: firstName),
-                    const SizedBox(width: 12),
-                    Expanded(child: lastName),
-                  ],
-                )
-              else ...[
-                firstName,
-                const SizedBox(height: 14),
-                lastName,
-              ],
-              const SizedBox(height: 14),
-              LabeledField(
-                label: t.email,
-                child: TextFormField(
-                  controller: _email,
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
-                  textInputAction: TextInputAction.next,
-                  decoration: const InputDecoration(hintText: 'name@company.com'),
-                  validator: (v) => Validators.email(t, v),
-                ),
-              ),
-              const SizedBox(height: 14),
-              LabeledField(
-                label: t.country,
-                child: CountryField(
-                  initialValue: _country,
-                  onChanged: _onCountry,
-                  validator: (v) => v == null ? t.fieldRequired : null,
-                ),
-              ),
-              const SizedBox(height: 14),
-              LabeledField(
-                label: t.language,
-                child: LanguageField(
-                  value: language,
-                  onChanged: (code) => context.read<ProfileController>().changeLanguage(code),
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(t.languageHint, style: TextStyle(fontSize: 12, color: p.muted)),
-              const SizedBox(height: 14),
-              LabeledField(
-                label: t.password,
-                child: TextFormField(
-                  controller: _password,
-                  obscureText: _obscure,
-                  autofillHints: const [AutofillHints.newPassword],
-                  textInputAction: TextInputAction.next,
-                  decoration: InputDecoration(
-                    helperText: t.passwordHint,
-                    helperStyle: TextStyle(color: p.muted, fontSize: 12),
-                    suffixIcon: IconButton(
-                      tooltip: t.password,
-                      icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                          size: 20, color: p.muted),
-                      onPressed: () => setState(() => _obscure = !_obscure),
-                    ),
-                  ),
-                  validator: (v) => Validators.newPassword(t, v),
-                ),
-              ),
-              const SizedBox(height: 14),
-              LabeledField(
-                label: t.confirmPassword,
-                child: TextFormField(
-                  controller: _confirm,
-                  obscureText: _obscure,
-                  autofillHints: const [AutofillHints.newPassword],
-                  textInputAction: TextInputAction.done,
-                  onFieldSubmitted: (_) => _register(),
-                  validator: (v) => v != _password.text ? t.passwordsDoNotMatch : null,
-                ),
-              ),
+              AuthHeading(title: t.createAccountTitle),
+              const SizedBox(height: 16),
+              ...pair(firstName, lastName),
+              const SizedBox(height: 12),
+              email,
+              const SizedBox(height: 12),
+              ...pair(country, languageField),
+              const SizedBox(height: 4),
+              Text(t.languageHint, style: TextStyle(fontSize: 11.5, color: p.muted)),
+              const SizedBox(height: 12),
+              ...pair(password, confirm),
               if (_failure != null) ...[const SizedBox(height: 12), ErrorBanner(_failure!.message(t))],
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
               PrimaryButton(label: t.createAccount, busy: busy, onPressed: _register),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               OrDivider(t.orDivider),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               GoogleButton(label: t.continueWithGoogle, onPressed: busy ? null : _google),
+              const SizedBox(height: 6),
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  Text(t.haveAccount, style: TextStyle(color: p.muted, fontSize: 12.5)),
+                  TextButton(onPressed: busy ? null : widget.onSignIn, child: Text(t.signIn)),
+                ],
+              ),
             ],
           ),
         ),

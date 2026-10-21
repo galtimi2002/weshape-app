@@ -100,10 +100,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AuthHeading(title: t.completeProfileTitle, subtitle: t.completeProfileSubtitle),
-            const SizedBox(height: 6),
-            Text(email, style: TextStyle(fontSize: 13, color: p.muted)),
-            const SizedBox(height: 18),
+            AuthHeading(title: t.completeProfileTitle, subtitle: '${t.completeProfileSubtitle}\n$email'),
+            const SizedBox(height: 16),
             LabeledField(
               label: t.firstName,
               child: TextFormField(

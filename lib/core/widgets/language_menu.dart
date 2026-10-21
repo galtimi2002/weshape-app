@@ -54,9 +54,9 @@ class LanguageMenu extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(horizontal: style == LanguageMenuStyle.flagOnly ? 7 : 10, vertical: 6),
         decoration: BoxDecoration(
-          color: p.surface,
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: p.border),
+          color: p.fieldFill,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: p.fieldBorder),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

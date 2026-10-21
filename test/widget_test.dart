@@ -79,13 +79,18 @@ void main() {
     await tester.pumpWidget(_harness(settings));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.light_mode_rounded), findsOneWidget);
+    double progress() => (tester
+            .widget<CustomPaint>(find.descendant(of: find.byType(ThemeSwitch), matching: find.byType(CustomPaint)))
+            .painter! as SunMoonPainter)
+        .progress;
+
+    expect(progress(), 0); // sun
 
     await tester.tap(find.byType(ThemeSwitch));
     await tester.pumpAndSettle();
 
     expect(settings.themeMode, ThemeMode.dark);
-    expect(find.byIcon(Icons.dark_mode_rounded), findsOneWidget);
+    expect(progress(), 1); // moon
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString('weshape.themeMode'), 'dark');
   });

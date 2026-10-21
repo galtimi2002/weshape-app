@@ -84,7 +84,7 @@ class _Header extends StatelessWidget {
       decoration: BoxDecoration(color: p.surface, border: Border(bottom: BorderSide(color: p.border))),
       child: Row(
         children: [
-          if (phone) const WeShapeMark(size: 36) else const WeShapeLogo(height: 40),
+          if (phone) const WeShapeMark(size: 36) else const WeShapeLogo(height: 40, withSlogan: false),
           const Spacer(),
           LanguageMenu(style: phone ? LanguageMenuStyle.flagOnly : LanguageMenuStyle.compact),
           const SizedBox(width: 8),
