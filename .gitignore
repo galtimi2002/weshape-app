@@ -1,0 +1,30 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.lock.bak
+
+# Generated platform folders — recreate with ./tool/bootstrap.sh
+/android/
+/ios/
+/linux/
+/macos/
+/windows/
+/web/
+
+# Secrets — never commit
+lib/firebase_options.dart.local
+google-services.json
+GoogleService-Info.plist
+.env
+.env.*
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
