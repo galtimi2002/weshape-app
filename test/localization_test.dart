@@ -6,10 +6,10 @@ import 'package:weshape_app/core/i18n/country_names.g.dart';
 import 'package:weshape_app/core/i18n/languages.dart';
 
 void main() {
-  test('nineteen languages, English first, each with its strings', () {
-    expect(AppLanguages.all, hasLength(19));
+  test('twenty-five languages, English first, each with its strings', () {
+    expect(AppLanguages.all, hasLength(25));
     expect(AppLanguages.all.first.code, 'en');
-    expect(AppLocalizations.supportedLocales, hasLength(19));
+    expect(AppLocalizations.supportedLocales, hasLength(25));
     for (final lang in AppLanguages.all) {
       expect(AppLocalizations.byLanguageCode.containsKey(lang.code), isTrue, reason: lang.code);
     }
@@ -31,6 +31,7 @@ void main() {
     expect(AppLocalizations.stringsFor(const Locale('hu')).signIn, 'Bejelentkezés');
     expect(AppLocalizations.stringsFor(const Locale('zh')).signIn, '登录');
     expect(AppLocalizations.stringsFor(const Locale('ja')).signIn, 'ログイン');
+    expect(AppLocalizations.stringsFor(const Locale('ko')).signIn, '로그인');
   });
 
   test('unknown languages fall back to English', () {
@@ -49,6 +50,12 @@ void main() {
     expect(AppLanguages.forCountry('DK'), 'da');
     expect(AppLanguages.forCountry('CY'), 'el');
     expect(AppLanguages.forCountry('JP'), 'ja');
+    expect(AppLanguages.forCountry('KR'), 'ko');
+    expect(AppLanguages.forCountry('IN'), 'hi');
+    expect(AppLanguages.forCountry('EG'), 'ar');
+    expect(AppLanguages.forCountry('BD'), 'bn');
+    expect(AppLanguages.forCountry('ID'), 'id');
+    expect(AppLanguages.forCountry('VN'), 'vi');
     expect(AppLanguages.forCountry('NO'), 'en');
     expect(AppLanguages.forCountry(null), 'en');
   });

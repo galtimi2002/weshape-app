@@ -46,6 +46,13 @@ abstract final class AppLanguages {
     // Mandarin, written in simplified characters.
     AppLanguage('zh', '中文', 'CN'),
     AppLanguage('ja', '日本語', 'JP'),
+    AppLanguage('ko', '한국어', 'KR'),
+    AppLanguage('hi', 'हिन्दी', 'IN'),
+    AppLanguage('bn', 'বাংলা', 'BD'),
+    AppLanguage('id', 'Bahasa Indonesia', 'ID'),
+    AppLanguage('vi', 'Tiếng Việt', 'VN'),
+    // Written right to left; Flutter mirrors the layout on its own.
+    AppLanguage('ar', 'العربية', 'SA'),
   ];
 
   static final Map<String, AppLanguage> _byCode = {for (final l in all) l.code: l};
@@ -79,6 +86,12 @@ abstract final class AppLanguages {
       'tr': ['TR'],
       'zh': ['CN', 'TW', 'HK', 'MO'],
       'ja': ['JP'],
+      'ko': ['KR'],
+      'hi': ['IN'],
+      'bn': ['BD'],
+      'id': ['ID'],
+      'vi': ['VN'],
+      'ar': ['SA', 'AE', 'EG', 'MA', 'DZ', 'TN', 'JO', 'QA', 'KW', 'OM', 'BH', 'LB', 'IQ', 'LY', 'SY', 'YE', 'SD', 'PS', 'MR'],
     }.entries)
       for (final country in entry.value) country: entry.key,
   };

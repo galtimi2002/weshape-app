@@ -1,7 +1,7 @@
 /// Every user-facing string in the app.
 ///
 /// A constructor with required named parameters means a string cannot be added
-/// to English without the compiler demanding it in all 19 languages: missing
+/// to English without the compiler demanding it in every language: missing
 /// translations are a build error, not something to catch in review.
 class AppStrings {
   const AppStrings({

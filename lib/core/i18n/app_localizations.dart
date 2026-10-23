@@ -2,17 +2,22 @@ import 'package:flutter/material.dart';
 
 import 'app_strings.dart';
 import 'languages.dart';
-import 'strings/strings_de.dart';
-import 'strings/strings_en.dart';
+import 'strings/strings_ar.dart';
+import 'strings/strings_bn.dart';
 import 'strings/strings_da.dart';
+import 'strings/strings_de.dart';
 import 'strings/strings_el.dart';
+import 'strings/strings_en.dart';
 import 'strings/strings_es.dart';
 import 'strings/strings_fi.dart';
 import 'strings/strings_fr.dart';
+import 'strings/strings_hi.dart';
 import 'strings/strings_hr.dart';
 import 'strings/strings_hu.dart';
+import 'strings/strings_id.dart';
 import 'strings/strings_it.dart';
 import 'strings/strings_ja.dart';
+import 'strings/strings_ko.dart';
 import 'strings/strings_nl.dart';
 import 'strings/strings_pl.dart';
 import 'strings/strings_pt.dart';
@@ -20,6 +25,7 @@ import 'strings/strings_ro.dart';
 import 'strings/strings_ru.dart';
 import 'strings/strings_sv.dart';
 import 'strings/strings_tr.dart';
+import 'strings/strings_vi.dart';
 import 'strings/strings_zh.dart';
 
 /// Hand-rolled localization: no code generation step, so `flutter run` works
@@ -52,6 +58,12 @@ class AppLocalizations {
     'tr': kStringsTr,
     'zh': kStringsZh,
     'ja': kStringsJa,
+    'ko': kStringsKo,
+    'hi': kStringsHi,
+    'bn': kStringsBn,
+    'id': kStringsId,
+    'vi': kStringsVi,
+    'ar': kStringsAr,
   };
 
   static AppStrings stringsFor(Locale locale) => byLanguageCode[locale.languageCode] ?? kStringsEn;
