@@ -9,11 +9,11 @@ abstract final class AppConfig {
     defaultValue: 'http://localhost:8080',
   );
 
+  /// 'firebase' real accounts through Firebase Authentication (the default).
+  ///            The backend must run with WESHAPE_AUTH_MODE=firebase.
   /// 'demo'     sign-in is simulated on the device and the app sends dev tokens.
   ///            Pair with WESHAPE_AUTH_MODE=dev on the backend.
-  /// 'firebase' real Firebase Authentication. Needs firebase_options.dart from
-  ///            `flutterfire configure`.
-  static const String authMode = String.fromEnvironment('AUTH_MODE', defaultValue: 'demo');
+  static const String authMode = String.fromEnvironment('AUTH_MODE', defaultValue: 'firebase');
 
   static bool get isDemoAuth => authMode != 'firebase';
 

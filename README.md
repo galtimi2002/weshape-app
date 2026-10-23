@@ -12,16 +12,16 @@ Platform folders are generated, not committed:
 flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080
 ```
 
-That is **demo mode**: sign-in is simulated on the device and the backend must
-run with `WESHAPE_AUTH_MODE=dev`. Any email with an 8+ character password works.
+Sign-in is real: Firebase Authentication, project `weshape-energy`
+(email + password and Google). The backend must run with
+`WESHAPE_AUTH_MODE=firebase` and the project's service account.
 
-For real accounts:
+To try things without Firebase, add `--dart-define=AUTH_MODE=demo` and run the
+backend with `WESHAPE_AUTH_MODE=dev`: sign-in is then simulated on the device,
+and any email with an 8+ character password works.
 
-```bash
-dart pub global activate flutterfire_cli
-flutterfire configure --project=<firebase-project-id>   # rewrites lib/firebase_options.dart
-flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080 --dart-define=AUTH_MODE=firebase
-```
+Only the web app is registered in Firebase so far. For Android or iOS, register
+them in the console and run `flutterfire configure`.
 
 ## What is in it
 

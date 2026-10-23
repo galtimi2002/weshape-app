@@ -40,8 +40,7 @@ Future<void> main() async {
   );
 }
 
-/// Demo is the default so a fresh clone runs without Firebase. Pass
-/// --dart-define=AUTH_MODE=firebase once `flutterfire configure` has run.
+/// Real Firebase sign-in by default; --dart-define=AUTH_MODE=demo simulates it.
 Future<AuthService> _createAuthService() async {
   if (AppConfig.isDemoAuth) return DemoAuthService();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
