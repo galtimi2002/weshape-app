@@ -38,9 +38,6 @@ class AppStrings {
     required this.greeting,
     required this.greetingSubtitle,
     required this.contentPlaceholder,
-    required this.yourCode,
-    required this.copy,
-    required this.copied,
     required this.signOut,
     required this.resetPasswordTitle,
     required this.resetPasswordBody,
@@ -97,9 +94,6 @@ class AppStrings {
   final String greeting;
   final String greetingSubtitle;
   final String contentPlaceholder;
-  final String yourCode;
-  final String copy;
-  final String copied;
   final String signOut;
   final String resetPasswordTitle;
   final String resetPasswordBody;

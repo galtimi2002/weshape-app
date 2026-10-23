@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/auth/auth_controller.dart';
@@ -111,8 +110,7 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// Initials with a green "online" dot; opens a card with the person's details
-/// and their personal code.
+/// Initials with a green "online" dot; opens a card with the person's details.
 class _AccountButton extends StatelessWidget {
   const _AccountButton({required this.profile});
 
@@ -190,10 +188,6 @@ class _AccountDialog extends StatelessWidget {
                   style: TextStyle(fontSize: 14, color: p.text),
                 ),
               ],
-              const SizedBox(height: 16),
-              Text(t.yourCode, style: TextStyle(fontSize: 12, color: p.muted, letterSpacing: 0.3)),
-              const SizedBox(height: 6),
-              _CodeChip(code: profile.userCode),
               const SizedBox(height: 18),
               OutlinedButton.icon(
                 onPressed: () {
@@ -207,46 +201,6 @@ class _AccountDialog extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _CodeChip extends StatefulWidget {
-  const _CodeChip({required this.code});
-
-  final String code;
-
-  @override
-  State<_CodeChip> createState() => _CodeChipState();
-}
-
-class _CodeChipState extends State<_CodeChip> {
-  bool _copied = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final p = context.palette;
-    final t = context.t;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(10, 4, 4, 4),
-      decoration: BoxDecoration(color: p.selected, borderRadius: BorderRadius.circular(8)),
-      child: Row(
-        children: [
-          Expanded(
-            child: SelectableText(
-              widget.code,
-              style: TextStyle(fontFamily: 'monospace', fontSize: 14, fontWeight: FontWeight.w600, color: p.text, letterSpacing: 0.6),
-            ),
-          ),
-          TextButton(
-            onPressed: () async {
-              await Clipboard.setData(ClipboardData(text: widget.code));
-              if (mounted) setState(() => _copied = true);
-            },
-            child: Text(_copied ? t.copied : t.copy),
-          ),
-        ],
       ),
     );
   }
