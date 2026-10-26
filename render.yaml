@@ -7,7 +7,7 @@ services:
     autoDeploy: true
     envVars:
       - key: API_BASE_URL
-        value: https://weshape-backend.onrender.com
+        value: https://api.weshapeenergy.com
       - key: AUTH_MODE
         value: firebase
     # Single-page app: every path serves index.html.
