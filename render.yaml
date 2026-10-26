@@ -10,8 +10,17 @@ services:
         value: https://api.weshapeenergy.com
       - key: AUTH_MODE
         value: firebase
-    # Single-page app: every path serves index.html.
     routes:
+      # Firebase's sign-in helper, served from our own domain so Google's
+      # account picker says "continue to weshapeenergy.com" rather than
+      # weshape-energy.firebaseapp.com. Must stay above the catch-all.
+      - type: rewrite
+        source: /__/auth/*
+        destination: https://weshape-energy.firebaseapp.com/__/auth/*
+      - type: rewrite
+        source: /__/firebase/*
+        destination: https://weshape-energy.firebaseapp.com/__/firebase/*
+      # Single-page app: every other path serves index.html.
       - type: rewrite
         source: /*
         destination: /index.html

@@ -26,7 +26,9 @@ class DefaultFirebaseOptions {
     appId: '1:1059747265341:web:67f905cd147f583127a354',
     messagingSenderId: '1059747265341',
     projectId: 'weshape-energy',
-    authDomain: 'weshape-energy.firebaseapp.com',
+    // Our own domain: Render forwards /__/auth/* to Firebase (see render.yaml),
+    // so the Google sign-in window names weshapeenergy.com.
+    authDomain: 'weshapeenergy.com',
     storageBucket: 'weshape-energy.firebasestorage.app',
   );
 }
