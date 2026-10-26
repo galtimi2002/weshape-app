@@ -84,3 +84,15 @@ showing the old one from cache.
 ```bash
 flutter test
 ```
+
+## Before launch (to do once the company exists)
+
+- **Privacy policy page** at `https://weshapeenergy.com/privacy`: who runs the
+  service (company name, address), contact email for data requests, what is
+  stored (name, email, country, language, theme), where (Firebase / Google,
+  Neon and Render in Frankfurt), how to ask for deletion. Have it checked for
+  GDPR.
+- **Terms of service** page, same place.
+- **Google sign-in branding** (Google Cloud → Google Auth Platform → Branding):
+  app name "WeShape Energy", the 120×120 logo, home page, privacy policy link,
+  then submit for brand verification so Google shows the name and logo.
