@@ -12,7 +12,7 @@ services:
         value: firebase
     routes:
       # Firebase's sign-in helper, served from our own domain so Google's
-      # account picker says "continue to weshapeenergy.com" rather than
+      # account picker says "continue to www.weshapeenergy.com" rather than
       # weshape-energy.firebaseapp.com. Must stay above the catch-all.
       - type: rewrite
         source: /__/auth/*
