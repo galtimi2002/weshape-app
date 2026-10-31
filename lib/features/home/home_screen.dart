@@ -10,56 +10,24 @@ import '../../core/widgets/language_menu.dart';
 import '../../core/widgets/theme_switch.dart';
 import '../../core/widgets/weshape_logo.dart';
 import '../profile/profile_controller.dart';
+import 'map/resource_map.dart';
 
-/// The signed-in shell: header with language, theme, log out and the avatar,
-/// and an empty area waiting for the app's real features.
+/// The signed-in home: the header, and under it the resource map.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final profile = context.watch<ProfileController>().profile!;
-    final t = context.t;
-    final p = context.palette;
     final phone = MediaQuery.sizeOf(context).width < 700;
 
     return Scaffold(
       body: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _Header(profile: profile, phone: phone),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.all(phone ? 18 : 28),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      t.greet(profile.firstName ?? profile.displayName),
-                      style: TextStyle(fontSize: phone ? 22 : 26, fontWeight: FontWeight.w700, color: p.text),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(t.greetingSubtitle, style: TextStyle(fontSize: 14, color: p.muted)),
-                    const SizedBox(height: 18),
-                    Expanded(
-                      child: CustomPaint(
-                        painter: _DashedBorderPainter(color: p.border),
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Text(
-                              t.contentPlaceholder,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 14, color: p.muted),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            Expanded(child: ResourceMap(countryCode: profile.country)),
           ],
         ),
       ),
@@ -80,7 +48,7 @@ class _Header extends StatelessWidget {
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: phone ? 12 : 20, vertical: 10),
-      decoration: BoxDecoration(color: p.surface, border: Border(bottom: BorderSide(color: p.border))),
+      color: p.surface,
       child: Row(
         children: [
           if (phone) const WeShapeMark(size: 36) else const WeShapeLogo(height: 40, withSlogan: false),
@@ -204,29 +172,4 @@ class _AccountDialog extends StatelessWidget {
       ),
     );
   }
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  _DashedBorderPainter({required this.color});
-
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    final path = Path()..addRRect(RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(14)));
-    for (final metric in path.computeMetrics()) {
-      var distance = 0.0;
-      while (distance < metric.length) {
-        canvas.drawPath(metric.extractPath(distance, distance + 7), paint);
-        distance += 12;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedBorderPainter old) => old.color != color;
 }

@@ -31,7 +31,41 @@ them in the console and run `flutterfire configure`.
 - **One more step**: after a first Google sign-in, asks for what Google does not
   give (country, and names if missing).
 - **Home**: header with language, sun/moon theme switch, log out and the
-  account card with the personal code. The content area is empty for now.
+  account card, and under it the resource map (below).
+
+## Home: resource map
+
+The home screen is one full-screen map that opens on the country from the
+person's profile. They can search an address or click anywhere, and a card
+shows the solar resource there. Only **Solar** works for now; Wind, Hydro,
+Geothermal and Biomass are shown as coming soon.
+
+Solar has three layers, switchable under the resource buttons and from the
+card: irradiation on an optimally inclined plane (GTI, kWh/m²), annual PV
+production (PVOUT, kWh/kWp) and the optimum tilt angle (OPTA, degrees).
+
+How it is built (`lib/features/home/map/`):
+
+- **Map**: MapLibre GL JS with the OpenFreeMap "positron" base map, recoloured
+  for dark mode, place names in the app language where OpenStreetMap has them.
+  It runs in the page: `assets/map/weshape_map.js` loads MapLibre from unpkg
+  and `map_bridge_web.dart` talks to it. Flutter draws the search, card and
+  dock on top and tells the map where they are, so clicks on them stay off the map.
+- **Solar values and layer pictures**: from the backend
+  (`/api/v1/solar/point`, `/api/v1/solar/layers/{gti,pvout,opta}.png`). Today
+  these are example values; the backend will switch to Global Solar Atlas and
+  PVGIS without the app changing.
+- **Address search and place names**: Photon (photon.komoot.io, OpenStreetMap
+  data), results from the person's country first. The public Photon server is
+  fine for development; pick a hosted geocoder before launch (only
+  `geocoder.dart` changes).
+
+To try it locally, run the backend and then:
+
+```bash
+flutter pub get
+flutter run -d edge --dart-define=API_BASE_URL=http://localhost:8080
+```
 
 ## Language and theme rules
 
@@ -112,9 +146,31 @@ Agreed while sketching the home page (resource map); not built yet.
 - **Privacy policy page** at `https://weshapeenergy.com/privacy`: who runs the
   service (company name, address), contact email for data requests, what is
   stored (name, email, country, language, theme), where (Firebase / Google,
-  Neon and Render in Frankfurt), how to ask for deletion. Have it checked for
-  GDPR.
-- **Terms of service** page, same place.
+  Neon and Render in Frankfurt), how to ask for deletion. Mention that
+  searched addresses go to the geocoder and clicked points to PVGIS. Have it
+  checked for GDPR.
+- **Terms of service** page, same place. It must include a **data
+  disclaimer**: the solar figures are estimates for orientation, not a
+  guaranteed yield. PVGIS's own usage conditions say the European Commission
+  is not responsible for how its data is used, so ours should say the same.
+- **Legal check of data sources and attribution** (have a lawyer look at it
+  together with the terms):
+  - PVGIS: free, no restrictions on use; they ask to be credited as
+    "Photovoltaic Geographical Information System (PVGIS), European
+    Commission Joint Research Centre", with a link to its home page. Done on
+    the map (bottom left) and on the card. Conditions:
+    https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis/general-information/usage-conditions-data-protection_en
+  - Base map: OpenFreeMap, OpenMapTiles, OpenStreetMap (ODbL). Credited by
+    the map automatically; keep that line visible.
+  - Address search: Photon (OpenStreetMap data). The public server is for
+    testing only: **choose a production geocoder** (hosted plan or our own
+    Photon) and check its terms, then change `geocoder.dart`.
 - **Google sign-in branding** (Google Cloud → Google Auth Platform → Branding):
   app name "WeShape Energy", the 120×120 logo, home page, privacy policy link,
   then submit for brand verification so Google shows the name and logo.
+- **GitHub, for the monthly solar data check** (backend repo):
+  Settings → Actions → General → "Allow GitHub Actions to create and approve
+  pull requests"; and in your account's notification settings, the
+  notification email gl.tmea90@gmail.com.
+- **Remove the `?maptest=1` shortcut** in `lib/app.dart` (debug builds only,
+  but it is not needed any more).

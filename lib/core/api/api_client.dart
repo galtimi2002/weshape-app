@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../auth/auth_service.dart';
 import '../config/app_config.dart';
+import '../models/solar.dart';
 import '../models/user_profile.dart';
 import 'api_exception.dart';
 
@@ -38,6 +39,18 @@ class ApiClient {
         if (language != null) 'preferredLanguage': language,
         if (themeMode != null) 'themeMode': themeMode,
       }) as Map<String, dynamic>);
+
+  /// Irradiation, PV output and optimum tilt for one place.
+  Future<SolarPoint> solarPoint(double lat, double lon) async => SolarPoint.fromJson(
+      await _send('GET', '/api/v1/solar/point?lat=${lat.toStringAsFixed(5)}&lon=${lon.toStringAsFixed(5)}')
+          as Map<String, dynamic>);
+
+  /// How the solar map layers are drawn and where they cover.
+  Future<SolarLayers> solarLayers() async =>
+      SolarLayers.fromJson(await _send('GET', '/api/v1/solar/layers') as Map<String, dynamic>);
+
+  /// Full address of a backend path, for things the map loads by itself (layer pictures).
+  String urlOf(String path) => '$_baseUrl$path';
 
   /// Wakes the backend early (fire and forget) so it is up by the time the
   /// person has typed their password.

@@ -19,6 +19,10 @@ dependencies:
   shared_preferences: ^2.3.2
   google_fonts: ^6.2.1
 
+  # Home map: MapLibre GL JS runs in the page (assets/map/weshape_map.js);
+  # package:web lets Flutter host it.
+  web: ^1.0.0
+
   # Auth (used with --dart-define=AUTH_MODE=firebase)
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1
@@ -33,3 +37,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/brand/
+    - assets/map/

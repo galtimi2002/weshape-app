@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -9,6 +10,7 @@ import 'core/theme/weshape_palette.dart';
 import 'core/theme/weshape_theme.dart';
 import 'features/auth/auth_flow.dart';
 import 'features/home/home_screen.dart';
+import 'features/home/map/resource_map.dart';
 import 'features/profile/complete_profile_screen.dart';
 import 'features/profile/profile_controller.dart';
 import 'features/splash/splash_screen.dart';
@@ -60,6 +62,11 @@ class _RootGateState extends State<RootGate> {
     final profile = context.watch<ProfileController>();
 
     if (!settings.isLoaded || auth.status == AuthStatus.unknown) return const SplashScreen();
+
+    // Debug builds only: ?maptest=1 opens the map without signing in, to check it in any browser.
+    if (kDebugMode && Uri.base.queryParameters.containsKey('maptest')) {
+      return const Scaffold(body: SafeArea(child: ResourceMap(countryCode: 'RO')));
+    }
 
     if (auth.status == AuthStatus.signedOut) {
       if (_loadedFor != null) {

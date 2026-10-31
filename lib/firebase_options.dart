@@ -13,7 +13,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
-    if (kIsWeb) return web;
+    if (kIsWeb) return _isLocal ? webLocal : web;
     throw UnsupportedError(
       'Firebase is only set up for the web so far. Register the Android/iOS app '
       'in the Firebase console and run `flutterfire configure`, or run with '
@@ -32,4 +32,21 @@ class DefaultFirebaseOptions {
     authDomain: 'www.weshapeenergy.com',
     storageBucket: 'weshape-energy.firebasestorage.app',
   );
+
+  /// The same, for `flutter run` on this computer. The sign-in window then
+  /// comes from Firebase's own domain, so Google sign-in works locally without
+  /// depending on the live site.
+  static const FirebaseOptions webLocal = FirebaseOptions(
+    apiKey: 'AIzaSyD2Qye48NnpbU5u885cfYWvk0aQQF-DPJ8',
+    appId: '1:1059747265341:web:67f905cd147f583127a354',
+    messagingSenderId: '1059747265341',
+    projectId: 'weshape-energy',
+    authDomain: 'weshape-energy.firebaseapp.com',
+    storageBucket: 'weshape-energy.firebasestorage.app',
+  );
+
+  static bool get _isLocal {
+    final host = Uri.base.host;
+    return host == 'localhost' || host == '127.0.0.1';
+  }
 }

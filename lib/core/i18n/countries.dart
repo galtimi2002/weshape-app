@@ -35,7 +35,9 @@ abstract final class Countries {
 
   static bool isKnown(String? code) => code != null && kCountryCodes.contains(code.toUpperCase());
 
-  /// Lower case with the common Latin diacritics removed.
+  /// Lower case with the common Latin diacritics removed, for matching what people type.
+  static String fold(String s) => _fold(s);
+
   static String _fold(String s) {
     const from = 'áàâäãåāăąçćčďéèêëēęěíìîïīłńňñóòôöõőøřśšșşťțúùûüűůýÿžźż';
     const plain = 'aaaaaaaaacccdeeeeeeeiiiiilnnnooooooorssssttuuuuuuyyzzz';

@@ -58,6 +58,35 @@ class AppStrings {
     required this.serverWakingUp,
     required this.serverWakingUpHint,
     required this.demoModeNotice,
+    required this.resourceSolar,
+    required this.resourceWind,
+    required this.resourceHydro,
+    required this.resourceGeothermal,
+    required this.resourceBiomass,
+    required this.comingSoon,
+    required this.comingSoonMessage,
+    required this.layerIrradiation,
+    required this.layerPvProduction,
+    required this.layerOptimumTilt,
+    required this.irradiationTitle,
+    required this.pvProductionTitle,
+    required this.optimumTiltTitle,
+    required this.legendIrradiation,
+    required this.legendPvProduction,
+    required this.legendOptimumTilt,
+    required this.perYear,
+    required this.searchAddress,
+    required this.mapCountryHint,
+    required this.mapClickHint,
+    required this.selectedPoint,
+    required this.exampleValuesNote,
+    required this.south,
+    required this.zoomIn,
+    required this.zoomOut,
+    required this.close,
+    required this.noPlaceFound,
+    required this.mapLoadFailed,
+    required this.noSolarDataHere,
   });
 
   final String tagline;
@@ -115,6 +144,46 @@ class AppStrings {
   final String serverWakingUpHint;
   final String demoModeNotice;
 
+  // Home: resource map
+  final String resourceSolar;
+  final String resourceWind;
+  final String resourceHydro;
+  final String resourceGeothermal;
+  final String resourceBiomass;
+  /// Short badge on resources that are not ready yet.
+  final String comingSoon;
+  /// Use {resource} where the resource name goes.
+  final String comingSoonMessage;
+  final String layerIrradiation;
+  final String layerPvProduction;
+  final String layerOptimumTilt;
+  final String irradiationTitle;
+  final String pvProductionTitle;
+  final String optimumTiltTitle;
+  final String legendIrradiation;
+  final String legendPvProduction;
+  final String legendOptimumTilt;
+  final String perYear;
+  final String searchAddress;
+  /// Use {country} where the country name goes.
+  final String mapCountryHint;
+  final String mapClickHint;
+  final String selectedPoint;
+  final String exampleValuesNote;
+  final String south;
+  final String zoomIn;
+  final String zoomOut;
+  final String close;
+  final String noPlaceFound;
+  final String mapLoadFailed;
+  final String noSolarDataHere;
+
   /// "Hi, Ada" in the current language.
   String greet(String name) => greeting.replaceAll('{name}', name);
+
+  /// "Wind is coming soon."
+  String comingSoonFor(String resource) => comingSoonMessage.replaceAll('{resource}', resource);
+
+  /// "Showing Romania from your profile. …"
+  String mapCountryHintFor(String country) => mapCountryHint.replaceAll('{country}', country);
 }
