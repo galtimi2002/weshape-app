@@ -121,21 +121,20 @@ flutter test
 
 ## Map and data decisions
 
-Agreed while sketching the home page (resource map); not built yet.
+Agreed while designing the home page (resource map). Solar is built; the other resources come later.
 
 - **Map library: MapLibre** (free, open source). We style the base map
   ourselves to match the app: muted grey base, our own colored resource layer
   on top, light and dark theme. Not Google Maps.
-- **Solar map layers: Global Solar Atlas** GIS data (World Bank / Solargis,
-  CC BY 4.0, free; credit "Global Solar Atlas / Solargis" on the map):
-  - Inclined plane irradiation: GTI, kWh/m² per year (~250 m)
-  - Annual PV production: PVOUT, kWh/kWp per year (~1 km)
-  - Optimum tilt angle: OPTA, degrees (~4 km)
-
-  Prepared once into map tiles and served from our own server.
-- **Values for an address and the monthly breakdown: PVGIS** (EU JRC, free,
-  no API key, max 30 requests/s). Called from our backend, since PVGIS does not
-  allow calls straight from the browser.
+- **Solar data: PVGIS** (European Commission JRC, free, no key), for both
+  the map and the card. The map layers come from a PVGIS grid built once
+  (0.5° in Europe, 2° elsewhere, see the backend README); the card asks
+  PVGIS live for the exact point. Global Solar Atlas was considered for the
+  map, but its world files are 3–4 GB per layer, and one source keeps the
+  map and the card consistent.
+  - Inclined plane irradiation (kWh/m² per year, like GTI)
+  - Annual PV production (kWh/kWp per year, like PVOUT)
+  - Optimum tilt angle (degrees, like OPTA)
 - **Google Solar API**: maybe later, only as a paid extra (free monthly quota,
   then paid; Romania coverage not confirmed).
 - Wind, hydro, geothermal and biomass need their own data sources (e.g.
