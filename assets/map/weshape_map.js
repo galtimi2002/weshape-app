@@ -6,7 +6,13 @@
 // is remembered and applied once it has, so callers never wait on it.
 (function () {
   'use strict';
-  if (window.WeShapeMap) return;
+  // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
+  // (after a hot restart the page still holds the previous script).
+  var VERSION = 8;
+  if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
+  if (window.WeShapeMap && window.WeShapeMap.destroy) {
+    try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
+  }
 
   var MAPLIBRE_VERSION = '4.7.1';
   var STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
@@ -16,23 +22,40 @@
   // The dark look, set per kind of layer (an automatic inversion turned land black and sea grey).
   var DARK = {
     background: '#141B26',
-    water: '#0A111C',
-    waterLine: '#16253A',
+    water: '#122A42',
+    waterLine: '#1D3D5E',
     green: '#17202C',
     landuse: '#18212E',
     building: '#1C2635',
-    road: '#2A3546',
-    roadMinor: '#222C3B',
-    rail: '#2E394B',
+    road: 'rgba(190,205,225,0.30)',
+    roadMinor: 'rgba(190,205,225,0.16)',
+    rail: 'rgba(190,205,225,0.22)',
     border: '#4C5D78',
     text: '#8F9AAC',
     textStrong: '#B8C2D1',
     halo: '#121924'
   };
 
+  // In the light look only the water changes: positron's grey water read as a road.
+  var LIGHT = {
+    water: '#BCD5E8',
+    waterLine: '#9FC3DE'
+  };
+
+  function isWaterLayer(id) {
+    return /water|ocean|sea|lake|river|dam/.test(id);
+  }
+
+  function lightPaint(l, p) {
+    if (!isWaterLayer(l.id)) return undefined;
+    if (l.type === 'fill' && (p === 'fill-color' || p === 'fill-outline-color')) return LIGHT.water;
+    if (l.type === 'line' && p === 'line-color') return LIGHT.waterLine;
+    return undefined;
+  }
+
   function darkPaint(l, p) {
     var id = l.id;
-    var isWater = /water|ocean|sea|lake|river/.test(id);
+    var isWater = isWaterLayer(id);
     if (p === 'raster-opacity') return 0.12;
     if (p === 'background-color') return DARK.background;
     if (p === 'text-color') return /country|state|city|capital/.test(id) ? DARK.textStrong : DARK.text;
@@ -181,8 +204,8 @@
     Object.keys(original).forEach(function (key) {
       var parts = key.split('|'), v = original[key], l = byId[parts[0]];
       var value = v;
-      if (state.dark && l) {
-        var d = darkPaint(l, parts[1]);
+      if (l) {
+        var d = state.dark ? darkPaint(l, parts[1]) : lightPaint(l, parts[1]);
         value = d === undefined ? v : d;
       }
       try { map.setPaintProperty(parts[0], parts[1], value); } catch (e) { /* layer gone */ }
@@ -272,6 +295,8 @@
   // ---------------------------------------------------------------- API
 
   window.WeShapeMap = {
+    version: VERSION,
+
     /**
      * el: the element to draw in. opts: {dark, language, bounds:[w,s,e,n],
      * padding:[top,right,bottom,left], attribution}. onClick(lon, lat), onError(message).

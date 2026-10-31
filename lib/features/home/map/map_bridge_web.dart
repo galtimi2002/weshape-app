@@ -15,6 +15,7 @@ MapBridge createMapBridge() => _WebMapBridge();
 external _WeShapeMapJs? get _weShapeMap;
 
 extension type _WeShapeMapJs._(JSObject _) implements JSObject {
+  external int? get version;
   external void mount(web.HTMLElement element, JSAny? options, JSFunction onClick, JSFunction onError);
   external void setDark(bool dark);
   external void setLanguage(String code);
@@ -31,14 +32,14 @@ extension type _WeShapeMapJs._(JSObject _) implements JSObject {
   external void destroy();
 }
 
-/// Raise when assets/map/weshape_map.js changes.
-const _bridgeVersion = 6;
+/// Raise together with VERSION in assets/map/weshape_map.js whenever that file changes.
+const _bridgeVersion = 8;
 
 Future<void>? _scriptLoading;
 
 /// Adds the bridge script to the page once.
 Future<void> _loadScript() {
-  if (_weShapeMap != null) return Future.value();
+  if (_weShapeMap?.version == _bridgeVersion) return Future.value();
   return _scriptLoading ??= () {
     final done = Completer<void>();
     // The version keeps browsers from running an older cached copy after an update.
