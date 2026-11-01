@@ -14,7 +14,10 @@ class LanguageField extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     return DropdownButtonFormField<String>(
-      value: value,
+      // initialValue is read once; the key rebuilds the field when the value
+      // changes from outside (picking a country suggests its language).
+      key: ValueKey(value),
+      initialValue: value,
       isExpanded: true,
       icon: Icon(Icons.expand_more_rounded, color: p.muted),
       dropdownColor: p.surface,
