@@ -85,4 +85,13 @@ const AppStrings kStringsDa = AppStrings(
   noPlaceFound: 'Intet sted fundet. Prøv en anden adresse.',
   mapLoadFailed: 'Kortet kunne ikke indlæses. Tjek forbindelsen, og genindlæs siden.',
   noSolarDataHere: 'Ingen soldata for dette punkt, for eksempel over havet.',
+  layerWindSpeed: 'Vindhastighed',
+  layerPowerDensity: 'Effekttæthed',
+  layerByHeight: 'Efter højde',
+  windSpeedTitle: 'Gennemsnitlig vindhastighed',
+  powerDensityTitle: 'Vindens effekttæthed',
+  atHeight: 'i {height} m',
+  legendWindSpeed: 'Gennemsnitlig vindhastighed i {height} m · m/s',
+  legendPowerDensity: 'Vindens effekttæthed i 100 m · W/m²',
+  noWindDataHere: 'Ingen vinddata for dette sted, for eksempel langt ude på havet.',
 );

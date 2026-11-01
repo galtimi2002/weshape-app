@@ -85,4 +85,13 @@ const AppStrings kStringsHu = AppStrings(
   noPlaceFound: 'Nincs találat. Próbálj egy másik címet.',
   mapLoadFailed: 'A térkép nem töltött be. Ellenőrizd a kapcsolatot, és töltsd újra az oldalt.',
   noSolarDataHere: 'Erre a pontra nincs napenergia-adat, például a tenger fölött.',
+  layerWindSpeed: 'Szélsebesség',
+  layerPowerDensity: 'Energiasűrűség',
+  layerByHeight: 'Magasság szerint',
+  windSpeedTitle: 'Átlagos szélsebesség',
+  powerDensityTitle: 'Szélenergia-sűrűség',
+  atHeight: '{height} m magasan',
+  legendWindSpeed: 'Átlagos szélsebesség {height} m-en · m/s',
+  legendPowerDensity: 'Szélenergia-sűrűség 100 m-en · W/m²',
+  noWindDataHere: 'Erre a pontra nincs szél-adat, például a nyílt tengeren.',
 );

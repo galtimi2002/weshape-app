@@ -85,4 +85,13 @@ const AppStrings kStringsHr = AppStrings(
   noPlaceFound: 'Mjesto nije pronađeno. Pokušajte drugu adresu.',
   mapLoadFailed: 'Karta se nije mogla učitati. Provjerite vezu i ponovno učitajte stranicu.',
   noSolarDataHere: 'Za ovu točku nema podataka o suncu, na primjer iznad mora.',
+  layerWindSpeed: 'Brzina vjetra',
+  layerPowerDensity: 'Gustoća snage',
+  layerByHeight: 'Po visini',
+  windSpeedTitle: 'Prosječna brzina vjetra',
+  powerDensityTitle: 'Gustoća snage vjetra',
+  atHeight: 'na {height} m',
+  legendWindSpeed: 'Prosječna brzina vjetra na {height} m · m/s',
+  legendPowerDensity: 'Gustoća snage vjetra na 100 m · W/m²',
+  noWindDataHere: 'Nema podataka o vjetru za ovu točku, npr. na otvorenom moru.',
 );

@@ -85,4 +85,13 @@ const AppStrings kStringsEs = AppStrings(
   noPlaceFound: 'No se encontró ningún lugar. Prueba otra dirección.',
   mapLoadFailed: 'No se pudo cargar el mapa. Comprueba tu conexión y recarga la página.',
   noSolarDataHere: 'No hay datos solares para este punto, por ejemplo sobre el mar.',
+  layerWindSpeed: 'Velocidad del viento',
+  layerPowerDensity: 'Densidad de potencia',
+  layerByHeight: 'Por altura',
+  windSpeedTitle: 'Velocidad media del viento',
+  powerDensityTitle: 'Densidad de potencia eólica',
+  atHeight: 'a {height} m',
+  legendWindSpeed: 'Velocidad media del viento a {height} m · m/s',
+  legendPowerDensity: 'Densidad de potencia eólica a 100 m · W/m²',
+  noWindDataHere: 'No hay datos de viento para este punto, por ejemplo en alta mar.',
 );

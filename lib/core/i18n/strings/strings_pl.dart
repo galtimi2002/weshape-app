@@ -85,4 +85,13 @@ const AppStrings kStringsPl = AppStrings(
   noPlaceFound: 'Nie znaleziono miejsca. Spróbuj innego adresu.',
   mapLoadFailed: 'Nie udało się wczytać mapy. Sprawdź połączenie i odśwież stronę.',
   noSolarDataHere: 'Brak danych słonecznych dla tego punktu, np. nad morzem.',
+  layerWindSpeed: 'Prędkość wiatru',
+  layerPowerDensity: 'Gęstość mocy',
+  layerByHeight: 'Według wysokości',
+  windSpeedTitle: 'Średnia prędkość wiatru',
+  powerDensityTitle: 'Gęstość mocy wiatru',
+  atHeight: 'na {height} m',
+  legendWindSpeed: 'Średnia prędkość wiatru na {height} m · m/s',
+  legendPowerDensity: 'Gęstość mocy wiatru na 100 m · W/m²',
+  noWindDataHere: 'Brak danych o wietrze dla tego miejsca, np. na otwartym morzu.',
 );

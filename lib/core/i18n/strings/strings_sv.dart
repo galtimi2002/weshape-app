@@ -85,4 +85,13 @@ const AppStrings kStringsSv = AppStrings(
   noPlaceFound: 'Ingen plats hittades. Prova en annan adress.',
   mapLoadFailed: 'Kartan kunde inte laddas. Kontrollera anslutningen och ladda om sidan.',
   noSolarDataHere: 'Inga soldata för den här punkten, till exempel över havet.',
+  layerWindSpeed: 'Vindhastighet',
+  layerPowerDensity: 'Effekttäthet',
+  layerByHeight: 'Efter höjd',
+  windSpeedTitle: 'Medelvindhastighet',
+  powerDensityTitle: 'Vindens effekttäthet',
+  atHeight: 'på {height} m',
+  legendWindSpeed: 'Medelvindhastighet på {height} m · m/s',
+  legendPowerDensity: 'Vindens effekttäthet på 100 m · W/m²',
+  noWindDataHere: 'Inga vinddata för den här platsen, till exempel långt ute till havs.',
 );

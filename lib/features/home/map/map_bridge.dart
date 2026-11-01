@@ -40,6 +40,17 @@ abstract class MapBridge {
   /// A picture laid over the land, rows in Web Mercator; [bounds] is west, south, east, north.
   void setOverlay(String url, List<double> bounds, double opacity);
 
+  /// Map tiles laid over the land instead of a single picture: [urlTemplate] has
+  /// {z}/{x}/{y}; [bounds] is west, south, east, north; tiles exist up to [maxZoom].
+  void setTileOverlay(String urlTemplate, List<double> bounds, double opacity, {int maxZoom = 10});
+
+  /// Replaces the data credit in the map's attribution line (HTML).
+  void setAttribution(String html);
+
+  /// A short breeze across the map (soft gusts, a few leaves, a turbine), when
+  /// the person switches to wind. Skipped when the system asks for reduced motion.
+  void playBreeze();
+
   void fitBounds(List<double> bounds, EdgeInsets padding, {bool animate = true});
 
   /// [offset] shifts the target away from the centre, in pixels, to leave room for the card.

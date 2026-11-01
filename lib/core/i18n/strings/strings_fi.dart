@@ -85,4 +85,13 @@ const AppStrings kStringsFi = AppStrings(
   noPlaceFound: 'Paikkaa ei löytynyt. Kokeile toista osoitetta.',
   mapLoadFailed: 'Karttaa ei voitu ladata. Tarkista yhteys ja lataa sivu uudelleen.',
   noSolarDataHere: 'Tälle kohdalle ei ole aurinkotietoja, esimerkiksi meren yllä.',
+  layerWindSpeed: 'Tuulen nopeus',
+  layerPowerDensity: 'Tehotiheys',
+  layerByHeight: 'Korkeuden mukaan',
+  windSpeedTitle: 'Keskimääräinen tuulen nopeus',
+  powerDensityTitle: 'Tuulen tehotiheys',
+  atHeight: '{height} m:n korkeudella',
+  legendWindSpeed: 'Keskimääräinen tuulen nopeus {height} m:n korkeudella · m/s',
+  legendPowerDensity: 'Tuulen tehotiheys 100 m:n korkeudella · W/m²',
+  noWindDataHere: 'Tälle kohdalle ei ole tuulitietoja, esimerkiksi kaukana merellä.',
 );

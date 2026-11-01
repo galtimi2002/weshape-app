@@ -85,4 +85,13 @@ const AppStrings kStringsHi = AppStrings(
   noPlaceFound: 'कोई स्थान नहीं मिला। दूसरा पता आज़माएँ।',
   mapLoadFailed: 'मानचित्र लोड नहीं हो सका। कनेक्शन जाँचें और पेज फिर से लोड करें।',
   noSolarDataHere: 'इस स्थान के लिए सौर डेटा उपलब्ध नहीं है, जैसे समुद्र के ऊपर।',
+  layerWindSpeed: 'हवा की गति',
+  layerPowerDensity: 'शक्ति घनत्व',
+  layerByHeight: 'ऊँचाई के अनुसार',
+  windSpeedTitle: 'औसत हवा की गति',
+  powerDensityTitle: 'पवन शक्ति घनत्व',
+  atHeight: '{height} मी पर',
+  legendWindSpeed: '{height} मी पर औसत हवा की गति · m/s',
+  legendPowerDensity: '100 मी पर पवन शक्ति घनत्व · W/m²',
+  noWindDataHere: 'इस जगह के लिए हवा का डेटा नहीं है, जैसे खुले समुद्र में।',
 );

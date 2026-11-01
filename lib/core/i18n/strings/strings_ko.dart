@@ -85,4 +85,13 @@ const AppStrings kStringsKo = AppStrings(
   noPlaceFound: '장소를 찾을 수 없습니다. 다른 주소를 입력해 보세요.',
   mapLoadFailed: '지도를 불러올 수 없습니다. 연결을 확인하고 페이지를 새로 고치세요.',
   noSolarDataHere: '이 지점에는 태양광 데이터가 없습니다(예: 바다 위).',
+  layerWindSpeed: '풍속',
+  layerPowerDensity: '출력 밀도',
+  layerByHeight: '높이별',
+  windSpeedTitle: '평균 풍속',
+  powerDensityTitle: '풍력 밀도',
+  atHeight: '{height}m 높이',
+  legendWindSpeed: '{height}m 높이 평균 풍속 · m/s',
+  legendPowerDensity: '100m 높이 풍력 밀도 · W/m²',
+  noWindDataHere: '이 지점에는 바람 데이터가 없습니다(예: 먼 바다).',
 );

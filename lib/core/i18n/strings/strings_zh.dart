@@ -85,4 +85,13 @@ const AppStrings kStringsZh = AppStrings(
   noPlaceFound: '未找到地点。请尝试其他地址。',
   mapLoadFailed: '地图无法加载。请检查网络连接并刷新页面。',
   noSolarDataHere: '此位置没有太阳能数据，例如在海面上。',
+  layerWindSpeed: '风速',
+  layerPowerDensity: '功率密度',
+  layerByHeight: '按高度',
+  windSpeedTitle: '平均风速',
+  powerDensityTitle: '风功率密度',
+  atHeight: '{height} 米高度',
+  legendWindSpeed: '{height} 米高度平均风速 · m/s',
+  legendPowerDensity: '100 米高度风功率密度 · W/m²',
+  noWindDataHere: '此处没有风数据，例如远海。',
 );

@@ -6,6 +6,7 @@ import '../auth/auth_service.dart';
 import '../config/app_config.dart';
 import '../models/solar.dart';
 import '../models/user_profile.dart';
+import '../models/wind.dart';
 import 'api_exception.dart';
 
 /// Thin REST client for weshape-backend.
@@ -48,6 +49,15 @@ class ApiClient {
   /// How the solar map layers are drawn and where they cover.
   Future<SolarLayers> solarLayers() async =>
       SolarLayers.fromJson(await _send('GET', '/api/v1/solar/layers') as Map<String, dynamic>);
+
+  /// Mean wind speed by height and power density for one place.
+  Future<WindPoint> windPoint(double lat, double lon) async => WindPoint.fromJson(
+      await _send('GET', '/api/v1/wind/point?lat=${lat.toStringAsFixed(5)}&lon=${lon.toStringAsFixed(5)}')
+          as Map<String, dynamic>);
+
+  /// How the wind map layers are drawn and where their tiles are.
+  Future<WindLayers> windLayers() async =>
+      WindLayers.fromJson(await _send('GET', '/api/v1/wind/layers') as Map<String, dynamic>);
 
   /// Full address of a backend path, for things the map loads by itself (layer pictures).
   String urlOf(String path) => '$_baseUrl$path';

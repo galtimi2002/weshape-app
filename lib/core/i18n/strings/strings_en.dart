@@ -85,4 +85,13 @@ const AppStrings kStringsEn = AppStrings(
   noPlaceFound: 'No place found. Try another address.',
   mapLoadFailed: 'The map could not load. Check your connection and reload the page.',
   noSolarDataHere: 'No solar data for this spot, for example over the sea.',
+  layerWindSpeed: 'Wind speed',
+  layerPowerDensity: 'Power density',
+  layerByHeight: 'By height',
+  windSpeedTitle: 'Mean wind speed',
+  powerDensityTitle: 'Wind power density',
+  atHeight: 'at {height} m',
+  legendWindSpeed: 'Mean wind speed at {height} m · m/s',
+  legendPowerDensity: 'Wind power density at 100 m · W/m²',
+  noWindDataHere: 'No wind data for this spot, for example far out at sea.',
 );

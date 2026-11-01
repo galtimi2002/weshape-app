@@ -20,6 +20,9 @@ extension type _WeShapeMapJs._(JSObject _) implements JSObject {
   external void setDark(bool dark);
   external void setLanguage(String code);
   external void setOverlay(String url, JSArray<JSNumber> bounds, double opacity);
+  external void setTileOverlay(String url, JSArray<JSNumber> bounds, double opacity, int maxZoom);
+  external void setAttribution(String html);
+  external void playBreeze();
   external void fitBounds(JSArray<JSNumber> bounds, double top, double right, double bottom, double left, bool animate);
   external void flyTo(double lon, double lat, double zoom, double offsetX, double offsetY);
   external void setMarker(double lon, double lat, String color);
@@ -33,7 +36,7 @@ extension type _WeShapeMapJs._(JSObject _) implements JSObject {
 }
 
 /// Raise together with VERSION in assets/map/weshape_map.js whenever that file changes.
-const _bridgeVersion = 8;
+const _bridgeVersion = 9;
 
 Future<void>? _scriptLoading;
 
@@ -127,6 +130,16 @@ class _WebMapBridge implements MapBridge {
   @override
   void setOverlay(String url, List<double> bounds, double opacity) =>
       _run((m) => m.setOverlay(url, _numbers(bounds), opacity));
+
+  @override
+  void setTileOverlay(String urlTemplate, List<double> bounds, double opacity, {int maxZoom = 10}) =>
+      _run((m) => m.setTileOverlay(urlTemplate, _numbers(bounds), opacity, maxZoom));
+
+  @override
+  void setAttribution(String html) => _run((m) => m.setAttribution(html));
+
+  @override
+  void playBreeze() => _run((m) => m.playBreeze());
 
   @override
   void fitBounds(List<double> bounds, EdgeInsets padding, {bool animate = true}) =>

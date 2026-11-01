@@ -85,4 +85,13 @@ const AppStrings kStringsBn = AppStrings(
   noPlaceFound: 'কোনো স্থান পাওয়া যায়নি। অন্য ঠিকানা চেষ্টা করুন।',
   mapLoadFailed: 'মানচিত্র লোড করা যায়নি। সংযোগ পরীক্ষা করে পৃষ্ঠাটি আবার লোড করুন।',
   noSolarDataHere: 'এই বিন্দুর জন্য কোনো সৌর তথ্য নেই, যেমন সমুদ্রের ওপরে।',
+  layerWindSpeed: 'বাতাসের গতি',
+  layerPowerDensity: 'শক্তি ঘনত্ব',
+  layerByHeight: 'উচ্চতা অনুযায়ী',
+  windSpeedTitle: 'গড় বাতাসের গতি',
+  powerDensityTitle: 'বায়ু শক্তি ঘনত্ব',
+  atHeight: '{height} মি উচ্চতায়',
+  legendWindSpeed: '{height} মি উচ্চতায় গড় বাতাসের গতি · m/s',
+  legendPowerDensity: '100 মি উচ্চতায় বায়ু শক্তি ঘনত্ব · W/m²',
+  noWindDataHere: 'এই জায়গার জন্য বাতাসের তথ্য নেই, যেমন গভীর সমুদ্রে।',
 );

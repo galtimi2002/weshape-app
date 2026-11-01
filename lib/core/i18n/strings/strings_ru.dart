@@ -85,4 +85,13 @@ const AppStrings kStringsRu = AppStrings(
   noPlaceFound: 'Место не найдено. Попробуйте другой адрес.',
   mapLoadFailed: 'Не удалось загрузить карту. Проверьте подключение и обновите страницу.',
   noSolarDataHere: 'Для этой точки нет данных о солнце, например над морем.',
+  layerWindSpeed: 'Скорость ветра',
+  layerPowerDensity: 'Плотность мощности',
+  layerByHeight: 'По высоте',
+  windSpeedTitle: 'Средняя скорость ветра',
+  powerDensityTitle: 'Удельная мощность ветра',
+  atHeight: 'на высоте {height} м',
+  legendWindSpeed: 'Средняя скорость ветра на высоте {height} м · м/с',
+  legendPowerDensity: 'Удельная мощность ветра на высоте 100 м · Вт/м²',
+  noWindDataHere: 'Нет данных о ветре для этой точки, например в открытом море.',
 );

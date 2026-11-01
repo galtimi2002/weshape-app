@@ -85,4 +85,13 @@ const AppStrings kStringsNl = AppStrings(
   noPlaceFound: 'Geen plaats gevonden. Probeer een ander adres.',
   mapLoadFailed: 'De kaart kon niet worden geladen. Controleer je verbinding en laad de pagina opnieuw.',
   noSolarDataHere: 'Geen zonnedata voor dit punt, bijvoorbeeld boven zee.',
+  layerWindSpeed: 'Windsnelheid',
+  layerPowerDensity: 'Vermogensdichtheid',
+  layerByHeight: 'Per hoogte',
+  windSpeedTitle: 'Gemiddelde windsnelheid',
+  powerDensityTitle: 'Windvermogensdichtheid',
+  atHeight: 'op {height} m',
+  legendWindSpeed: 'Gemiddelde windsnelheid op {height} m · m/s',
+  legendPowerDensity: 'Windvermogensdichtheid op 100 m · W/m²',
+  noWindDataHere: 'Geen windgegevens voor deze plek, bijvoorbeeld ver op zee.',
 );

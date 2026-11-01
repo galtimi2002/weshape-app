@@ -85,4 +85,13 @@ const AppStrings kStringsId = AppStrings(
   noPlaceFound: 'Tempat tidak ditemukan. Coba alamat lain.',
   mapLoadFailed: 'Peta tidak dapat dimuat. Periksa koneksi dan muat ulang halaman.',
   noSolarDataHere: 'Tidak ada data surya untuk titik ini, misalnya di atas laut.',
+  layerWindSpeed: 'Kecepatan angin',
+  layerPowerDensity: 'Kepadatan daya',
+  layerByHeight: 'Menurut ketinggian',
+  windSpeedTitle: 'Kecepatan angin rata-rata',
+  powerDensityTitle: 'Kepadatan daya angin',
+  atHeight: 'pada {height} m',
+  legendWindSpeed: 'Kecepatan angin rata-rata pada {height} m · m/s',
+  legendPowerDensity: 'Kepadatan daya angin pada 100 m · W/m²',
+  noWindDataHere: 'Tidak ada data angin untuk titik ini, misalnya di laut lepas.',
 );

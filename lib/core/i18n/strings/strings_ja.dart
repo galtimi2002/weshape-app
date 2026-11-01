@@ -85,4 +85,13 @@ const AppStrings kStringsJa = AppStrings(
   noPlaceFound: '場所が見つかりません。別の住所を試してください。',
   mapLoadFailed: '地図を読み込めませんでした。接続を確認してページを再読み込みしてください。',
   noSolarDataHere: 'この地点の日射データはありません（海上など）。',
+  layerWindSpeed: '風速',
+  layerPowerDensity: 'パワー密度',
+  layerByHeight: '高さ別',
+  windSpeedTitle: '平均風速',
+  powerDensityTitle: '風力エネルギー密度',
+  atHeight: '高さ {height} m',
+  legendWindSpeed: '高さ {height} m の平均風速 · m/s',
+  legendPowerDensity: '高さ 100 m の風力エネルギー密度 · W/m²',
+  noWindDataHere: 'この地点には風のデータがありません（例：外洋）。',
 );

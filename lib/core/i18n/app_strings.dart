@@ -87,6 +87,15 @@ class AppStrings {
     required this.noPlaceFound,
     required this.mapLoadFailed,
     required this.noSolarDataHere,
+    required this.layerWindSpeed,
+    required this.layerPowerDensity,
+    required this.layerByHeight,
+    required this.windSpeedTitle,
+    required this.powerDensityTitle,
+    required this.atHeight,
+    required this.legendWindSpeed,
+    required this.legendPowerDensity,
+    required this.noWindDataHere,
   });
 
   final String tagline;
@@ -178,6 +187,19 @@ class AppStrings {
   final String mapLoadFailed;
   final String noSolarDataHere;
 
+  // Home: wind map
+  final String layerWindSpeed;
+  final String layerPowerDensity;
+  final String layerByHeight;
+  final String windSpeedTitle;
+  final String powerDensityTitle;
+  /// Use {height} where the height in metres goes.
+  final String atHeight;
+  /// Use {height} where the height in metres goes.
+  final String legendWindSpeed;
+  final String legendPowerDensity;
+  final String noWindDataHere;
+
   /// "Hi, Ada" in the current language.
   String greet(String name) => greeting.replaceAll('{name}', name);
 
@@ -186,4 +208,10 @@ class AppStrings {
 
   /// "Showing Romania from your profile. …"
   String mapCountryHintFor(String country) => mapCountryHint.replaceAll('{country}', country);
+
+  /// "at 100 m"
+  String atHeightFor(int height) => atHeight.replaceAll('{height}', '$height');
+
+  /// "Mean wind speed at 100 m · m/s"
+  String legendWindSpeedFor(int height) => legendWindSpeed.replaceAll('{height}', '$height');
 }

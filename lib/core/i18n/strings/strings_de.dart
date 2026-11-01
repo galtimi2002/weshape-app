@@ -85,4 +85,13 @@ const AppStrings kStringsDe = AppStrings(
   noPlaceFound: 'Kein Ort gefunden. Versuche eine andere Adresse.',
   mapLoadFailed: 'Die Karte konnte nicht geladen werden. Prüfe deine Verbindung und lade die Seite neu.',
   noSolarDataHere: 'Für diesen Punkt gibt es keine Solardaten, zum Beispiel über dem Meer.',
+  layerWindSpeed: 'Windgeschwindigkeit',
+  layerPowerDensity: 'Leistungsdichte',
+  layerByHeight: 'Nach Höhe',
+  windSpeedTitle: 'Mittlere Windgeschwindigkeit',
+  powerDensityTitle: 'Windleistungsdichte',
+  atHeight: 'in {height} m',
+  legendWindSpeed: 'Mittlere Windgeschwindigkeit in {height} m · m/s',
+  legendPowerDensity: 'Windleistungsdichte in 100 m · W/m²',
+  noWindDataHere: 'Keine Winddaten für diesen Ort, zum Beispiel weit draußen auf dem Meer.',
 );

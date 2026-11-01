@@ -85,4 +85,13 @@ const AppStrings kStringsVi = AppStrings(
   noPlaceFound: 'Không tìm thấy địa điểm. Hãy thử địa chỉ khác.',
   mapLoadFailed: 'Không thể tải bản đồ. Kiểm tra kết nối và tải lại trang.',
   noSolarDataHere: 'Không có dữ liệu năng lượng mặt trời cho điểm này, ví dụ trên biển.',
+  layerWindSpeed: 'Tốc độ gió',
+  layerPowerDensity: 'Mật độ công suất',
+  layerByHeight: 'Theo độ cao',
+  windSpeedTitle: 'Tốc độ gió trung bình',
+  powerDensityTitle: 'Mật độ công suất gió',
+  atHeight: 'ở độ cao {height} m',
+  legendWindSpeed: 'Tốc độ gió trung bình ở độ cao {height} m · m/s',
+  legendPowerDensity: 'Mật độ công suất gió ở độ cao 100 m · W/m²',
+  noWindDataHere: 'Không có dữ liệu gió cho điểm này, ví dụ ngoài khơi xa.',
 );

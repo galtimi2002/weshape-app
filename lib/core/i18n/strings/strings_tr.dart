@@ -85,4 +85,13 @@ const AppStrings kStringsTr = AppStrings(
   noPlaceFound: 'Yer bulunamadı. Başka bir adres deneyin.',
   mapLoadFailed: 'Harita yüklenemedi. Bağlantınızı kontrol edip sayfayı yenileyin.',
   noSolarDataHere: 'Bu nokta için güneş verisi yok, örneğin deniz üzerinde.',
+  layerWindSpeed: 'Rüzgar hızı',
+  layerPowerDensity: 'Güç yoğunluğu',
+  layerByHeight: 'Yüksekliğe göre',
+  windSpeedTitle: 'Ortalama rüzgar hızı',
+  powerDensityTitle: 'Rüzgar güç yoğunluğu',
+  atHeight: '{height} m\'de',
+  legendWindSpeed: '{height} m\'de ortalama rüzgar hızı · m/s',
+  legendPowerDensity: '100 m\'de rüzgar güç yoğunluğu · W/m²',
+  noWindDataHere: 'Bu nokta için rüzgar verisi yok, örneğin açık denizde.',
 );

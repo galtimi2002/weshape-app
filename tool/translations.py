@@ -89,6 +89,15 @@ T["en"] = dict(
     noPlaceFound="No place found. Try another address.",
     mapLoadFailed="The map could not load. Check your connection and reload the page.",
     noSolarDataHere="No solar data for this spot, for example over the sea.",
+    layerWindSpeed="Wind speed",
+    layerPowerDensity="Power density",
+    layerByHeight="By height",
+    windSpeedTitle="Mean wind speed",
+    powerDensityTitle="Wind power density",
+    atHeight="at {height} m",
+    legendWindSpeed="Mean wind speed at {height} m · m/s",
+    legendPowerDensity="Wind power density at 100 m · W/m²",
+    noWindDataHere="No wind data for this spot, for example far out at sea.",
 )
 
 T["hu"] = dict(
@@ -174,6 +183,15 @@ T["hu"] = dict(
     noPlaceFound="Nincs találat. Próbálj egy másik címet.",
     mapLoadFailed="A térkép nem töltött be. Ellenőrizd a kapcsolatot, és töltsd újra az oldalt.",
     noSolarDataHere="Erre a pontra nincs napenergia-adat, például a tenger fölött.",
+    layerWindSpeed="Szélsebesség",
+    layerPowerDensity="Energiasűrűség",
+    layerByHeight="Magasság szerint",
+    windSpeedTitle="Átlagos szélsebesség",
+    powerDensityTitle="Szélenergia-sűrűség",
+    atHeight="{height} m magasan",
+    legendWindSpeed="Átlagos szélsebesség {height} m-en · m/s",
+    legendPowerDensity="Szélenergia-sűrűség 100 m-en · W/m²",
+    noWindDataHere="Erre a pontra nincs szél-adat, például a nyílt tengeren.",
 )
 
 T["ro"] = dict(
@@ -259,6 +277,15 @@ T["ro"] = dict(
     noPlaceFound="Niciun loc găsit. Încearcă altă adresă.",
     mapLoadFailed="Harta nu s-a putut încărca. Verifică conexiunea și reîncarcă pagina.",
     noSolarDataHere="Nu există date solare pentru acest punct, de exemplu deasupra mării.",
+    layerWindSpeed="Viteza vântului",
+    layerPowerDensity="Densitate de putere",
+    layerByHeight="După înălțime",
+    windSpeedTitle="Viteza medie a vântului",
+    powerDensityTitle="Densitatea puterii vântului",
+    atHeight="la {height} m",
+    legendWindSpeed="Viteza medie a vântului la {height} m · m/s",
+    legendPowerDensity="Densitatea puterii vântului la 100 m · W/m²",
+    noWindDataHere="Nu există date despre vânt pentru acest punct, de exemplu în larg.",
 )
 
 T["de"] = dict(
@@ -344,6 +371,15 @@ T["de"] = dict(
     noPlaceFound="Kein Ort gefunden. Versuche eine andere Adresse.",
     mapLoadFailed="Die Karte konnte nicht geladen werden. Prüfe deine Verbindung und lade die Seite neu.",
     noSolarDataHere="Für diesen Punkt gibt es keine Solardaten, zum Beispiel über dem Meer.",
+    layerWindSpeed="Windgeschwindigkeit",
+    layerPowerDensity="Leistungsdichte",
+    layerByHeight="Nach Höhe",
+    windSpeedTitle="Mittlere Windgeschwindigkeit",
+    powerDensityTitle="Windleistungsdichte",
+    atHeight="in {height} m",
+    legendWindSpeed="Mittlere Windgeschwindigkeit in {height} m · m/s",
+    legendPowerDensity="Windleistungsdichte in 100 m · W/m²",
+    noWindDataHere="Keine Winddaten für diesen Ort, zum Beispiel weit draußen auf dem Meer.",
 )
 
 T["fr"] = dict(
@@ -429,6 +465,15 @@ T["fr"] = dict(
     noPlaceFound="Aucun lieu trouvé. Essayez une autre adresse.",
     mapLoadFailed="La carte n'a pas pu se charger. Vérifiez votre connexion et rechargez la page.",
     noSolarDataHere="Aucune donnée solaire pour ce point, par exemple en mer.",
+    layerWindSpeed="Vitesse du vent",
+    layerPowerDensity="Densité de puissance",
+    layerByHeight="Par hauteur",
+    windSpeedTitle="Vitesse moyenne du vent",
+    powerDensityTitle="Densité de puissance du vent",
+    atHeight="à {height} m",
+    legendWindSpeed="Vitesse moyenne du vent à {height} m · m/s",
+    legendPowerDensity="Densité de puissance du vent à 100 m · W/m²",
+    noWindDataHere="Pas de données de vent pour ce point, par exemple en pleine mer.",
 )
 
 T["es"] = dict(
@@ -514,6 +559,15 @@ T["es"] = dict(
     noPlaceFound="No se encontró ningún lugar. Prueba otra dirección.",
     mapLoadFailed="No se pudo cargar el mapa. Comprueba tu conexión y recarga la página.",
     noSolarDataHere="No hay datos solares para este punto, por ejemplo sobre el mar.",
+    layerWindSpeed="Velocidad del viento",
+    layerPowerDensity="Densidad de potencia",
+    layerByHeight="Por altura",
+    windSpeedTitle="Velocidad media del viento",
+    powerDensityTitle="Densidad de potencia eólica",
+    atHeight="a {height} m",
+    legendWindSpeed="Velocidad media del viento a {height} m · m/s",
+    legendPowerDensity="Densidad de potencia eólica a 100 m · W/m²",
+    noWindDataHere="No hay datos de viento para este punto, por ejemplo en alta mar.",
 )
 
 T["it"] = dict(
@@ -599,6 +653,15 @@ T["it"] = dict(
     noPlaceFound="Nessun luogo trovato. Prova un altro indirizzo.",
     mapLoadFailed="Impossibile caricare la mappa. Controlla la connessione e ricarica la pagina.",
     noSolarDataHere="Nessun dato solare per questo punto, ad esempio sul mare.",
+    layerWindSpeed="Velocità del vento",
+    layerPowerDensity="Densità di potenza",
+    layerByHeight="Per altezza",
+    windSpeedTitle="Velocità media del vento",
+    powerDensityTitle="Densità di potenza eolica",
+    atHeight="a {height} m",
+    legendWindSpeed="Velocità media del vento a {height} m · m/s",
+    legendPowerDensity="Densità di potenza eolica a 100 m · W/m²",
+    noWindDataHere="Nessun dato sul vento per questo punto, ad esempio in mare aperto.",
 )
 
 T["pt"] = dict(
@@ -684,6 +747,15 @@ T["pt"] = dict(
     noPlaceFound="Nenhum local encontrado. Tente outro endereço.",
     mapLoadFailed="Não foi possível carregar o mapa. Verifique a internet e recarregue a página.",
     noSolarDataHere="Não há dados solares para este ponto, por exemplo sobre o mar.",
+    layerWindSpeed="Velocidade do vento",
+    layerPowerDensity="Densidade de potência",
+    layerByHeight="Por altura",
+    windSpeedTitle="Velocidade média do vento",
+    powerDensityTitle="Densidade de potência eólica",
+    atHeight="a {height} m",
+    legendWindSpeed="Velocidade média do vento a {height} m · m/s",
+    legendPowerDensity="Densidade de potência eólica a 100 m · W/m²",
+    noWindDataHere="Sem dados de vento para este ponto, por exemplo em alto-mar.",
 )
 
 T["nl"] = dict(
@@ -769,6 +841,15 @@ T["nl"] = dict(
     noPlaceFound="Geen plaats gevonden. Probeer een ander adres.",
     mapLoadFailed="De kaart kon niet worden geladen. Controleer je verbinding en laad de pagina opnieuw.",
     noSolarDataHere="Geen zonnedata voor dit punt, bijvoorbeeld boven zee.",
+    layerWindSpeed="Windsnelheid",
+    layerPowerDensity="Vermogensdichtheid",
+    layerByHeight="Per hoogte",
+    windSpeedTitle="Gemiddelde windsnelheid",
+    powerDensityTitle="Windvermogensdichtheid",
+    atHeight="op {height} m",
+    legendWindSpeed="Gemiddelde windsnelheid op {height} m · m/s",
+    legendPowerDensity="Windvermogensdichtheid op 100 m · W/m²",
+    noWindDataHere="Geen windgegevens voor deze plek, bijvoorbeeld ver op zee.",
 )
 
 T["pl"] = dict(
@@ -854,6 +935,15 @@ T["pl"] = dict(
     noPlaceFound="Nie znaleziono miejsca. Spróbuj innego adresu.",
     mapLoadFailed="Nie udało się wczytać mapy. Sprawdź połączenie i odśwież stronę.",
     noSolarDataHere="Brak danych słonecznych dla tego punktu, np. nad morzem.",
+    layerWindSpeed="Prędkość wiatru",
+    layerPowerDensity="Gęstość mocy",
+    layerByHeight="Według wysokości",
+    windSpeedTitle="Średnia prędkość wiatru",
+    powerDensityTitle="Gęstość mocy wiatru",
+    atHeight="na {height} m",
+    legendWindSpeed="Średnia prędkość wiatru na {height} m · m/s",
+    legendPowerDensity="Gęstość mocy wiatru na 100 m · W/m²",
+    noWindDataHere="Brak danych o wietrze dla tego miejsca, np. na otwartym morzu.",
 )
 
 T["hr"] = dict(
@@ -939,6 +1029,15 @@ T["hr"] = dict(
     noPlaceFound="Mjesto nije pronađeno. Pokušajte drugu adresu.",
     mapLoadFailed="Karta se nije mogla učitati. Provjerite vezu i ponovno učitajte stranicu.",
     noSolarDataHere="Za ovu točku nema podataka o suncu, na primjer iznad mora.",
+    layerWindSpeed="Brzina vjetra",
+    layerPowerDensity="Gustoća snage",
+    layerByHeight="Po visini",
+    windSpeedTitle="Prosječna brzina vjetra",
+    powerDensityTitle="Gustoća snage vjetra",
+    atHeight="na {height} m",
+    legendWindSpeed="Prosječna brzina vjetra na {height} m · m/s",
+    legendPowerDensity="Gustoća snage vjetra na 100 m · W/m²",
+    noWindDataHere="Nema podataka o vjetru za ovu točku, npr. na otvorenom moru.",
 )
 
 T["fi"] = dict(
@@ -1024,6 +1123,15 @@ T["fi"] = dict(
     noPlaceFound="Paikkaa ei löytynyt. Kokeile toista osoitetta.",
     mapLoadFailed="Karttaa ei voitu ladata. Tarkista yhteys ja lataa sivu uudelleen.",
     noSolarDataHere="Tälle kohdalle ei ole aurinkotietoja, esimerkiksi meren yllä.",
+    layerWindSpeed="Tuulen nopeus",
+    layerPowerDensity="Tehotiheys",
+    layerByHeight="Korkeuden mukaan",
+    windSpeedTitle="Keskimääräinen tuulen nopeus",
+    powerDensityTitle="Tuulen tehotiheys",
+    atHeight="{height} m:n korkeudella",
+    legendWindSpeed="Keskimääräinen tuulen nopeus {height} m:n korkeudella · m/s",
+    legendPowerDensity="Tuulen tehotiheys 100 m:n korkeudella · W/m²",
+    noWindDataHere="Tälle kohdalle ei ole tuulitietoja, esimerkiksi kaukana merellä.",
 )
 
 T["ru"] = dict(
@@ -1109,6 +1217,15 @@ T["ru"] = dict(
     noPlaceFound="Место не найдено. Попробуйте другой адрес.",
     mapLoadFailed="Не удалось загрузить карту. Проверьте подключение и обновите страницу.",
     noSolarDataHere="Для этой точки нет данных о солнце, например над морем.",
+    layerWindSpeed="Скорость ветра",
+    layerPowerDensity="Плотность мощности",
+    layerByHeight="По высоте",
+    windSpeedTitle="Средняя скорость ветра",
+    powerDensityTitle="Удельная мощность ветра",
+    atHeight="на высоте {height} м",
+    legendWindSpeed="Средняя скорость ветра на высоте {height} м · м/с",
+    legendPowerDensity="Удельная мощность ветра на высоте 100 м · Вт/м²",
+    noWindDataHere="Нет данных о ветре для этой точки, например в открытом море.",
 )
 
 T["tr"] = dict(
@@ -1194,6 +1311,15 @@ T["tr"] = dict(
     noPlaceFound="Yer bulunamadı. Başka bir adres deneyin.",
     mapLoadFailed="Harita yüklenemedi. Bağlantınızı kontrol edip sayfayı yenileyin.",
     noSolarDataHere="Bu nokta için güneş verisi yok, örneğin deniz üzerinde.",
+    layerWindSpeed="Rüzgar hızı",
+    layerPowerDensity="Güç yoğunluğu",
+    layerByHeight="Yüksekliğe göre",
+    windSpeedTitle="Ortalama rüzgar hızı",
+    powerDensityTitle="Rüzgar güç yoğunluğu",
+    atHeight="{height} m'de",
+    legendWindSpeed="{height} m'de ortalama rüzgar hızı · m/s",
+    legendPowerDensity="100 m'de rüzgar güç yoğunluğu · W/m²",
+    noWindDataHere="Bu nokta için rüzgar verisi yok, örneğin açık denizde.",
 )
 
 T["zh"] = dict(
@@ -1279,6 +1405,15 @@ T["zh"] = dict(
     noPlaceFound="未找到地点。请尝试其他地址。",
     mapLoadFailed="地图无法加载。请检查网络连接并刷新页面。",
     noSolarDataHere="此位置没有太阳能数据，例如在海面上。",
+    layerWindSpeed="风速",
+    layerPowerDensity="功率密度",
+    layerByHeight="按高度",
+    windSpeedTitle="平均风速",
+    powerDensityTitle="风功率密度",
+    atHeight="{height} 米高度",
+    legendWindSpeed="{height} 米高度平均风速 · m/s",
+    legendPowerDensity="100 米高度风功率密度 · W/m²",
+    noWindDataHere="此处没有风数据，例如远海。",
 )
 
 T["sv"] = dict(
@@ -1364,6 +1499,15 @@ T["sv"] = dict(
     noPlaceFound="Ingen plats hittades. Prova en annan adress.",
     mapLoadFailed="Kartan kunde inte laddas. Kontrollera anslutningen och ladda om sidan.",
     noSolarDataHere="Inga soldata för den här punkten, till exempel över havet.",
+    layerWindSpeed="Vindhastighet",
+    layerPowerDensity="Effekttäthet",
+    layerByHeight="Efter höjd",
+    windSpeedTitle="Medelvindhastighet",
+    powerDensityTitle="Vindens effekttäthet",
+    atHeight="på {height} m",
+    legendWindSpeed="Medelvindhastighet på {height} m · m/s",
+    legendPowerDensity="Vindens effekttäthet på 100 m · W/m²",
+    noWindDataHere="Inga vinddata för den här platsen, till exempel långt ute till havs.",
 )
 
 T["da"] = dict(
@@ -1449,6 +1593,15 @@ T["da"] = dict(
     noPlaceFound="Intet sted fundet. Prøv en anden adresse.",
     mapLoadFailed="Kortet kunne ikke indlæses. Tjek forbindelsen, og genindlæs siden.",
     noSolarDataHere="Ingen soldata for dette punkt, for eksempel over havet.",
+    layerWindSpeed="Vindhastighed",
+    layerPowerDensity="Effekttæthed",
+    layerByHeight="Efter højde",
+    windSpeedTitle="Gennemsnitlig vindhastighed",
+    powerDensityTitle="Vindens effekttæthed",
+    atHeight="i {height} m",
+    legendWindSpeed="Gennemsnitlig vindhastighed i {height} m · m/s",
+    legendPowerDensity="Vindens effekttæthed i 100 m · W/m²",
+    noWindDataHere="Ingen vinddata for dette sted, for eksempel langt ude på havet.",
 )
 
 T["el"] = dict(
@@ -1534,6 +1687,15 @@ T["el"] = dict(
     noPlaceFound="Δεν βρέθηκε τοποθεσία. Δοκιμάστε άλλη διεύθυνση.",
     mapLoadFailed="Δεν ήταν δυνατή η φόρτωση του χάρτη. Ελέγξτε τη σύνδεση και ανανεώστε τη σελίδα.",
     noSolarDataHere="Δεν υπάρχουν ηλιακά δεδομένα για αυτό το σημείο, π.χ. πάνω από τη θάλασσα.",
+    layerWindSpeed="Ταχύτητα ανέμου",
+    layerPowerDensity="Πυκνότητα ισχύος",
+    layerByHeight="Ανά ύψος",
+    windSpeedTitle="Μέση ταχύτητα ανέμου",
+    powerDensityTitle="Πυκνότητα αιολικής ισχύος",
+    atHeight="στα {height} m",
+    legendWindSpeed="Μέση ταχύτητα ανέμου στα {height} m · m/s",
+    legendPowerDensity="Πυκνότητα αιολικής ισχύος στα 100 m · W/m²",
+    noWindDataHere="Δεν υπάρχουν δεδομένα ανέμου για αυτό το σημείο, π.χ. στην ανοιχτή θάλασσα.",
 )
 
 T["ja"] = dict(
@@ -1619,6 +1781,15 @@ T["ja"] = dict(
     noPlaceFound="場所が見つかりません。別の住所を試してください。",
     mapLoadFailed="地図を読み込めませんでした。接続を確認してページを再読み込みしてください。",
     noSolarDataHere="この地点の日射データはありません（海上など）。",
+    layerWindSpeed="風速",
+    layerPowerDensity="パワー密度",
+    layerByHeight="高さ別",
+    windSpeedTitle="平均風速",
+    powerDensityTitle="風力エネルギー密度",
+    atHeight="高さ {height} m",
+    legendWindSpeed="高さ {height} m の平均風速 · m/s",
+    legendPowerDensity="高さ 100 m の風力エネルギー密度 · W/m²",
+    noWindDataHere="この地点には風のデータがありません（例：外洋）。",
 )
 
 T["ko"] = dict(
@@ -1704,6 +1875,15 @@ T["ko"] = dict(
     noPlaceFound="장소를 찾을 수 없습니다. 다른 주소를 입력해 보세요.",
     mapLoadFailed="지도를 불러올 수 없습니다. 연결을 확인하고 페이지를 새로 고치세요.",
     noSolarDataHere="이 지점에는 태양광 데이터가 없습니다(예: 바다 위).",
+    layerWindSpeed="풍속",
+    layerPowerDensity="출력 밀도",
+    layerByHeight="높이별",
+    windSpeedTitle="평균 풍속",
+    powerDensityTitle="풍력 밀도",
+    atHeight="{height}m 높이",
+    legendWindSpeed="{height}m 높이 평균 풍속 · m/s",
+    legendPowerDensity="100m 높이 풍력 밀도 · W/m²",
+    noWindDataHere="이 지점에는 바람 데이터가 없습니다(예: 먼 바다).",
 )
 
 T["hi"] = dict(
@@ -1789,6 +1969,15 @@ T["hi"] = dict(
     noPlaceFound="कोई स्थान नहीं मिला। दूसरा पता आज़माएँ।",
     mapLoadFailed="मानचित्र लोड नहीं हो सका। कनेक्शन जाँचें और पेज फिर से लोड करें।",
     noSolarDataHere="इस स्थान के लिए सौर डेटा उपलब्ध नहीं है, जैसे समुद्र के ऊपर।",
+    layerWindSpeed="हवा की गति",
+    layerPowerDensity="शक्ति घनत्व",
+    layerByHeight="ऊँचाई के अनुसार",
+    windSpeedTitle="औसत हवा की गति",
+    powerDensityTitle="पवन शक्ति घनत्व",
+    atHeight="{height} मी पर",
+    legendWindSpeed="{height} मी पर औसत हवा की गति · m/s",
+    legendPowerDensity="100 मी पर पवन शक्ति घनत्व · W/m²",
+    noWindDataHere="इस जगह के लिए हवा का डेटा नहीं है, जैसे खुले समुद्र में।",
 )
 
 T["ar"] = dict(
@@ -1874,6 +2063,15 @@ T["ar"] = dict(
     noPlaceFound="لم يُعثر على مكان. جرّب عنوانًا آخر.",
     mapLoadFailed="تعذّر تحميل الخريطة. تحقّق من الاتصال وأعد تحميل الصفحة.",
     noSolarDataHere="لا توجد بيانات شمسية لهذه النقطة، مثلًا فوق البحر.",
+    layerWindSpeed="سرعة الرياح",
+    layerPowerDensity="كثافة القدرة",
+    layerByHeight="حسب الارتفاع",
+    windSpeedTitle="متوسط سرعة الرياح",
+    powerDensityTitle="كثافة قدرة الرياح",
+    atHeight="على ارتفاع {height} م",
+    legendWindSpeed="متوسط سرعة الرياح على ارتفاع {height} م · م/ث",
+    legendPowerDensity="كثافة قدرة الرياح على ارتفاع 100 م · واط/م²",
+    noWindDataHere="لا توجد بيانات رياح لهذه النقطة، مثلاً في عرض البحر.",
 )
 
 T["bn"] = dict(
@@ -1959,6 +2157,15 @@ T["bn"] = dict(
     noPlaceFound="কোনো স্থান পাওয়া যায়নি। অন্য ঠিকানা চেষ্টা করুন।",
     mapLoadFailed="মানচিত্র লোড করা যায়নি। সংযোগ পরীক্ষা করে পৃষ্ঠাটি আবার লোড করুন।",
     noSolarDataHere="এই বিন্দুর জন্য কোনো সৌর তথ্য নেই, যেমন সমুদ্রের ওপরে।",
+    layerWindSpeed="বাতাসের গতি",
+    layerPowerDensity="শক্তি ঘনত্ব",
+    layerByHeight="উচ্চতা অনুযায়ী",
+    windSpeedTitle="গড় বাতাসের গতি",
+    powerDensityTitle="বায়ু শক্তি ঘনত্ব",
+    atHeight="{height} মি উচ্চতায়",
+    legendWindSpeed="{height} মি উচ্চতায় গড় বাতাসের গতি · m/s",
+    legendPowerDensity="100 মি উচ্চতায় বায়ু শক্তি ঘনত্ব · W/m²",
+    noWindDataHere="এই জায়গার জন্য বাতাসের তথ্য নেই, যেমন গভীর সমুদ্রে।",
 )
 
 T["id"] = dict(
@@ -2044,6 +2251,15 @@ T["id"] = dict(
     noPlaceFound="Tempat tidak ditemukan. Coba alamat lain.",
     mapLoadFailed="Peta tidak dapat dimuat. Periksa koneksi dan muat ulang halaman.",
     noSolarDataHere="Tidak ada data surya untuk titik ini, misalnya di atas laut.",
+    layerWindSpeed="Kecepatan angin",
+    layerPowerDensity="Kepadatan daya",
+    layerByHeight="Menurut ketinggian",
+    windSpeedTitle="Kecepatan angin rata-rata",
+    powerDensityTitle="Kepadatan daya angin",
+    atHeight="pada {height} m",
+    legendWindSpeed="Kecepatan angin rata-rata pada {height} m · m/s",
+    legendPowerDensity="Kepadatan daya angin pada 100 m · W/m²",
+    noWindDataHere="Tidak ada data angin untuk titik ini, misalnya di laut lepas.",
 )
 
 T["vi"] = dict(
@@ -2129,4 +2345,13 @@ T["vi"] = dict(
     noPlaceFound="Không tìm thấy địa điểm. Hãy thử địa chỉ khác.",
     mapLoadFailed="Không thể tải bản đồ. Kiểm tra kết nối và tải lại trang.",
     noSolarDataHere="Không có dữ liệu năng lượng mặt trời cho điểm này, ví dụ trên biển.",
+    layerWindSpeed="Tốc độ gió",
+    layerPowerDensity="Mật độ công suất",
+    layerByHeight="Theo độ cao",
+    windSpeedTitle="Tốc độ gió trung bình",
+    powerDensityTitle="Mật độ công suất gió",
+    atHeight="ở độ cao {height} m",
+    legendWindSpeed="Tốc độ gió trung bình ở độ cao {height} m · m/s",
+    legendPowerDensity="Mật độ công suất gió ở độ cao 100 m · W/m²",
+    noWindDataHere="Không có dữ liệu gió cho điểm này, ví dụ ngoài khơi xa.",
 )

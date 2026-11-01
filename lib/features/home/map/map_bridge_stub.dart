@@ -36,6 +36,12 @@ class _NoMap implements MapBridge {
   @override
   void setOverlay(String url, List<double> bounds, double opacity) {}
   @override
+  void setTileOverlay(String urlTemplate, List<double> bounds, double opacity, {int maxZoom = 10}) {}
+  @override
+  void setAttribution(String html) {}
+  @override
+  void playBreeze() {}
+  @override
   void fitBounds(List<double> bounds, EdgeInsets padding, {bool animate = true}) {}
   @override
   void flyTo(double lat, double lon, {double zoom = 11, Offset offset = Offset.zero}) {}

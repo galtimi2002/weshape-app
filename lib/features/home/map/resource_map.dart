@@ -12,6 +12,7 @@ import '../../../core/i18n/app_localizations.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../core/i18n/countries.dart';
 import '../../../core/models/solar.dart';
+import '../../../core/models/wind.dart';
 import '../../../core/settings/settings_controller.dart';
 import '../../../core/theme/weshape_palette.dart';
 import '../../../core/theme/weshape_theme.dart';
@@ -20,9 +21,9 @@ import 'geocoder.dart';
 import 'map_bridge.dart';
 
 /// The home screen's map: the person's country first, then any address or
-/// any point they click, with the solar resource there.
+/// any point they click, with the solar or wind resource there.
 ///
-/// Only solar works for now; the other resources are shown as coming soon.
+/// Solar and wind work; the other resources are shown as coming soon.
 class ResourceMap extends StatefulWidget {
   const ResourceMap({super.key, required this.countryCode});
 
@@ -35,41 +36,57 @@ class ResourceMap extends StatefulWidget {
 
 /// What the card shows: a place, and its values once they arrive.
 class _Selection {
-  const _Selection({required this.lat, required this.lon, this.title, this.detail, this.point, this.error});
+  const _Selection({required this.lat, required this.lon, this.title, this.detail, this.point, this.wind, this.error});
 
   final double lat;
   final double lon;
   final String? title;
   final String? detail;
   final SolarPoint? point;
+  final WindPoint? wind;
   final String? error;
 
-  _Selection copyWith({String? title, String? detail, SolarPoint? point, String? error}) => _Selection(
+  _Selection copyWith({String? title, String? detail, SolarPoint? point, WindPoint? wind, String? error}) => _Selection(
         lat: lat,
         lon: lon,
         title: title ?? this.title,
         detail: detail ?? this.detail,
         point: point ?? this.point,
+        wind: wind ?? this.wind,
         error: error ?? this.error,
       );
+
+  /// The same place, without values (they are fetched again for another resource).
+  _Selection place() => _Selection(lat: lat, lon: lon, title: title, detail: detail);
 }
 
 // Below this the desktop dock no longer fits beside the zoom buttons.
 const double _phoneWidth = 900;
 const double _overlayOpacity = 0.66;
+const double _windOpacity = 0.72;
+
+/// The credit PVGIS asks for in its usage conditions, linked to its home page.
+const String _solarAttribution =
+    'Solar data: <a href="https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en" '
+    'target="_blank" rel="noopener">PVGIS</a>, European Commission Joint Research Centre';
 
 class _ResourceMapState extends State<ResourceMap> {
   final MapBridge _map = MapBridge();
   final Geocoder _geocoder = Geocoder();
   late final ApiClient _api = context.read<ApiClient>();
 
+  _Resource _resource = _Resource.solar;
   SolarLayers _layers = SolarLayers.fallback;
   SolarLayerId _layer = SolarLayerId.pvout;
+  WindLayers _wind = WindLayers.fallback;
+  WindLayerId _windLayer = WindLayerId.speed;
+  int _height = 100;
   List<double> _country = CountryBounds.europe;
   _Selection? _selection;
   Widget? _mapView;
   StreamSubscription<MapPoint>? _clicks;
   int _request = 0;
+  int _valuesRequest = 0;
   bool _phone = false;
 
   bool? _dark;
@@ -178,16 +195,36 @@ class _ResourceMapState extends State<ResourceMap> {
     } on ApiException {
       // The built-in description matches the backend; the pictures still load from it.
     }
+    try {
+      final wind = await _api.windLayers();
+      if (!mounted) return;
+      setState(() => _wind = wind);
+      _showOverlay();
+    } on ApiException {
+      // Same: the built-in description matches the backend.
+    }
   }
 
   String? _overlayUrl;
 
   void _showOverlay() {
-    final url = _api.urlOf(_layers[_layer].imagePath);
-    if (url == _overlayUrl) return;
-    _overlayUrl = url;
-    _map.setOverlay(url, _layers.bounds, _overlayOpacity);
+    if (_resource == _Resource.wind) {
+      final url = _api.urlOf(_wind[_windLayer].tiles.replaceAll('{h}', '$_height'));
+      if (url == _overlayUrl) return;
+      _overlayUrl = url;
+      _map.setTileOverlay(url, _wind.bounds, _windOpacity, maxZoom: _wind.maxZoom);
+      _map.setAttribution(_wind.attribution);
+    } else {
+      final url = _api.urlOf(_layers[_layer].imagePath);
+      if (url == _overlayUrl) return;
+      _overlayUrl = url;
+      _map.setOverlay(url, _layers.bounds, _overlayOpacity);
+      _map.setAttribution(_solarAttribution);
+    }
   }
+
+  /// The colour of the current layer, for the pin.
+  Color get _accent => _resource == _Resource.wind ? _wind[_windLayer].accent : _layers[_layer].accent;
 
   Future<void> _lookUpCountryIfUnknown() async {
     final code = widget.countryCode;
@@ -206,7 +243,7 @@ class _ResourceMapState extends State<ResourceMap> {
     final request = ++_request;
     final t = context.t;
     setState(() => _selection = _Selection(lat: lat, lon: lon, title: place?.title, detail: place?.detail));
-    _map.setMarker(lat, lon, _layers[_layer].accent);
+    _map.setMarker(lat, lon, _accent);
     if (place != null) {
       _map.flyTo(lat, lon, zoom: 12, offset: _phone ? const Offset(0, -110) : const Offset(-170, 0));
     } else {
@@ -221,18 +258,34 @@ class _ResourceMapState extends State<ResourceMap> {
         setState(() => _selection = _selection?.copyWith(title: t.selectedPoint, detail: ''));
       });
     }
+    await _fetchValues(lat, lon);
+  }
+
+  /// The values of the current resource for the selected place.
+  Future<void> _fetchValues(double lat, double lon) async {
+    final request = ++_valuesRequest;
+    final t = context.t;
+    final wind = _resource == _Resource.wind;
     try {
-      final point = await _api.solarPoint(lat, lon);
-      if (!mounted || request != _request) return;
-      setState(() => _selection = _selection?.copyWith(point: point));
+      if (wind) {
+        final point = await _api.windPoint(lat, lon);
+        if (!mounted || request != _valuesRequest) return;
+        setState(() => _selection = _selection?.copyWith(wind: point));
+      } else {
+        final point = await _api.solarPoint(lat, lon);
+        if (!mounted || request != _valuesRequest) return;
+        setState(() => _selection = _selection?.copyWith(point: point));
+      }
     } on ApiException catch (e) {
-      if (!mounted || request != _request) return;
-      setState(() => _selection = _selection?.copyWith(error: e.statusCode == 404 ? t.noSolarDataHere : e.message(t)));
+      if (!mounted || request != _valuesRequest) return;
+      final noData = wind ? t.noWindDataHere : t.noSolarDataHere;
+      setState(() => _selection = _selection?.copyWith(error: e.statusCode == 404 ? noData : e.message(t)));
     }
   }
 
   void _closeCard() {
     _request++;
+    _valuesRequest++;
     setState(() => _selection = null);
     _map.clearMarker();
     _map.fitBounds(_country, _fitPadding(_phone));
@@ -242,8 +295,44 @@ class _ResourceMapState extends State<ResourceMap> {
     if (layer == _layer) return;
     setState(() => _layer = layer);
     _showOverlay();
+    _recolorMarker();
+  }
+
+  void _setWindLayer(WindLayerId layer) {
+    if (layer == _windLayer) return;
+    setState(() => _windLayer = layer);
+    _showOverlay();
+    _recolorMarker();
+  }
+
+  void _setHeight(int height) {
+    if (height == _height && _windLayer == WindLayerId.height) return;
+    setState(() {
+      _height = height;
+      _windLayer = WindLayerId.height;
+    });
+    _showOverlay();
+    _recolorMarker();
+  }
+
+  void _setResource(_Resource resource) {
+    if (resource == _resource) return;
+    final toWind = resource == _Resource.wind;
+    setState(() {
+      _resource = resource;
+      final s = _selection;
+      if (s != null) _selection = s.place();
+    });
+    _showOverlay();
+    if (toWind) _map.playBreeze();
+    _recolorMarker();
     final s = _selection;
-    if (s != null) _map.setMarker(s.lat, s.lon, _layers[layer].accent);
+    if (s != null) _fetchValues(s.lat, s.lon);
+  }
+
+  void _recolorMarker() {
+    final s = _selection;
+    if (s != null) _map.setMarker(s.lat, s.lon, _accent);
   }
 
   void _showToast(String message) {
@@ -278,11 +367,8 @@ class _ResourceMapState extends State<ResourceMap> {
         language: language,
         bounds: _country,
         padding: _fitPadding(phone),
-        // The wording PVGIS asks for in its usage conditions, linked to its home page.
-        attribution: 'Solar data: <a href="https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en" '
-            'target="_blank" rel="noopener">PVGIS</a>, European Commission Joint Research Centre',
+        attribution: _solarAttribution,
       );
-      final info = _layers[_layer];
       final countryName = widget.countryCode == null ? null : Countries.nameOf(widget.countryCode!, language);
       final hint = _selection != null || countryName == null ? t.mapClickHint : t.mapCountryHintFor(countryName);
 
@@ -356,11 +442,17 @@ class _ResourceMapState extends State<ResourceMap> {
                 child: _ResultCard(
                   key: ValueKey('${_selection!.lat},${_selection!.lon}'),
                   selection: _selection!,
+                  resource: _resource,
                   layers: _layers,
                   layer: _layer,
+                  wind: _wind,
+                  windLayer: _windLayer,
+                  height: _height,
                   phone: phone,
                   language: language,
                   onLayer: _setLayer,
+                  onWindLayer: _setWindLayer,
+                  onHeight: _setHeight,
                   onClose: _closeCard,
                 ),
               ),
@@ -382,10 +474,17 @@ class _ResourceMapState extends State<ResourceMap> {
                 key: _dockKey,
                 child: _Dock(
                   phone: phone,
+                  resource: _resource,
                   layer: _layer,
-                  info: info,
+                  layers: _layers,
+                  windLayer: _windLayer,
+                  wind: _wind,
+                  height: _height,
                   language: language,
+                  onResource: _setResource,
                   onLayer: _setLayer,
+                  onWindLayer: _setWindLayer,
+                  onHeight: _setHeight,
                   onComingSoon: (name) => _showToast(t.comingSoonFor(name)),
                 ),
               ),
@@ -705,30 +804,42 @@ class _ResultCard extends StatelessWidget {
   const _ResultCard({
     super.key,
     required this.selection,
+    required this.resource,
     required this.layers,
     required this.layer,
+    required this.wind,
+    required this.windLayer,
+    required this.height,
     required this.phone,
     required this.language,
     required this.onLayer,
+    required this.onWindLayer,
+    required this.onHeight,
     required this.onClose,
   });
 
   final _Selection selection;
+  final _Resource resource;
   final SolarLayers layers;
   final SolarLayerId layer;
+  final WindLayers wind;
+  final WindLayerId windLayer;
+  final int height;
   final bool phone;
   final String language;
   final ValueChanged<SolarLayerId> onLayer;
+  final ValueChanged<WindLayerId> onWindLayer;
+  final ValueChanged<int> onHeight;
   final VoidCallback onClose;
+
+  bool get _isWind => resource == _Resource.wind;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final p = context.palette;
     final s = selection;
-    final point = s.point;
-    final info = layers[layer];
-    final accent = info.accent;
+    final accent = _isWind ? wind[windLayer].accent : layers[layer].accent;
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -781,7 +892,7 @@ class _ResultCard extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.only(right: 6),
-              child: _body(context, t, p, point, info, accent),
+              child: _body(t, p, accent),
             ),
           ],
         ),
@@ -789,46 +900,64 @@ class _ResultCard extends StatelessWidget {
     );
   }
 
-  Widget _body(BuildContext context, AppStrings t, WeShapePalette p, SolarPoint? point, SolarLayerInfo info, Color accent) {
+  Widget _body(AppStrings t, WeShapePalette p, Color accent) {
     if (selection.error != null) {
       return Padding(
         padding: const EdgeInsets.only(top: 12),
         child: Text(selection.error!, style: TextStyle(color: p.error, fontSize: 13)),
       );
     }
-    if (point == null) {
-      return Padding(
+    if (_isWind) {
+      final point = selection.wind;
+      return point == null ? _loading(p, accent) : _windBody(t, p, point, accent);
+    }
+    final point = selection.point;
+    return point == null ? _loading(p, accent) : _solarBody(t, p, point, accent);
+  }
+
+  Widget _loading(WeShapePalette p, Color accent) => Padding(
         padding: const EdgeInsets.only(top: 18, bottom: 10),
         child: LinearProgressIndicator(minHeight: 2, color: accent, backgroundColor: p.border),
       );
-    }
+
+  /// Big number: label above, value, unit and a note after it.
+  Widget _headline(WeShapePalette p, String label, String value, String unit, String note) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 10),
+          Text(label, style: TextStyle(fontSize: 12, color: p.muted)),
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.end,
+            spacing: 6,
+            children: [
+              Text(
+                value,
+                style: TextStyle(fontSize: phone ? 28 : 32, fontWeight: FontWeight.w700, letterSpacing: -0.8, color: p.text, height: 1.15),
+              ),
+              if (unit.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Text(unit, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: p.text)),
+                ),
+              if (note.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Text(note, style: TextStyle(fontSize: 12, color: p.muted)),
+                ),
+            ],
+          ),
+        ],
+      );
+
+  Widget _solarBody(AppStrings t, WeShapePalette p, SolarPoint point, Color accent) {
+    final info = layers[layer];
     final value = point.valueOf(layer);
     final monthly = point.monthlyOf(layer);
+    final tilt = layer == SolarLayerId.opta;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SizedBox(height: 10),
-        Text(_title(t, layer), style: TextStyle(fontSize: 12, color: p.muted)),
-        Wrap(
-          crossAxisAlignment: WrapCrossAlignment.end,
-          spacing: 6,
-          children: [
-            Text(
-              _format(value, layer, language),
-              style: TextStyle(fontSize: phone ? 28 : 32, fontWeight: FontWeight.w700, letterSpacing: -0.8, color: p.text, height: 1.15),
-            ),
-            if (layer != SolarLayerId.opta)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Text(info.unit, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: p.text)),
-              ),
-            if (layer != SolarLayerId.opta)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Text(t.perYear, style: TextStyle(fontSize: 12, color: p.muted)),
-              ),
-          ],
-        ),
+        _headline(p, _title(t, layer), _format(value, layer, language), tilt ? '' : info.unit, tilt ? '' : t.perYear),
         if (!phone) ...[
           const SizedBox(height: 8),
           if (monthly != null) _MonthlyBars(values: monthly, color: accent) else _TiltFigure(angle: value, color: accent, south: t.south),
@@ -859,6 +988,157 @@ class _ResultCard extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+
+  Widget _windBody(AppStrings t, WeShapePalette p, WindPoint point, Color accent) {
+    final atHeight = point.speedAt(height);
+    final density = point.powerDensity100;
+    final String label;
+    final String value;
+    final String unit;
+    final String note;
+    switch (windLayer) {
+      case WindLayerId.speed:
+        label = t.windSpeedTitle;
+        value = _decimal(point.speed100, language);
+        unit = 'm/s';
+        note = t.atHeightFor(100);
+      case WindLayerId.power:
+        label = t.powerDensityTitle;
+        value = density == null ? '–' : _group(density.round(), language);
+        unit = density == null ? '' : 'W/m²';
+        note = t.atHeightFor(100);
+      case WindLayerId.height:
+        label = t.windSpeedTitle;
+        value = atHeight == null ? '–' : _decimal(atHeight, language);
+        unit = atHeight == null ? '' : 'm/s';
+        note = t.atHeightFor(height);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _headline(p, label, value, unit, note),
+        if (!phone) ...[
+          const SizedBox(height: 8),
+          _HeightProfile(
+            speeds: point.speeds,
+            selected: windLayer == WindLayerId.height ? height : null,
+            color: accent,
+            language: language,
+            onHeight: onHeight,
+          ),
+        ],
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            for (final id in WindLayerId.values) ...[
+              if (id != WindLayerId.speed) const SizedBox(width: 6),
+              Expanded(
+                child: _MetricTile(
+                  label: _windShort(t, id),
+                  value: switch (id) {
+                    WindLayerId.speed => _decimal(point.speed100, language),
+                    WindLayerId.power => density == null ? '–' : _group(density.round(), language),
+                    WindLayerId.height => atHeight == null ? '–' : _decimal(atHeight, language),
+                  },
+                  unit: switch (id) {
+                    WindLayerId.speed => 'm/s',
+                    WindLayerId.power => 'W/m²',
+                    WindLayerId.height => '$height m',
+                  },
+                  selected: id == windLayer,
+                  accent: wind[id].accent,
+                  onTap: () => onWindLayer(id),
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (!phone) ...[
+          const SizedBox(height: 10),
+          Text('${point.source} · CC BY 4.0', style: TextStyle(fontSize: 10.5, color: p.muted)),
+        ],
+      ],
+    );
+  }
+}
+
+/// Mean wind speed at each height as bars; a bar picks that height for the map.
+class _HeightProfile extends StatelessWidget {
+  const _HeightProfile({
+    required this.speeds,
+    required this.selected,
+    required this.color,
+    required this.language,
+    required this.onHeight,
+  });
+
+  final List<WindSpeedAt> speeds;
+  final int? selected;
+  final Color color;
+  final String language;
+  final ValueChanged<int> onHeight;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final max = speeds.fold<double>(0, (m, s) => math.max(m, s.speed));
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(speeds.isEmpty ? 0 : speeds.first.speed),
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutCubic,
+      builder: (context, grow, _) => Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (var i = 0; i < speeds.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onHeight(speeds[i].height),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _decimal(speeds[i].speed, language),
+                        style: _mono(9.5, speeds[i].height == selected ? p.text : p.muted),
+                      ),
+                      const SizedBox(height: 2),
+                      SizedBox(
+                        height: 38,
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 250),
+                            opacity: selected == null || speeds[i].height == selected ? 1 : 0.55,
+                            child: Container(
+                              height: 38 * (0.12 + 0.88 * speeds[i].speed / (max == 0 ? 1 : max)) * grow,
+                              decoration: BoxDecoration(
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [color, color.withValues(alpha: 0.35)],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text('${speeds[i].height} m', style: _mono(9, p.muted)),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1051,36 +1331,85 @@ enum _Resource { solar, wind, hydro, geothermal, biomass }
 class _Dock extends StatelessWidget {
   const _Dock({
     required this.phone,
+    required this.resource,
     required this.layer,
-    required this.info,
+    required this.layers,
+    required this.windLayer,
+    required this.wind,
+    required this.height,
     required this.language,
+    required this.onResource,
     required this.onLayer,
+    required this.onWindLayer,
+    required this.onHeight,
     required this.onComingSoon,
   });
 
   final bool phone;
+  final _Resource resource;
   final SolarLayerId layer;
-  final SolarLayerInfo info;
+  final SolarLayers layers;
+  final WindLayerId windLayer;
+  final WindLayers wind;
+  final int height;
   final String language;
+  final ValueChanged<_Resource> onResource;
   final ValueChanged<SolarLayerId> onLayer;
+  final ValueChanged<WindLayerId> onWindLayer;
+  final ValueChanged<int> onHeight;
   final ValueChanged<String> onComingSoon;
+
+  static bool _ready(_Resource r) => r == _Resource.solar || r == _Resource.wind;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final p = context.palette;
+    final isWind = resource == _Resource.wind;
 
     final resources = [
       for (final r in _Resource.values)
         _ResourceButton(
           icon: _icon(r),
           label: _resourceName(t, r),
-          soon: r == _Resource.solar ? null : t.comingSoon,
-          selected: r == _Resource.solar,
+          soon: _ready(r) ? null : t.comingSoon,
+          selected: r == resource,
           phone: phone,
-          onTap: r == _Resource.solar ? null : () => onComingSoon(_resourceName(t, r)),
+          onTap: _ready(r) ? () => onResource(r) : () => onComingSoon(_resourceName(t, r)),
         ),
     ];
+
+    // Layer chips, legend and scale for the current resource.
+    final List<Widget> chips;
+    final String legend;
+    final String low;
+    final String high;
+    final List<Color> colors;
+    if (isWind) {
+      final info = wind[windLayer];
+      chips = [
+        for (final id in WindLayerId.values)
+          _LayerChip(label: _windShort(t, id), selected: id == windLayer, accent: info.accent, onTap: () => onWindLayer(id)),
+      ];
+      legend = switch (windLayer) {
+        WindLayerId.speed => t.legendWindSpeedFor(100),
+        WindLayerId.power => t.legendPowerDensity,
+        WindLayerId.height => t.legendWindSpeedFor(height),
+      };
+      low = _group(info.min.round(), language);
+      high = _group(info.max.round(), language);
+      colors = info.colors;
+    } else {
+      final info = layers[layer];
+      chips = [
+        for (final id in SolarLayerId.values)
+          _LayerChip(label: _short(t, id), selected: id == layer, accent: info.accent, onTap: () => onLayer(id)),
+      ];
+      legend = _legend(t, layer);
+      low = _legendNumber(info.min, layer, language);
+      high = _legendNumber(info.max, layer, language);
+      colors = info.colors;
+    }
 
     final dock = Container(
       padding: const EdgeInsets.all(6),
@@ -1103,14 +1432,18 @@ class _Dock extends StatelessWidget {
           const SizedBox(height: 6),
           Container(height: 1, color: p.border),
           const SizedBox(height: 5),
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 2,
-            children: [
-              for (final id in SolarLayerId.values)
-                _LayerChip(label: _short(t, id), selected: id == layer, accent: info.accent, onTap: () => onLayer(id)),
-            ],
-          ),
+          Wrap(alignment: WrapAlignment.center, spacing: 2, children: chips),
+          if (isWind && windLayer == WindLayerId.height) ...[
+            const SizedBox(height: 4),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 2,
+              children: [
+                for (final h in wind.heights)
+                  _HeightChip(label: '$h m', selected: h == height, accent: wind[WindLayerId.height].accent, onTap: () => onHeight(h)),
+              ],
+            ),
+          ],
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.fromLTRB(10, 2, 10, 4),
@@ -1120,19 +1453,19 @@ class _Dock extends StatelessWidget {
                 if (!phone) ...[
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 300),
-                    child: Text(_legend(t, layer), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10.5, color: p.muted)),
+                    child: Text(legend, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10.5, color: p.muted)),
                   ),
                   const SizedBox(width: 10),
                 ],
-                Text(_legendNumber(info.min, layer, language), style: _mono(10, p.muted)),
+                Text(low, style: _mono(10, p.muted)),
                 const SizedBox(width: 8),
                 SizedBox(
                   width: phone ? null : 180,
-                  child: phone ? null : _LegendBar(colors: info.colors),
+                  child: phone ? null : _LegendBar(colors: colors),
                 ),
-                if (phone) Expanded(child: _LegendBar(colors: info.colors)),
+                if (phone) Expanded(child: _LegendBar(colors: colors)),
                 const SizedBox(width: 8),
-                Text(_legendNumber(info.max, layer, language), style: _mono(10, p.muted)),
+                Text(high, style: _mono(10, p.muted)),
               ],
             ),
           ),
@@ -1157,6 +1490,37 @@ class _Dock extends StatelessWidget {
         _Resource.geothermal => t.resourceGeothermal,
         _Resource.biomass => t.resourceBiomass,
       };
+}
+
+/// One of the heights (10 … 200 m) under the "By height" layer.
+class _HeightChip extends StatelessWidget {
+  const _HeightChip({required this.label, required this.selected, required this.accent, required this.onTap});
+
+  final String label;
+  final bool selected;
+  final Color accent;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(999),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: selected ? accent.withValues(alpha: 0.24) : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(label, style: _mono(11, selected ? p.text : p.muted).copyWith(fontWeight: FontWeight.w600)),
+        ),
+      ),
+    );
+  }
 }
 
 class _LegendBar extends StatelessWidget {
@@ -1368,6 +1732,19 @@ String _legend(AppStrings t, SolarLayerId id) => switch (id) {
       SolarLayerId.pvout => t.legendPvProduction,
       SolarLayerId.opta => t.legendOptimumTilt,
     };
+
+String _windShort(AppStrings t, WindLayerId id) => switch (id) {
+      WindLayerId.speed => t.layerWindSpeed,
+      WindLayerId.power => t.layerPowerDensity,
+      WindLayerId.height => t.layerByHeight,
+    };
+
+/// 5.2 / 5,2, as each language writes decimals.
+String _decimal(double v, String language) {
+  const comma = {'de', 'nl', 'id', 'it', 'es', 'pt', 'tr', 'da', 'el', 'ro', 'hr', 'vi', 'hu', 'fr', 'pl', 'fi', 'sv', 'ru'};
+  final text = v.toStringAsFixed(1);
+  return comma.contains(language) ? text.replaceAll('.', ',') : text;
+}
 
 String _format(double v, SolarLayerId id, String language) =>
     id == SolarLayerId.opta ? '${v.round()}°' : _group((v / 5).round() * 5, language);

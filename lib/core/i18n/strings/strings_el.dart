@@ -85,4 +85,13 @@ const AppStrings kStringsEl = AppStrings(
   noPlaceFound: 'Δεν βρέθηκε τοποθεσία. Δοκιμάστε άλλη διεύθυνση.',
   mapLoadFailed: 'Δεν ήταν δυνατή η φόρτωση του χάρτη. Ελέγξτε τη σύνδεση και ανανεώστε τη σελίδα.',
   noSolarDataHere: 'Δεν υπάρχουν ηλιακά δεδομένα για αυτό το σημείο, π.χ. πάνω από τη θάλασσα.',
+  layerWindSpeed: 'Ταχύτητα ανέμου',
+  layerPowerDensity: 'Πυκνότητα ισχύος',
+  layerByHeight: 'Ανά ύψος',
+  windSpeedTitle: 'Μέση ταχύτητα ανέμου',
+  powerDensityTitle: 'Πυκνότητα αιολικής ισχύος',
+  atHeight: 'στα {height} m',
+  legendWindSpeed: 'Μέση ταχύτητα ανέμου στα {height} m · m/s',
+  legendPowerDensity: 'Πυκνότητα αιολικής ισχύος στα 100 m · W/m²',
+  noWindDataHere: 'Δεν υπάρχουν δεδομένα ανέμου για αυτό το σημείο, π.χ. στην ανοιχτή θάλασσα.',
 );

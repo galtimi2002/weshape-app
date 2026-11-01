@@ -85,4 +85,13 @@ const AppStrings kStringsAr = AppStrings(
   noPlaceFound: 'لم يُعثر على مكان. جرّب عنوانًا آخر.',
   mapLoadFailed: 'تعذّر تحميل الخريطة. تحقّق من الاتصال وأعد تحميل الصفحة.',
   noSolarDataHere: 'لا توجد بيانات شمسية لهذه النقطة، مثلًا فوق البحر.',
+  layerWindSpeed: 'سرعة الرياح',
+  layerPowerDensity: 'كثافة القدرة',
+  layerByHeight: 'حسب الارتفاع',
+  windSpeedTitle: 'متوسط سرعة الرياح',
+  powerDensityTitle: 'كثافة قدرة الرياح',
+  atHeight: 'على ارتفاع {height} م',
+  legendWindSpeed: 'متوسط سرعة الرياح على ارتفاع {height} م · م/ث',
+  legendPowerDensity: 'كثافة قدرة الرياح على ارتفاع 100 م · واط/م²',
+  noWindDataHere: 'لا توجد بيانات رياح لهذه النقطة، مثلاً في عرض البحر.',
 );

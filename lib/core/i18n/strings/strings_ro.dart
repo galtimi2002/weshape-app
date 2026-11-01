@@ -85,4 +85,13 @@ const AppStrings kStringsRo = AppStrings(
   noPlaceFound: 'Niciun loc găsit. Încearcă altă adresă.',
   mapLoadFailed: 'Harta nu s-a putut încărca. Verifică conexiunea și reîncarcă pagina.',
   noSolarDataHere: 'Nu există date solare pentru acest punct, de exemplu deasupra mării.',
+  layerWindSpeed: 'Viteza vântului',
+  layerPowerDensity: 'Densitate de putere',
+  layerByHeight: 'După înălțime',
+  windSpeedTitle: 'Viteza medie a vântului',
+  powerDensityTitle: 'Densitatea puterii vântului',
+  atHeight: 'la {height} m',
+  legendWindSpeed: 'Viteza medie a vântului la {height} m · m/s',
+  legendPowerDensity: 'Densitatea puterii vântului la 100 m · W/m²',
+  noWindDataHere: 'Nu există date despre vânt pentru acest punct, de exemplu în larg.',
 );

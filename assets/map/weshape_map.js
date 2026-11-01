@@ -1,5 +1,6 @@
 // The map behind the home screen: MapLibre GL JS with the OpenFreeMap
-// "positron" base map, our solar layer on top of the land, and a pin.
+// "positron" base map, our resource layer (solar picture or wind tiles) on top
+// of the land, and a pin.
 //
 // Flutter talks to it through window.WeShapeMap (lib/features/home/map/
 // map_bridge_web.dart). Everything the app asks for before the map has loaded
@@ -8,7 +9,7 @@
   'use strict';
   // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
   // (after a hot restart the page still holds the previous script).
-  var VERSION = 8;
+  var VERSION = 9;
   if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
   if (window.WeShapeMap && window.WeShapeMap.destroy) {
     try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
@@ -95,7 +96,9 @@
   }
   log('bridge script loaded');
 
-  var state = { dark: false, language: 'en', overlay: null, interactive: true, onClick: null, onError: null };
+  var state = { dark: false, language: 'en', overlay: null, overlayKey: null, overlayKind: null, overlayToken: 0,
+    attribution: '', attributionBottom: 0, interactive: true, onClick: null, onError: null };
+  var attributionControl = null;
 
   // ---------------------------------------------------------------- loading
 
@@ -244,39 +247,153 @@
     if (map.getLayer('ws-overlay')) map.setPaintProperty('ws-overlay', 'raster-opacity', overlayOpacity());
   }
 
+  /** The first layer above the land fills (roads, borders, names), not counting our own. */
+  function aboveFillsId() {
+    var id;
+    map.getStyle().layers.some(function (l) {
+      if (l.id !== 'ws-overlay' && l.type !== 'background' && l.type !== 'fill') { id = l.id; return true; }
+      return false;
+    });
+    return id;
+  }
+
+  /**
+   * Solar: seas and lakes cover the data, as in the solar atlases.
+   * Wind: the data covers them too, because the atlas has values along the coast.
+   */
+  function arrangeWater(waterOnTop) {
+    var target = waterOnTop ? aboveFillsId() : 'ws-overlay';
+    map.getStyle().layers.forEach(function (l) {
+      if (l.type === 'fill' && /water/.test(l.id)) {
+        try { map.moveLayer(l.id, target); } catch (e) { /* keep order */ }
+      }
+    });
+  }
+
+  function addOverlay(o, opacity) {
+    var b = o.bounds; // west, south, east, north
+    var spec = o.kind === 'tiles'
+      ? { type: 'raster', tiles: [o.url], tileSize: 256, bounds: b, minzoom: 0, maxzoom: o.maxZoom || 10 }
+      : { type: 'image', url: o.url, coordinates: [[b[0], b[3]], [b[2], b[3]], [b[2], b[1]], [b[0], b[1]]] };
+    map.addSource('ws-overlay', spec);
+    // The data goes over the land (parks, woods, built-up areas included, so it
+    // has no holes) and under the roads, borders and names.
+    map.addLayer({
+      id: 'ws-overlay', type: 'raster', source: 'ws-overlay',
+      paint: {
+        'raster-opacity': opacity, 'raster-fade-duration': o.kind === 'tiles' ? 200 : 0,
+        'raster-resampling': 'linear', 'raster-opacity-transition': { duration: 300 }
+      }
+    }, aboveFillsId());
+    arrangeWater(o.kind !== 'tiles');
+    state.overlayKey = o.kind + '|' + o.url;
+    state.overlayKind = o.kind;
+  }
+
+  function removeOverlay() {
+    if (map.getLayer('ws-overlay')) map.removeLayer('ws-overlay');
+    if (map.getSource('ws-overlay')) map.removeSource('ws-overlay');
+  }
+
   function applyOverlay(fade) {
     var o = state.overlay;
     if (!o) return;
-    var b = o.bounds; // west, south, east, north
-    var coords = [[b[0], b[3]], [b[2], b[3]], [b[2], b[1]], [b[0], b[1]]];
+    var key = o.kind + '|' + o.url;
     var source = map.getSource('ws-overlay');
-    if (!source) {
-      // The data goes over the land (parks, woods, built-up areas included,
-      // so it has no holes) and under the water, roads, borders and names.
-      var layers = map.getStyle().layers, beforeId;
-      layers.some(function (l) {
-        if (l.type !== 'background' && l.type !== 'fill') { beforeId = l.id; return true; }
-        return false;
-      });
-      map.addSource('ws-overlay', { type: 'image', url: o.url, coordinates: coords });
-      map.addLayer({
-        id: 'ws-overlay', type: 'raster', source: 'ws-overlay',
-        paint: { 'raster-opacity': overlayOpacity(), 'raster-fade-duration': 0, 'raster-resampling': 'linear', 'raster-opacity-transition': { duration: 300 } }
-      }, beforeId);
-      // Seas and lakes cover the data, as in the solar atlases.
-      layers.forEach(function (l) {
-        if (l.type === 'fill' && /water/.test(l.id)) {
-          try { map.moveLayer(l.id, beforeId); } catch (e) { /* keep order */ }
-        }
-      });
+    if (!source) { addOverlay(o, overlayOpacity()); return; }
+    if (key === state.overlayKey) { applyOverlayOpacity(); return; }
+    var token = ++state.overlayToken;
+    if (o.kind === 'image' && state.overlayKind === 'image') {
+      var b = o.bounds;
+      var coords = [[b[0], b[3]], [b[2], b[3]], [b[2], b[1]], [b[0], b[1]]];
+      state.overlayKey = key;
+      if (!fade) { source.updateImage({ url: o.url, coordinates: coords }); return; }
+      map.setPaintProperty('ws-overlay', 'raster-opacity', 0);
+      setTimeout(function () {
+        if (token !== state.overlayToken || !map) return;
+        source.updateImage({ url: o.url, coordinates: coords });
+        setTimeout(applyOverlayOpacity, 80);
+      }, 280);
       return;
     }
-    if (!fade) { source.updateImage({ url: o.url, coordinates: coords }); return; }
+    // Between a picture and tiles, or between tile sets: fade out, swap, fade in.
     map.setPaintProperty('ws-overlay', 'raster-opacity', 0);
     setTimeout(function () {
-      source.updateImage({ url: o.url, coordinates: coords });
+      if (token !== state.overlayToken || !map) return;
+      removeOverlay();
+      addOverlay(state.overlay, 0);
       setTimeout(applyOverlayOpacity, 80);
-    }, 280);
+    }, fade ? 280 : 0);
+  }
+
+  // ---------------------------------------------------------------- breeze
+
+  var BREEZE_CSS =
+    '.ws-breeze{position:absolute;inset:0;z-index:5;pointer-events:none;overflow:hidden;animation:wsBzOut 3.5s ease forwards}' +
+    '.ws-breeze .g{position:absolute;left:0;width:62%;border-radius:50%;background:radial-gradient(closest-side,var(--bzc),transparent);' +
+    'filter:blur(14px);opacity:0;transform:translateX(-80%);animation:wsGust var(--d,2.4s) cubic-bezier(.4,.05,.3,1) var(--dl,0ms) forwards}' +
+    '.ws-breeze .lf{position:absolute;left:0;opacity:0;animation:wsLeaf var(--d,2.6s) cubic-bezier(.45,.05,.35,1) var(--dl,0ms) forwards}' +
+    '.ws-breeze .lf svg{width:100%;height:100%;animation:wsSpin var(--sp,.9s) linear infinite;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}' +
+    '.ws-breeze .tb{position:absolute;left:24%;top:52%;width:86px;height:118px;transform:translate(-50%,-100%);' +
+    'animation:wsTb 3s cubic-bezier(.2,.9,.3,1) forwards;filter:drop-shadow(0 6px 10px var(--tws))}' +
+    '.ws-breeze .tb svg{width:100%;height:100%;overflow:visible}' +
+    '.ws-breeze .tb .rotor{transform-origin:43px 36px;animation:wsRot 3s cubic-bezier(.3,.1,.4,1) forwards}' +
+    '.ws-breeze.phone .tb{width:64px;height:88px;left:26%;top:44%}' +
+    '@keyframes wsGust{0%{opacity:0;transform:translateX(-80%) scaleY(.7)}25%{opacity:1}70%{opacity:.85}100%{opacity:0;transform:translateX(175%) scaleY(1.15)}}' +
+    '@keyframes wsLeaf{0%{opacity:0;transform:translate(-5vw,0)}12%{opacity:1}35%{transform:translate(calc(var(--w)*.32),calc(var(--a)*-1))}' +
+    '60%{transform:translate(calc(var(--w)*.6),var(--a))}85%{opacity:1}100%{opacity:0;transform:translate(calc(var(--w)*1.02),calc(var(--a)*-.6))}}' +
+    '@keyframes wsSpin{0%{transform:rotate(0) scaleX(1)}50%{transform:rotate(200deg) scaleX(.35)}100%{transform:rotate(360deg) scaleX(1)}}' +
+    '@keyframes wsTb{0%{opacity:0;transform:translate(-50%,-92%) scale(.9)}18%{opacity:1;transform:translate(-50%,-100%) scale(1)}72%{opacity:1}100%{opacity:0;transform:translate(-50%,-100%) scale(1)}}' +
+    '@keyframes wsRot{from{transform:rotate(0)}to{transform:rotate(760deg)}}' +
+    '@keyframes wsBzOut{0%,70%{opacity:1}100%{opacity:0}}';
+
+  function playBreeze() {
+    if (!container) return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!document.getElementById('ws-breeze-style')) {
+      var st = document.createElement('style');
+      st.id = 'ws-breeze-style';
+      st.textContent = BREEZE_CSS;
+      document.head.appendChild(st);
+    }
+    var old = container.querySelector('.ws-breeze');
+    if (old) old.remove();
+    var W = container.clientWidth, H = container.clientHeight;
+    var dark = state.dark;
+    var gustColor = dark ? 'rgba(170,200,245,.32)' : 'rgba(150,188,232,.5)';
+    var tower = dark ? '#DCE6F4' : '#ffffff';
+    var shadow = dark ? 'rgba(0,0,0,.5)' : 'rgba(30,58,110,.55)';
+    var leafA = dark ? '#8CC07A' : '#7FB069', leafB = dark ? '#D6B25E' : '#C9A24B';
+    var el = document.createElement('div');
+    el.className = 'ws-breeze' + (W < 600 ? ' phone' : '');
+    el.setAttribute('aria-hidden', 'true');
+    el.style.setProperty('--bzc', gustColor);
+    el.style.setProperty('--tws', shadow);
+    var html = '';
+    // Soft gusts: blurred, airy bands that sweep across.
+    [[.18, 46, 0, 2.3], [.36, 70, 260, 2.5], [.55, 54, 120, 2.2], [.72, 80, 420, 2.6], [.86, 40, 600, 2.3]].forEach(function (g) {
+      html += '<i class="g" style="top:' + (g[0] * H - g[1] / 2) + 'px;height:' + g[1] + 'px;--dl:' + g[2] + 'ms;--d:' + g[3] + 's"></i>';
+    });
+    // A few leaves carried by the breeze.
+    function leaf(color) {
+      return '<svg viewBox="0 0 20 20"><path fill="' + color + '" d="M2 18 C 2 8, 9 2, 18 2 C 18 11, 12 18, 2 18 Z"/>' +
+        '<path d="M3 17 L 15 5" stroke="rgba(0,0,0,.18)" stroke-width="1" fill="none"/></svg>';
+    }
+    [[.22, 180, leafA, 2.6, .8, 18], [.41, 520, leafB, 2.4, 1.1, 26], [.6, 320, leafA, 2.8, .7, 14], [.33, 760, leafA, 2.3, .95, 22],
+      [.7, 640, leafB, 2.5, 1.2, 16]].forEach(function (l, i) {
+      var size = i % 2 ? 11 : 14;
+      html += '<span class="lf" style="top:' + (l[0] * H) + 'px;width:' + size + 'px;height:' + size + 'px;--dl:' + l[1] +
+        'ms;--d:' + l[3] + 's;--sp:' + l[4] + 's;--a:' + l[5] + 'px;--w:' + W + 'px">' + leaf(l[2]) + '</span>';
+    });
+    // A turbine that spins up and fades.
+    var blade = 'M43 36 C 41 26, 41.6 12, 43.6 2 C 45.4 12, 45.4 26, 43.8 36 Z';
+    html += '<div class="tb"><svg viewBox="0 0 86 118"><path fill="' + tower + '" d="M41.2 38 L44.8 38 L46.6 118 L39.4 118 Z"/>' +
+      '<g class="rotor"><path fill="' + tower + '" d="' + blade + '"/><path fill="' + tower + '" d="' + blade + '" transform="rotate(120 43 36)"/>' +
+      '<path fill="' + tower + '" d="' + blade + '" transform="rotate(240 43 36)"/>' +
+      '<circle cx="43" cy="36" r="3.4" fill="' + tower + '" stroke="' + shadow + '" stroke-width=".6"/></g></svg></div>';
+    el.innerHTML = html;
+    container.insertBefore(el, shield);
+    setTimeout(function () { el.remove(); }, 3600);
   }
 
   function addCountryBorders() {
@@ -335,7 +452,9 @@
           maxZoom: 17
         });
         map.touchZoomRotate.disableRotation();
-        map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: opts.attribution || '' }), 'bottom-left');
+        state.attribution = opts.attribution || '';
+        attributionControl = new maplibregl.AttributionControl({ compact: true, customAttribution: state.attribution });
+        map.addControl(attributionControl, 'bottom-left');
         map.on('error', function (e) {
           console.warn('[WeShapeMap] error', e && e.error);
           if (!loaded && state.onError) state.onError(String((e && e.error && e.error.message) || 'map error'));
@@ -378,9 +497,31 @@
     /** bounds: [west, south, east, north]; the picture's rows are in Web Mercator. */
     setOverlay: function (url, bounds, opacity) {
       var had = !!state.overlay;
-      state.overlay = { url: url, bounds: bounds, opacity: opacity };
+      state.overlay = { kind: 'image', url: url, bounds: bounds, opacity: opacity };
       whenLoaded(function () { applyOverlay(had); });
     },
+
+    /** Map tiles instead of a single picture; url has {z}/{x}/{y}; tiles exist up to maxZoom. */
+    setTileOverlay: function (url, bounds, opacity, maxZoom) {
+      var had = !!state.overlay;
+      state.overlay = { kind: 'tiles', url: url, bounds: bounds, opacity: opacity, maxZoom: maxZoom };
+      whenLoaded(function () { applyOverlay(had); });
+    },
+
+    /** Replaces the data credit in the attribution line. */
+    setAttribution: function (html) {
+      if (html === state.attribution) return;
+      state.attribution = html;
+      whenLoaded(function () {
+        if (attributionControl) map.removeControl(attributionControl);
+        attributionControl = new maplibregl.AttributionControl({ compact: true, customAttribution: state.attribution });
+        map.addControl(attributionControl, 'bottom-left');
+        var corner = container && container.querySelector('.maplibregl-ctrl-bottom-left');
+        if (corner) corner.style.bottom = state.attributionBottom + 'px';
+      });
+    },
+
+    playBreeze: function () { playBreeze(); },
 
     fitBounds: function (bounds, top, right, bottom, left, animate) {
       whenLoaded(function () {
@@ -432,6 +573,7 @@
 
     /** Lifts the attribution line above Flutter's bottom dock when they would overlap. */
     setAttributionBottom: function (px) {
+      state.attributionBottom = px;
       var corner = container && container.querySelector('.maplibregl-ctrl-bottom-left');
       if (corner) corner.style.bottom = px + 'px';
     },
@@ -459,7 +601,8 @@
       if (resizeObserver) resizeObserver.disconnect();
       if (map) map.remove();
       map = null; loaded = false; container = null; mapDiv = null; shield = null; original = null; labelFields = null; marker = null;
-      resizeObserver = null; pending = []; state.overlay = null;
+      resizeObserver = null; pending = []; state.overlay = null; state.overlayKey = null; state.overlayKind = null;
+      attributionControl = null;
     }
   };
 })();
