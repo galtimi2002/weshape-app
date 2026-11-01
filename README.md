@@ -132,6 +132,19 @@ Agreed while designing the home page (resource map). Solar is built; the other r
   PVGIS live for the exact point. Global Solar Atlas was considered for the
   map, but its world files are 3–4 GB per layer, and one source keeps the
   map and the card consistent.
+- **Wind data: Global Wind Atlas** (DTU and the World Bank, CC BY 4.0),
+  250 m for every country. Three layers: mean wind speed at 100 m, wind power
+  density at 100 m, and wind speed by height (10, 50, 100, 150, 200 m). The
+  card shows the speed-by-height profile instead of monthly bars. The world
+  files (81 GB) are re-encoded to about 10 GB of cloud-optimised GeoTIFFs in a
+  Cloudflare R2 bucket (weshape-wind); 150 m is worked out from 100 and 200 m
+  (0.6 % mean error), the other heights are stored. Built by the backend's
+  "Build wind map data" workflow.
+- **Switching to wind plays a short breeze:** soft blurred gusts and a few
+  leaves sweep across the map and a turbine spins up, then everything fades
+  out after about 3 seconds (only when arriving at wind, not between wind
+  layers; skipped when the system asks for reduced motion). Agreed on the
+  sketch, keep it.
   - Inclined plane irradiation (kWh/m² per year, like GTI)
   - Annual PV production (kWh/kWp per year, like PVOUT)
   - Optimum tilt angle (degrees, like OPTA)
