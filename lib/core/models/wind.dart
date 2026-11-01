@@ -80,7 +80,7 @@ class WindLayers {
   static const WindLayers fallback = WindLayers(
     available: true,
     bounds: [-180, -64, 180, 80],
-    maxZoom: 10,
+    maxZoom: 8,
     heights: [10, 50, 100, 150, 200],
     attribution: 'Wind data: <a href="https://globalwindatlas.info" target="_blank" rel="noopener">Global Wind Atlas</a> 4.0, '
         'DTU and World Bank Group (CC BY 4.0)',
@@ -100,7 +100,7 @@ class WindLayers {
         min: 50,
         max: 800,
         logarithmic: true,
-        colors: [Color(0xFFEEE8F6), Color(0xFFB39BDA), Color(0xFF7552B5), Color(0xFF46297F)],
+        colors: [Color(0xFFE3EEF8), Color(0xFF7FB2E0), Color(0xFF2F6DB0), Color(0xFF163E78)],
         tiles: '/api/v1/wind/tiles/power/{z}/{x}/{y}.png',
       ),
       WindLayerId.height: WindLayerInfo(
@@ -109,7 +109,7 @@ class WindLayers {
         min: 2,
         max: 10,
         logarithmic: false,
-        colors: [Color(0xFFE0F2F5), Color(0xFF7CC5D6), Color(0xFF2B8BA8), Color(0xFF145A73)],
+        colors: [Color(0xFFE3EEF8), Color(0xFF7FB2E0), Color(0xFF2F6DB0), Color(0xFF163E78)],
         tiles: '/api/v1/wind/tiles/height-{h}/{z}/{x}/{y}.png',
       ),
     },
