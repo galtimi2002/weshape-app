@@ -109,4 +109,5 @@ const AppStrings kStringsAr = AppStrings(
   wettestMonth: 'أكثر الشهور رطوبة',
   noHydroDataHere: 'لا يوجد نهر ضمن 2 كم من هذه النقطة. انقر أقرب إلى نهر.',
   ecologicalFlowNote: 'يبقى {percent}% من متوسط التدفق في النهر من أجل الطبيعة.',
+  flatReachNote: 'لا يكاد يوجد سقوط طبيعي على هذا المقطع، لذا فالإمكانات قريبة من الصفر. السدود تصنع السقوط اصطناعيًا.',
 );

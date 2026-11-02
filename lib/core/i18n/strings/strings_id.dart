@@ -109,4 +109,5 @@ const AppStrings kStringsId = AppStrings(
   wettestMonth: 'Bulan terbasah',
   noHydroDataHere: 'Tidak ada sungai dalam radius 2 km. Klik lebih dekat ke sungai.',
   ecologicalFlowNote: '{percent}% dari debit rata-rata tetap di sungai untuk alam.',
+  flatReachNote: 'Ruas ini hampir tidak memiliki tinggi jatuh alami, jadi potensinya hampir nol. Bendungan menciptakan tinggi jatuh secara buatan.',
 );

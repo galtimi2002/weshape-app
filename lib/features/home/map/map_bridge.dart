@@ -6,10 +6,13 @@ import 'map_bridge_stub.dart' if (dart.library.js_interop) 'map_bridge_web.dart'
 /// A point on the map.
 @immutable
 class MapPoint {
-  const MapPoint(this.lat, this.lon);
+  const MapPoint(this.lat, this.lon, {this.zoom});
 
   final double lat;
   final double lon;
+
+  /// The map's zoom when it was clicked.
+  final double? zoom;
 }
 
 /// The interactive map, drawn by MapLibre GL JS in the browser.

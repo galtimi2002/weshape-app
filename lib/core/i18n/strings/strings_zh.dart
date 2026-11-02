@@ -109,4 +109,5 @@ const AppStrings kStringsZh = AppStrings(
   wettestMonth: '最湿润月份',
   noHydroDataHere: '此处 2 公里内没有河流。请在离河流更近的地方点击。',
   ecologicalFlowNote: '平均流量的 {percent}% 留在河中供自然生态使用。',
+  flatReachNote: '该河段几乎没有天然落差，因此潜力接近零。水坝可以人为制造落差。',
 );

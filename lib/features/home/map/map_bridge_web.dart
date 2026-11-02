@@ -38,7 +38,7 @@ extension type _WeShapeMapJs._(JSObject _) implements JSObject {
 }
 
 /// Raise together with VERSION in assets/map/weshape_map.js whenever that file changes.
-const _bridgeVersion = 12;
+const _bridgeVersion = 14;
 
 Future<void>? _scriptLoading;
 
@@ -106,8 +106,8 @@ class _WebMapBridge implements MapBridge {
         _run((map) => map.mount(
               element,
               options,
-              ((JSNumber lon, JSNumber lat) {
-                if (!_clicks.isClosed) _clicks.add(MapPoint(lat.toDartDouble, lon.toDartDouble));
+              ((JSNumber lon, JSNumber lat, JSNumber? zoom) {
+                if (!_clicks.isClosed) _clicks.add(MapPoint(lat.toDartDouble, lon.toDartDouble, zoom: zoom?.toDartDouble));
               }).toJS,
               ((JSString message) {
                 if (!_disposed) _error.value ??= message.toDart;

@@ -109,4 +109,5 @@ const AppStrings kStringsFr = AppStrings(
   wettestMonth: 'Mois le plus humide',
   noHydroDataHere: 'Aucune rivière à moins de 2 km. Cliquez plus près d\'une rivière.',
   ecologicalFlowNote: '{percent} % du débit moyen reste dans la rivière pour la nature.',
+  flatReachNote: 'Ce tronçon n\'a presque pas de dénivelé naturel, le potentiel est donc proche de zéro. Les barrages créent la chute artificiellement.',
 );

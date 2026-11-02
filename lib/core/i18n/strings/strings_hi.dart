@@ -109,4 +109,5 @@ const AppStrings kStringsHi = AppStrings(
   wettestMonth: 'सबसे गीला महीना',
   noHydroDataHere: 'इस जगह से 2 km के भीतर कोई नदी नहीं है। किसी नदी के पास क्लिक करें।',
   ecologicalFlowNote: 'औसत प्रवाह का {percent}% प्रकृति के लिए नदी में रहता है।',
+  flatReachNote: 'इस खंड में लगभग कोई प्राकृतिक ढलान नहीं है, इसलिए क्षमता लगभग शून्य है। बाँध कृत्रिम रूप से हेड बनाते हैं।',
 );

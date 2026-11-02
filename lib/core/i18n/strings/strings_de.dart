@@ -109,4 +109,5 @@ const AppStrings kStringsDe = AppStrings(
   wettestMonth: 'Nassester Monat',
   noHydroDataHere: 'Kein Fluss im Umkreis von 2 km. Klicke näher an einen Fluss.',
   ecologicalFlowNote: '{percent} % des mittleren Abflusses bleiben für die Natur im Fluss.',
+  flatReachNote: 'Auf diesem Abschnitt gibt es kaum natürliches Gefälle, daher ist das Potenzial nahezu null. Staudämme schaffen die Fallhöhe künstlich.',
 );

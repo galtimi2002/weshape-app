@@ -109,4 +109,5 @@ const AppStrings kStringsSv = AppStrings(
   wettestMonth: 'Blötaste månaden',
   noHydroDataHere: 'Ingen älv inom 2 km. Klicka närmare en älv.',
   ecologicalFlowNote: '{percent} % av medelflödet stannar i älven för naturen.',
+  flatReachNote: 'Den här sträckan har nästan ingen naturlig fallhöjd, så potentialen är nära noll. Dammar skapar fallhöjden på konstgjord väg.',
 );

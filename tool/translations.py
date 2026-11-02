@@ -113,6 +113,7 @@ T["en"] = dict(
     wettestMonth='Wettest month',
     noHydroDataHere='No river within 2 km of this spot. Click closer to a river.',
     ecologicalFlowNote='{percent}% of the mean flow stays in the river for nature.',
+    flatReachNote='Almost no natural drop along this stretch, so the potential is near zero. Dams create the drop artificially.',
 )
 
 T["hu"] = dict(
@@ -222,6 +223,7 @@ T["hu"] = dict(
     wettestMonth='Legcsapadékosabb hónap',
     noHydroDataHere='2 km-en belül nincs folyó. Kattints közelebb egy folyóhoz.',
     ecologicalFlowNote='Az átlagos vízhozam {percent}%-a a folyóban marad a természetnek.',
+    flatReachNote='Ezen a szakaszon szinte nincs természetes esés, ezért a potenciál közel nulla. A gátak mesterségesen hoznak létre esést.',
 )
 
 T["ro"] = dict(
@@ -331,6 +333,7 @@ T["ro"] = dict(
     wettestMonth='Luna cea mai umedă',
     noHydroDataHere='Niciun râu pe o rază de 2 km. Faceți clic mai aproape de un râu.',
     ecologicalFlowNote='{percent}% din debitul mediu rămâne în râu pentru natură.',
+    flatReachNote='Pe acest tronson aproape că nu există cădere naturală, deci potențialul este aproape zero. Barajele creează căderea artificial.',
 )
 
 T["de"] = dict(
@@ -440,6 +443,7 @@ T["de"] = dict(
     wettestMonth='Nassester Monat',
     noHydroDataHere='Kein Fluss im Umkreis von 2 km. Klicke näher an einen Fluss.',
     ecologicalFlowNote='{percent} % des mittleren Abflusses bleiben für die Natur im Fluss.',
+    flatReachNote='Auf diesem Abschnitt gibt es kaum natürliches Gefälle, daher ist das Potenzial nahezu null. Staudämme schaffen die Fallhöhe künstlich.',
 )
 
 T["fr"] = dict(
@@ -549,6 +553,7 @@ T["fr"] = dict(
     wettestMonth='Mois le plus humide',
     noHydroDataHere="Aucune rivière à moins de 2 km. Cliquez plus près d'une rivière.",
     ecologicalFlowNote='{percent} % du débit moyen reste dans la rivière pour la nature.',
+    flatReachNote="Ce tronçon n'a presque pas de dénivelé naturel, le potentiel est donc proche de zéro. Les barrages créent la chute artificiellement.",
 )
 
 T["es"] = dict(
@@ -658,6 +663,7 @@ T["es"] = dict(
     wettestMonth='Mes más húmedo',
     noHydroDataHere='No hay ningún río a menos de 2 km. Haz clic más cerca de un río.',
     ecologicalFlowNote='El {percent} % del caudal medio se queda en el río para la naturaleza.',
+    flatReachNote='Este tramo casi no tiene desnivel natural, por lo que el potencial es casi nulo. Las presas crean el salto de forma artificial.',
 )
 
 T["it"] = dict(
@@ -767,6 +773,7 @@ T["it"] = dict(
     wettestMonth='Mese più piovoso',
     noHydroDataHere='Nessun fiume entro 2 km. Fai clic più vicino a un fiume.',
     ecologicalFlowNote='Il {percent}% della portata media resta nel fiume per la natura.',
+    flatReachNote='Questo tratto non ha quasi dislivello naturale, quindi il potenziale è quasi nullo. Le dighe creano il salto artificialmente.',
 )
 
 T["pt"] = dict(
@@ -876,6 +883,7 @@ T["pt"] = dict(
     wettestMonth='Mês mais chuvoso',
     noHydroDataHere='Nenhum rio a menos de 2 km. Clique mais perto de um rio.',
     ecologicalFlowNote='{percent}% do caudal médio fica no rio para a natureza.',
+    flatReachNote='Este troço quase não tem desnível natural, por isso o potencial é quase nulo. As barragens criam a queda artificialmente.',
 )
 
 T["nl"] = dict(
@@ -985,6 +993,7 @@ T["nl"] = dict(
     wettestMonth='Natste maand',
     noHydroDataHere='Geen rivier binnen 2 km. Klik dichter bij een rivier.',
     ecologicalFlowNote='{percent}% van de gemiddelde afvoer blijft voor de natuur in de rivier.',
+    flatReachNote='Dit traject heeft vrijwel geen natuurlijk verval, dus het potentieel is bijna nul. Stuwdammen maken het verval kunstmatig.',
 )
 
 T["pl"] = dict(
@@ -1094,6 +1103,7 @@ T["pl"] = dict(
     wettestMonth='Najwilgotniejszy miesiąc',
     noHydroDataHere='W promieniu 2 km nie ma rzeki. Kliknij bliżej rzeki.',
     ecologicalFlowNote='{percent}% średniego przepływu zostaje w rzece dla przyrody.',
+    flatReachNote='Na tym odcinku prawie nie ma naturalnego spadku, więc potencjał jest bliski zeru. Zapory tworzą spad sztucznie.',
 )
 
 T["hr"] = dict(
@@ -1203,6 +1213,7 @@ T["hr"] = dict(
     wettestMonth='Najvlažniji mjesec',
     noHydroDataHere='Nema rijeke unutar 2 km. Kliknite bliže rijeci.',
     ecologicalFlowNote='{percent} % srednjeg protoka ostaje u rijeci za prirodu.',
+    flatReachNote='Na ovoj dionici gotovo da nema prirodnog pada, pa je potencijal blizu nule. Brane umjetno stvaraju pad.',
 )
 
 T["fi"] = dict(
@@ -1312,6 +1323,7 @@ T["fi"] = dict(
     wettestMonth='Sateisin kuukausi',
     noHydroDataHere='Ei jokea 2 km:n säteellä. Napsauta lähempänä jokea.',
     ecologicalFlowNote='{percent} % keskivirtaamasta jää jokeen luonnon hyväksi.',
+    flatReachNote='Tällä osuudella ei juuri ole luonnollista pudotusta, joten potentiaali on lähes nolla. Padot luovat putouksen keinotekoisesti.',
 )
 
 T["ru"] = dict(
@@ -1421,6 +1433,7 @@ T["ru"] = dict(
     wettestMonth='Самый влажный месяц',
     noHydroDataHere='В радиусе 2 км нет реки. Нажмите ближе к реке.',
     ecologicalFlowNote='{percent}% среднего расхода остаётся в реке для природы.',
+    flatReachNote='На этом участке почти нет естественного падения, поэтому потенциал близок к нулю. Плотины создают напор искусственно.',
 )
 
 T["tr"] = dict(
@@ -1530,6 +1543,7 @@ T["tr"] = dict(
     wettestMonth='En yağışlı ay',
     noHydroDataHere='2 km içinde nehir yok. Bir nehre daha yakın tıklayın.',
     ecologicalFlowNote='Ortalama akışın %{percent} kadarı doğa için nehirde kalır.',
+    flatReachNote='Bu kesimde neredeyse hiç doğal düşü yok, bu yüzden potansiyel sıfıra yakın. Barajlar düşüyü yapay olarak oluşturur.',
 )
 
 T["zh"] = dict(
@@ -1639,6 +1653,7 @@ T["zh"] = dict(
     wettestMonth='最湿润月份',
     noHydroDataHere='此处 2 公里内没有河流。请在离河流更近的地方点击。',
     ecologicalFlowNote='平均流量的 {percent}% 留在河中供自然生态使用。',
+    flatReachNote='该河段几乎没有天然落差，因此潜力接近零。水坝可以人为制造落差。',
 )
 
 T["sv"] = dict(
@@ -1748,6 +1763,7 @@ T["sv"] = dict(
     wettestMonth='Blötaste månaden',
     noHydroDataHere='Ingen älv inom 2 km. Klicka närmare en älv.',
     ecologicalFlowNote='{percent} % av medelflödet stannar i älven för naturen.',
+    flatReachNote='Den här sträckan har nästan ingen naturlig fallhöjd, så potentialen är nära noll. Dammar skapar fallhöjden på konstgjord väg.',
 )
 
 T["da"] = dict(
@@ -1857,6 +1873,7 @@ T["da"] = dict(
     wettestMonth='Vådeste måned',
     noHydroDataHere='Ingen flod inden for 2 km. Klik tættere på en flod.',
     ecologicalFlowNote='{percent} % af middelvandføringen bliver i floden for naturens skyld.',
+    flatReachNote='Denne strækning har næsten intet naturligt fald, så potentialet er tæt på nul. Dæmninger skaber faldet kunstigt.',
 )
 
 T["el"] = dict(
@@ -1966,6 +1983,7 @@ T["el"] = dict(
     wettestMonth='Υγρότερος μήνας',
     noHydroDataHere='Κανένα ποτάμι σε ακτίνα 2 km. Κάντε κλικ πιο κοντά σε ποτάμι.',
     ecologicalFlowNote='Το {percent}% της μέσης παροχής μένει στο ποτάμι για τη φύση.',
+    flatReachNote='Σε αυτό το τμήμα σχεδόν δεν υπάρχει φυσική πτώση, άρα το δυναμικό είναι σχεδόν μηδέν. Τα φράγματα δημιουργούν την πτώση τεχνητά.',
 )
 
 T["ja"] = dict(
@@ -2075,6 +2093,7 @@ T["ja"] = dict(
     wettestMonth='最も雨の多い月',
     noHydroDataHere='この地点から 2 km 以内に川がありません。川の近くをクリックしてください。',
     ecologicalFlowNote='平均流量の {percent}% は自然のために川に残されます。',
+    flatReachNote='この区間には自然の落差がほとんどないため、ポテンシャルはほぼゼロです。ダムは人工的に落差を作ります。',
 )
 
 T["ko"] = dict(
@@ -2184,6 +2203,7 @@ T["ko"] = dict(
     wettestMonth='가장 습한 달',
     noHydroDataHere='이 지점 2 km 안에 하천이 없습니다. 하천 가까이를 클릭하세요.',
     ecologicalFlowNote='평균 유량의 {percent}%는 자연을 위해 하천에 남겨 둡니다.',
+    flatReachNote='이 구간은 자연 낙차가 거의 없어 잠재량이 거의 0입니다. 댐은 낙차를 인공적으로 만듭니다.',
 )
 
 T["hi"] = dict(
@@ -2293,6 +2313,7 @@ T["hi"] = dict(
     wettestMonth='सबसे गीला महीना',
     noHydroDataHere='इस जगह से 2 km के भीतर कोई नदी नहीं है। किसी नदी के पास क्लिक करें।',
     ecologicalFlowNote='औसत प्रवाह का {percent}% प्रकृति के लिए नदी में रहता है।',
+    flatReachNote='इस खंड में लगभग कोई प्राकृतिक ढलान नहीं है, इसलिए क्षमता लगभग शून्य है। बाँध कृत्रिम रूप से हेड बनाते हैं।',
 )
 
 T["ar"] = dict(
@@ -2402,6 +2423,7 @@ T["ar"] = dict(
     wettestMonth='أكثر الشهور رطوبة',
     noHydroDataHere='لا يوجد نهر ضمن 2 كم من هذه النقطة. انقر أقرب إلى نهر.',
     ecologicalFlowNote='يبقى {percent}% من متوسط التدفق في النهر من أجل الطبيعة.',
+    flatReachNote='لا يكاد يوجد سقوط طبيعي على هذا المقطع، لذا فالإمكانات قريبة من الصفر. السدود تصنع السقوط اصطناعيًا.',
 )
 
 T["bn"] = dict(
@@ -2511,6 +2533,7 @@ T["bn"] = dict(
     wettestMonth='সবচেয়ে আর্দ্র মাস',
     noHydroDataHere='এই জায়গার 2 km-এর মধ্যে কোনো নদী নেই। নদীর কাছাকাছি ক্লিক করুন।',
     ecologicalFlowNote='গড় প্রবাহের {percent}% প্রকৃতির জন্য নদীতে থাকে।',
+    flatReachNote='এই অংশে প্রায় কোনো প্রাকৃতিক ঢাল নেই, তাই সম্ভাবনা প্রায় শূন্য। বাঁধ কৃত্রিমভাবে হেড তৈরি করে।',
 )
 
 T["id"] = dict(
@@ -2620,6 +2643,7 @@ T["id"] = dict(
     wettestMonth='Bulan terbasah',
     noHydroDataHere='Tidak ada sungai dalam radius 2 km. Klik lebih dekat ke sungai.',
     ecologicalFlowNote='{percent}% dari debit rata-rata tetap di sungai untuk alam.',
+    flatReachNote='Ruas ini hampir tidak memiliki tinggi jatuh alami, jadi potensinya hampir nol. Bendungan menciptakan tinggi jatuh secara buatan.',
 )
 
 T["vi"] = dict(
@@ -2729,4 +2753,5 @@ T["vi"] = dict(
     wettestMonth='Tháng ẩm nhất',
     noHydroDataHere='Không có sông nào trong vòng 2 km. Hãy nhấp gần một con sông hơn.',
     ecologicalFlowNote='{percent}% lưu lượng trung bình được giữ lại trong sông cho thiên nhiên.',
+    flatReachNote='Đoạn sông này gần như không có độ dốc tự nhiên nên tiềm năng gần bằng không. Đập tạo ra cột nước một cách nhân tạo.',
 )

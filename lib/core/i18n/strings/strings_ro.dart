@@ -109,4 +109,5 @@ const AppStrings kStringsRo = AppStrings(
   wettestMonth: 'Luna cea mai umedă',
   noHydroDataHere: 'Niciun râu pe o rază de 2 km. Faceți clic mai aproape de un râu.',
   ecologicalFlowNote: '{percent}% din debitul mediu rămâne în râu pentru natură.',
+  flatReachNote: 'Pe acest tronson aproape că nu există cădere naturală, deci potențialul este aproape zero. Barajele creează căderea artificial.',
 );

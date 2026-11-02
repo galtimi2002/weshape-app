@@ -46,6 +46,7 @@ class _Selection {
     this.wind,
     this.hydro,
     this.error,
+    this.zoom,
   });
 
   final double lat;
@@ -57,6 +58,9 @@ class _Selection {
   final HydroPoint? hydro;
   final String? error;
 
+  /// The map's zoom when the place was picked (for hydro: the rivers drawn then).
+  final double? zoom;
+
   _Selection copyWith({String? title, String? detail, SolarPoint? point, WindPoint? wind, HydroPoint? hydro, String? error}) =>
       _Selection(
         lat: lat,
@@ -67,10 +71,11 @@ class _Selection {
         wind: wind ?? this.wind,
         hydro: hydro ?? this.hydro,
         error: error ?? this.error,
+        zoom: zoom,
       );
 
   /// The same place, without values (they are fetched again for another resource).
-  _Selection place() => _Selection(lat: lat, lon: lon, title: title, detail: detail);
+  _Selection place() => _Selection(lat: lat, lon: lon, title: title, detail: detail, zoom: zoom);
 }
 
 // Below this the desktop dock no longer fits beside the zoom buttons.
@@ -126,7 +131,7 @@ class _ResourceMapState extends State<ResourceMap> {
   void initState() {
     super.initState();
     _country = CountryBounds.of(widget.countryCode) ?? CountryBounds.europe;
-    _clicks = _map.clicks.listen((p) => _select(p.lat, p.lon));
+    _clicks = _map.clicks.listen((p) => _select(p.lat, p.lon, zoom: p.zoom));
     _showOverlay();
     _loadLayers();
     _lookUpCountryIfUnknown();
@@ -289,10 +294,12 @@ class _ResourceMapState extends State<ResourceMap> {
     }
   }
 
-  Future<void> _select(double lat, double lon, {Place? place}) async {
+  Future<void> _select(double lat, double lon, {Place? place, double? zoom}) async {
     final request = ++_request;
     final t = context.t;
-    setState(() => _selection = _Selection(lat: lat, lon: lon, title: place?.title, detail: place?.detail));
+    // A searched address: the map flies to zoom 12, where most streams are drawn.
+    setState(() => _selection =
+        _Selection(lat: lat, lon: lon, title: place?.title, detail: place?.detail, zoom: place != null ? 12 : zoom));
     _map.setMarker(lat, lon, _accent);
     if (place != null) {
       _map.flyTo(lat, lon, zoom: 12, offset: _phone ? const Offset(0, -110) : const Offset(-170, 0));
@@ -318,7 +325,7 @@ class _ResourceMapState extends State<ResourceMap> {
     final resource = _resource;
     try {
       if (resource == _Resource.hydro) {
-        final point = await _api.hydroPoint(lat, lon);
+        final point = await _api.hydroPoint(lat, lon, zoom: _selection?.zoom);
         if (!mounted || request != _valuesRequest) return;
         setState(() => _selection = _selection?.copyWith(hydro: point));
       } else if (resource == _Resource.wind) {
@@ -1169,6 +1176,10 @@ class _ResultCard extends StatelessWidget {
             color: hydro[HydroLayerId.flow].accent,
             language: language,
           ),
+        ],
+        if (point.headM < 0.5) ...[
+          const SizedBox(height: 8),
+          Text(t.flatReachNote, style: TextStyle(fontSize: 11.5, color: p.muted, height: 1.35)),
         ],
         const SizedBox(height: 10),
         Row(

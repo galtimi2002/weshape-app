@@ -9,7 +9,7 @@
   'use strict';
   // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
   // (after a hot restart the page still holds the previous script).
-  var VERSION = 12;
+  var VERSION = 14;
   if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
   if (window.WeShapeMap && window.WeShapeMap.destroy) {
     try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
@@ -214,6 +214,7 @@
       try { map.setPaintProperty(parts[0], parts[1], value); } catch (e) { /* layer gone */ }
     });
     if (map.getLayer('ws-border')) map.setPaintProperty('ws-border', 'line-color', state.dark ? '#9DB8E6' : '#1E3A6E');
+    if (map.getLayer('ws-lakes')) map.setPaintProperty('ws-lakes', 'fill-color', lakeColor());
     applyOverlayOpacity();
   }
 
@@ -338,6 +339,7 @@
           'line-opacity-transition': { duration: 300 }, 'line-color-transition': { duration: 300 }
         }
       }, aboveWaterId());
+      addLakeCover();
       state.overlayKey = o.kind + '|' + o.url;
       state.overlayKind = o.kind;
       return;
@@ -360,7 +362,33 @@
     state.overlayKind = o.kind;
   }
 
+  function lakeColor() {
+    return state.dark ? DARK.water : LIGHT.water;
+  }
+
+  /**
+   * Lakes and the sea drawn again over the river lines: the river data crosses lakes with
+   * straight connecting lines that are not rivers. Rivers drawn as water (wide ones) stay under.
+   */
+  function addLakeCover() {
+    var sources = map.getStyle().sources;
+    var base = Object.keys(sources).filter(function (k) { return k !== 'ws-overlay' && sources[k].type === 'vector'; })[0];
+    if (!base) return;
+    var layers = map.getStyle().layers, above;
+    for (var i = 0; i < layers.length - 1; i++) {
+      if (layers[i].id === 'ws-overlay') { above = layers[i + 1].id; break; }
+    }
+    try {
+      map.addLayer({
+        id: 'ws-lakes', type: 'fill', source: base, 'source-layer': 'water',
+        filter: ['match', ['get', 'class'], ['lake', 'ocean'], true, false],
+        paint: { 'fill-color': lakeColor(), 'fill-antialias': true }
+      }, above);
+    } catch (e) { /* the base tiles have no water layer */ }
+  }
+
   function removeOverlay() {
+    if (map.getLayer('ws-lakes')) map.removeLayer('ws-lakes');
     if (map.getLayer('ws-overlay')) map.removeLayer('ws-overlay');
     if (map.getSource('ws-overlay')) map.removeSource('ws-overlay');
   }
@@ -491,7 +519,7 @@
 
     /**
      * el: the element to draw in. opts: {dark, language, bounds:[w,s,e,n],
-     * padding:[top,right,bottom,left], attribution}. onClick(lon, lat), onError(message).
+     * padding:[top,right,bottom,left], attribution}. onClick(lon, lat, zoom), onError(message).
      */
     mount: function (el, opts, onClick, onError) {
       state.onClick = onClick;
@@ -546,7 +574,7 @@
           queued.forEach(function (fn) { fn(); });
         });
         map.on('click', function (e) {
-          if (state.interactive && state.onClick) state.onClick(e.lngLat.lng, e.lngLat.lat);
+          if (state.interactive && state.onClick) state.onClick(e.lngLat.lng, e.lngLat.lat, map.getZoom());
         });
         map.getCanvas().style.cursor = 'crosshair';
         map.on('dragstart', function () { map.getCanvas().style.cursor = 'grabbing'; });

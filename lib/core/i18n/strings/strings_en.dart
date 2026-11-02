@@ -109,4 +109,5 @@ const AppStrings kStringsEn = AppStrings(
   wettestMonth: 'Wettest month',
   noHydroDataHere: 'No river within 2 km of this spot. Click closer to a river.',
   ecologicalFlowNote: '{percent}% of the mean flow stays in the river for nature.',
+  flatReachNote: 'Almost no natural drop along this stretch, so the potential is near zero. Dams create the drop artificially.',
 );

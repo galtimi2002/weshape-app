@@ -109,4 +109,5 @@ const AppStrings kStringsIt = AppStrings(
   wettestMonth: 'Mese più piovoso',
   noHydroDataHere: 'Nessun fiume entro 2 km. Fai clic più vicino a un fiume.',
   ecologicalFlowNote: 'Il {percent}% della portata media resta nel fiume per la natura.',
+  flatReachNote: 'Questo tratto non ha quasi dislivello naturale, quindi il potenziale è quasi nullo. Le dighe creano il salto artificialmente.',
 );

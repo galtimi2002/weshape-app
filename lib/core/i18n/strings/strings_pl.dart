@@ -109,4 +109,5 @@ const AppStrings kStringsPl = AppStrings(
   wettestMonth: 'Najwilgotniejszy miesiąc',
   noHydroDataHere: 'W promieniu 2 km nie ma rzeki. Kliknij bliżej rzeki.',
   ecologicalFlowNote: '{percent}% średniego przepływu zostaje w rzece dla przyrody.',
+  flatReachNote: 'Na tym odcinku prawie nie ma naturalnego spadku, więc potencjał jest bliski zeru. Zapory tworzą spad sztucznie.',
 );

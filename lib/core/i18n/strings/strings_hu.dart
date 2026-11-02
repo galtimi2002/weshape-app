@@ -109,4 +109,5 @@ const AppStrings kStringsHu = AppStrings(
   wettestMonth: 'Legcsapadékosabb hónap',
   noHydroDataHere: '2 km-en belül nincs folyó. Kattints közelebb egy folyóhoz.',
   ecologicalFlowNote: 'Az átlagos vízhozam {percent}%-a a folyóban marad a természetnek.',
+  flatReachNote: 'Ezen a szakaszon szinte nincs természetes esés, ezért a potenciál közel nulla. A gátak mesterségesen hoznak létre esést.',
 );

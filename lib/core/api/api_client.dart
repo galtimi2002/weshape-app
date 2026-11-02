@@ -60,10 +60,13 @@ class ApiClient {
   Future<WindLayers> windLayers() async =>
       WindLayers.fromJson(await _send('GET', '/api/v1/wind/layers') as Map<String, dynamic>);
 
-  /// The nearest river reach to a place: potential, available flow, head.
-  Future<HydroPoint> hydroPoint(double lat, double lon) async => HydroPoint.fromJson(
-      await _send('GET', '/api/v1/hydro/point?lat=${lat.toStringAsFixed(5)}&lon=${lon.toStringAsFixed(5)}')
-          as Map<String, dynamic>);
+  /// The nearest river reach to a place: potential, available flow, head. With [zoom],
+  /// only among the rivers the map draws at that zoom (the one the person clicked on).
+  Future<HydroPoint> hydroPoint(double lat, double lon, {double? zoom}) async => HydroPoint.fromJson(await _send(
+          'GET',
+          '/api/v1/hydro/point?lat=${lat.toStringAsFixed(5)}&lon=${lon.toStringAsFixed(5)}'
+              '${zoom == null ? '' : '&zoom=${zoom.toStringAsFixed(1)}'}')
+      as Map<String, dynamic>);
 
   /// How the river map layers are drawn and where their tiles are.
   Future<HydroLayers> hydroLayers() async =>

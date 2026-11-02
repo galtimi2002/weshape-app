@@ -109,4 +109,5 @@ const AppStrings kStringsPt = AppStrings(
   wettestMonth: 'Mês mais chuvoso',
   noHydroDataHere: 'Nenhum rio a menos de 2 km. Clique mais perto de um rio.',
   ecologicalFlowNote: '{percent}% do caudal médio fica no rio para a natureza.',
+  flatReachNote: 'Este troço quase não tem desnível natural, por isso o potencial é quase nulo. As barragens criam a queda artificialmente.',
 );

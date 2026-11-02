@@ -109,4 +109,5 @@ const AppStrings kStringsHr = AppStrings(
   wettestMonth: 'Najvlažniji mjesec',
   noHydroDataHere: 'Nema rijeke unutar 2 km. Kliknite bliže rijeci.',
   ecologicalFlowNote: '{percent} % srednjeg protoka ostaje u rijeci za prirodu.',
+  flatReachNote: 'Na ovoj dionici gotovo da nema prirodnog pada, pa je potencijal blizu nule. Brane umjetno stvaraju pad.',
 );

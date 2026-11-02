@@ -109,4 +109,5 @@ const AppStrings kStringsJa = AppStrings(
   wettestMonth: '最も雨の多い月',
   noHydroDataHere: 'この地点から 2 km 以内に川がありません。川の近くをクリックしてください。',
   ecologicalFlowNote: '平均流量の {percent}% は自然のために川に残されます。',
+  flatReachNote: 'この区間には自然の落差がほとんどないため、ポテンシャルはほぼゼロです。ダムは人工的に落差を作ります。',
 );

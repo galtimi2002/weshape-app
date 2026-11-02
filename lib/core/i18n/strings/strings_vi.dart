@@ -109,4 +109,5 @@ const AppStrings kStringsVi = AppStrings(
   wettestMonth: 'Tháng ẩm nhất',
   noHydroDataHere: 'Không có sông nào trong vòng 2 km. Hãy nhấp gần một con sông hơn.',
   ecologicalFlowNote: '{percent}% lưu lượng trung bình được giữ lại trong sông cho thiên nhiên.',
+  flatReachNote: 'Đoạn sông này gần như không có độ dốc tự nhiên nên tiềm năng gần bằng không. Đập tạo ra cột nước một cách nhân tạo.',
 );

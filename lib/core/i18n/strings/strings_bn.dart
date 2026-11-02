@@ -109,4 +109,5 @@ const AppStrings kStringsBn = AppStrings(
   wettestMonth: 'সবচেয়ে আর্দ্র মাস',
   noHydroDataHere: 'এই জায়গার 2 km-এর মধ্যে কোনো নদী নেই। নদীর কাছাকাছি ক্লিক করুন।',
   ecologicalFlowNote: 'গড় প্রবাহের {percent}% প্রকৃতির জন্য নদীতে থাকে।',
+  flatReachNote: 'এই অংশে প্রায় কোনো প্রাকৃতিক ঢাল নেই, তাই সম্ভাবনা প্রায় শূন্য। বাঁধ কৃত্রিমভাবে হেড তৈরি করে।',
 );

@@ -109,4 +109,5 @@ const AppStrings kStringsNl = AppStrings(
   wettestMonth: 'Natste maand',
   noHydroDataHere: 'Geen rivier binnen 2 km. Klik dichter bij een rivier.',
   ecologicalFlowNote: '{percent}% van de gemiddelde afvoer blijft voor de natuur in de rivier.',
+  flatReachNote: 'Dit traject heeft vrijwel geen natuurlijk verval, dus het potentieel is bijna nul. Stuwdammen maken het verval kunstmatig.',
 );

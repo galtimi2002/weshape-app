@@ -109,4 +109,5 @@ const AppStrings kStringsDa = AppStrings(
   wettestMonth: 'Vådeste måned',
   noHydroDataHere: 'Ingen flod inden for 2 km. Klik tættere på en flod.',
   ecologicalFlowNote: '{percent} % af middelvandføringen bliver i floden for naturens skyld.',
+  flatReachNote: 'Denne strækning har næsten intet naturligt fald, så potentialet er tæt på nul. Dæmninger skaber faldet kunstigt.',
 );

@@ -109,4 +109,5 @@ const AppStrings kStringsFi = AppStrings(
   wettestMonth: 'Sateisin kuukausi',
   noHydroDataHere: 'Ei jokea 2 km:n säteellä. Napsauta lähempänä jokea.',
   ecologicalFlowNote: '{percent} % keskivirtaamasta jää jokeen luonnon hyväksi.',
+  flatReachNote: 'Tällä osuudella ei juuri ole luonnollista pudotusta, joten potentiaali on lähes nolla. Padot luovat putouksen keinotekoisesti.',
 );

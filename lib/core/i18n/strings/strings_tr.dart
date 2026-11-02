@@ -109,4 +109,5 @@ const AppStrings kStringsTr = AppStrings(
   wettestMonth: 'En yağışlı ay',
   noHydroDataHere: '2 km içinde nehir yok. Bir nehre daha yakın tıklayın.',
   ecologicalFlowNote: 'Ortalama akışın %{percent} kadarı doğa için nehirde kalır.',
+  flatReachNote: 'Bu kesimde neredeyse hiç doğal düşü yok, bu yüzden potansiyel sıfıra yakın. Barajlar düşüyü yapay olarak oluşturur.',
 );

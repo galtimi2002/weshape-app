@@ -109,4 +109,5 @@ const AppStrings kStringsKo = AppStrings(
   wettestMonth: '가장 습한 달',
   noHydroDataHere: '이 지점 2 km 안에 하천이 없습니다. 하천 가까이를 클릭하세요.',
   ecologicalFlowNote: '평균 유량의 {percent}%는 자연을 위해 하천에 남겨 둡니다.',
+  flatReachNote: '이 구간은 자연 낙차가 거의 없어 잠재량이 거의 0입니다. 댐은 낙차를 인공적으로 만듭니다.',
 );

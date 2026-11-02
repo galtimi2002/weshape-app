@@ -111,6 +111,7 @@ class AppStrings {
     required this.wettestMonth,
     required this.noHydroDataHere,
     required this.ecologicalFlowNote,
+    required this.flatReachNote,
   });
 
   final String tagline;
@@ -229,6 +230,7 @@ class AppStrings {
   final String wettestMonth;
   final String noHydroDataHere;
   final String ecologicalFlowNote;
+  final String flatReachNote;
 
   /// "Hi, Ada" in the current language.
   String greet(String name) => greeting.replaceAll('{name}', name);
