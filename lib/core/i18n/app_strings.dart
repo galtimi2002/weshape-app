@@ -112,6 +112,19 @@ class AppStrings {
     required this.noHydroDataHere,
     required this.ecologicalFlowNote,
     required this.flatReachNote,
+    required this.layerGroundTemp,
+    required this.layerAtDepth,
+    required this.layerHeatFlow,
+    required this.groundTempTitle,
+    required this.depthTempTitle,
+    required this.heatFlowTitle,
+    required this.legendGroundTemp,
+    required this.legendDepthTemp,
+    required this.legendHeatFlow,
+    required this.nearSurface,
+    required this.noGeoDataHere,
+    required this.noHeatFlowNearby,
+    required this.depthEstimateNote,
   });
 
   final String tagline;
@@ -231,6 +244,19 @@ class AppStrings {
   final String noHydroDataHere;
   final String ecologicalFlowNote;
   final String flatReachNote;
+  final String layerGroundTemp;
+  final String layerAtDepth;
+  final String layerHeatFlow;
+  final String groundTempTitle;
+  final String depthTempTitle;
+  final String heatFlowTitle;
+  final String legendGroundTemp;
+  final String legendDepthTemp;
+  final String legendHeatFlow;
+  final String nearSurface;
+  final String noGeoDataHere;
+  final String noHeatFlowNearby;
+  final String depthEstimateNote;
 
   /// "Hi, Ada" in the current language.
   String greet(String name) => greeting.replaceAll('{name}', name);
@@ -252,4 +278,13 @@ class AppStrings {
 
   /// "10% of the mean flow stays in the river for nature."
   String ecologicalFlowNoteFor(int percent) => ecologicalFlowNote.replaceAll('{percent}', '$percent');
+
+  /// "Temperature at 2 km depth"
+  String depthTempTitleFor(int depth) => depthTempTitle.replaceAll('{depth}', '$depth');
+
+  /// "Estimated temperature at 2 km depth · °C"
+  String legendDepthTempFor(int depth) => legendDepthTemp.replaceAll('{depth}', '$depth');
+
+  /// "Temperature at depth = ground temperature + heat flow ÷ 2.5 W/m·K × depth: …"
+  String depthEstimateNoteFor(String conductivity) => depthEstimateNote.replaceAll('{k}', conductivity);
 }

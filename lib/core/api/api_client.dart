@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../auth/auth_service.dart';
 import '../config/app_config.dart';
+import '../models/geo.dart';
 import '../models/hydro.dart';
 import '../models/solar.dart';
 import '../models/user_profile.dart';
@@ -67,6 +68,15 @@ class ApiClient {
           '/api/v1/hydro/point?lat=${lat.toStringAsFixed(5)}&lon=${lon.toStringAsFixed(5)}'
               '${zoom == null ? '' : '&zoom=${zoom.toStringAsFixed(1)}'}')
       as Map<String, dynamic>);
+
+  /// Ground temperature, heat flow and the estimated temperature at depth for one place.
+  Future<GeoPoint> geoPoint(double lat, double lon) async => GeoPoint.fromJson(
+      await _send('GET', '/api/v1/geo/point?lat=${lat.toStringAsFixed(5)}&lon=${lon.toStringAsFixed(5)}')
+          as Map<String, dynamic>);
+
+  /// How the geothermal map layers are drawn and where their tiles are.
+  Future<GeoLayers> geoLayers() async =>
+      GeoLayers.fromJson(await _send('GET', '/api/v1/geo/layers') as Map<String, dynamic>);
 
   /// How the river map layers are drawn and where their tiles are.
   Future<HydroLayers> hydroLayers() async =>

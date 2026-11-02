@@ -37,9 +37,9 @@ them in the console and run `flutterfire configure`.
 
 The home screen is one full-screen map that opens on the country from the
 person's profile. They can search an address or click anywhere, and a card
-shows the resource there. **Solar**, **Wind** and **Hydro** work; Geothermal
-and Biomass are shown as coming soon (Hydro too, until the backend reports its
-river tiles are built).
+shows the resource there. **Solar**, **Wind**, **Hydro** and **Geothermal**
+work; Biomass is shown as coming soon (Hydro and Geothermal too, until the
+backend reports their data is built).
 
 Solar has three layers, switchable under the resource buttons and from the
 card: irradiation on an optimally inclined plane (GTI, kWh/m²), annual PV
@@ -151,7 +151,16 @@ Agreed while designing the home page (resource map). Solar is built; the other r
   - Optimum tilt angle (degrees, like OPTA)
 - **Google Solar API**: maybe later, only as a paid extra (free monthly quota,
   then paid; Romania coverage not confirmed).
-- Geothermal and biomass need their own data sources; still to choose.
+- **Geothermal data**: three layers, as asked for: **Geothermal temperature**
+  (annual mean ground temperature near the surface, SoilTemp, ~1 km),
+  **Temperature at depth** (1, 2, 3 or 5 km, picked like the wind heights;
+  estimated as ground temperature + heat flow ÷ 2.5 W/m·K × depth) and
+  **Geothermal heat flow** (mW/m², from the Global Heat Flow Database 2024
+  measurements, smoothed; empty where no measurement lies within 250 km).
+  One orange–brick colour scale, the depth layer with its own range per depth.
+  The card shows the three values and the temperature by depth as bars.
+  Built by the backend's "Build geothermal map data" workflow.
+- Biomass needs its own data source; still to choose.
 
 ## Before launch (to do once the company exists)
 

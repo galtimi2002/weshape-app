@@ -11,6 +11,7 @@ import '../../../core/api/api_exception.dart';
 import '../../../core/i18n/app_localizations.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../core/i18n/countries.dart';
+import '../../../core/models/geo.dart';
 import '../../../core/models/hydro.dart';
 import '../../../core/models/solar.dart';
 import '../../../core/models/wind.dart';
@@ -22,9 +23,9 @@ import 'geocoder.dart';
 import 'map_bridge.dart';
 
 /// The home screen's map: the person's country first, then any address or
-/// any point they click, with the solar, wind or river resource there.
+/// any point they click, with the solar, wind, river or geothermal resource there.
 ///
-/// Solar, wind and hydro work; the other resources are shown as coming soon.
+/// Solar, wind, hydro and geothermal work; biomass is shown as coming soon.
 class ResourceMap extends StatefulWidget {
   const ResourceMap({super.key, required this.countryCode});
 
@@ -45,6 +46,7 @@ class _Selection {
     this.point,
     this.wind,
     this.hydro,
+    this.geo,
     this.error,
     this.zoom,
   });
@@ -56,12 +58,13 @@ class _Selection {
   final SolarPoint? point;
   final WindPoint? wind;
   final HydroPoint? hydro;
+  final GeoPoint? geo;
   final String? error;
 
   /// The map's zoom when the place was picked (for hydro: the rivers drawn then).
   final double? zoom;
 
-  _Selection copyWith({String? title, String? detail, SolarPoint? point, WindPoint? wind, HydroPoint? hydro, String? error}) =>
+  _Selection copyWith({String? title, String? detail, SolarPoint? point, WindPoint? wind, HydroPoint? hydro, GeoPoint? geo, String? error}) =>
       _Selection(
         lat: lat,
         lon: lon,
@@ -70,6 +73,7 @@ class _Selection {
         point: point ?? this.point,
         wind: wind ?? this.wind,
         hydro: hydro ?? this.hydro,
+        geo: geo ?? this.geo,
         error: error ?? this.error,
         zoom: zoom,
       );
@@ -83,6 +87,7 @@ const double _phoneWidth = 900;
 const double _overlayOpacity = 0.66;
 const double _windOpacity = 0.72;
 const double _riverOpacity = 0.95;
+const double _geoOpacity = 0.72;
 
 /// The credit PVGIS asks for in its usage conditions, linked to its home page.
 const String _solarAttribution =
@@ -102,6 +107,9 @@ class _ResourceMapState extends State<ResourceMap> {
   int _height = 100;
   HydroLayers _hydro = HydroLayers.fallback;
   HydroLayerId _hydroLayer = HydroLayerId.potential;
+  GeoLayers _geo = GeoLayers.fallback;
+  GeoLayerId _geoLayer = GeoLayerId.ground;
+  int _depth = 2;
   List<double> _country = CountryBounds.europe;
   _Selection? _selection;
   Widget? _mapView;
@@ -232,12 +240,26 @@ class _ResourceMapState extends State<ResourceMap> {
     } on ApiException {
       // Hydro stays "coming soon" until the backend says its river tiles are there.
     }
+    try {
+      final geo = await _api.geoLayers();
+      if (!mounted) return;
+      setState(() => _geo = geo);
+      _showOverlay();
+    } on ApiException {
+      // Geothermal stays "coming soon" until the backend says its data is there.
+    }
   }
 
   String? _overlayUrl;
 
   void _showOverlay() {
-    if (_resource == _Resource.hydro) {
+    if (_resource == _Resource.geothermal) {
+      final url = _api.urlOf(_geo[_geoLayer].tiles.replaceAll('{d}', '$_depth'));
+      if (url == _overlayUrl) return;
+      _overlayUrl = url;
+      _map.setTileOverlay(url, _geo.bounds, _geoOpacity, maxZoom: _geo.maxZoom);
+      _map.setAttribution(_geo.attribution);
+    } else if (_resource == _Resource.hydro) {
       final info = _hydro[_hydroLayer];
       final url = _api.urlOf(_hydro.tiles);
       final key = '$url|${info.property}';
@@ -278,6 +300,7 @@ class _ResourceMapState extends State<ResourceMap> {
   Color get _accent => switch (_resource) {
         _Resource.wind => _wind[_windLayer].accent,
         _Resource.hydro => _hydro[_hydroLayer].accent,
+        _Resource.geothermal => _geo[_geoLayer].accent,
         _ => _layers[_layer].accent,
       };
 
@@ -324,7 +347,11 @@ class _ResourceMapState extends State<ResourceMap> {
     final t = context.t;
     final resource = _resource;
     try {
-      if (resource == _Resource.hydro) {
+      if (resource == _Resource.geothermal) {
+        final point = await _api.geoPoint(lat, lon);
+        if (!mounted || request != _valuesRequest) return;
+        setState(() => _selection = _selection?.copyWith(geo: point));
+      } else if (resource == _Resource.hydro) {
         final point = await _api.hydroPoint(lat, lon, zoom: _selection?.zoom);
         if (!mounted || request != _valuesRequest) return;
         setState(() => _selection = _selection?.copyWith(hydro: point));
@@ -342,6 +369,7 @@ class _ResourceMapState extends State<ResourceMap> {
       final noData = switch (resource) {
         _Resource.wind => t.noWindDataHere,
         _Resource.hydro => t.noHydroDataHere,
+        _Resource.geothermal => t.noGeoDataHere,
         _ => t.noSolarDataHere,
       };
       setState(() => _selection = _selection?.copyWith(error: e.statusCode == 404 ? noData : e.message(t)));
@@ -366,6 +394,23 @@ class _ResourceMapState extends State<ResourceMap> {
   void _setWindLayer(WindLayerId layer) {
     if (layer == _windLayer) return;
     setState(() => _windLayer = layer);
+    _showOverlay();
+    _recolorMarker();
+  }
+
+  void _setGeoLayer(GeoLayerId layer) {
+    if (layer == _geoLayer) return;
+    setState(() => _geoLayer = layer);
+    _showOverlay();
+    _recolorMarker();
+  }
+
+  void _setDepth(int depth) {
+    if (depth == _depth && _geoLayer == GeoLayerId.depth) return;
+    setState(() {
+      _depth = depth;
+      _geoLayer = GeoLayerId.depth;
+    });
     _showOverlay();
     _recolorMarker();
   }
@@ -522,12 +567,17 @@ class _ResourceMapState extends State<ResourceMap> {
                   height: _height,
                   hydro: _hydro,
                   hydroLayer: _hydroLayer,
+                  geo: _geo,
+                  geoLayer: _geoLayer,
+                  depth: _depth,
                   phone: phone,
                   language: language,
                   onLayer: _setLayer,
                   onWindLayer: _setWindLayer,
                   onHeight: _setHeight,
                   onHydroLayer: _setHydroLayer,
+                  onGeoLayer: _setGeoLayer,
+                  onDepth: _setDepth,
                   onClose: _closeCard,
                 ),
               ),
@@ -557,12 +607,17 @@ class _ResourceMapState extends State<ResourceMap> {
                   height: _height,
                   hydro: _hydro,
                   hydroLayer: _hydroLayer,
+                  geo: _geo,
+                  geoLayer: _geoLayer,
+                  depth: _depth,
                   language: language,
                   onResource: _setResource,
                   onLayer: _setLayer,
                   onWindLayer: _setWindLayer,
                   onHeight: _setHeight,
                   onHydroLayer: _setHydroLayer,
+                  onGeoLayer: _setGeoLayer,
+                  onDepth: _setDepth,
                   onComingSoon: (name) => _showToast(t.comingSoonFor(name)),
                 ),
               ),
@@ -890,12 +945,17 @@ class _ResultCard extends StatelessWidget {
     required this.height,
     required this.hydro,
     required this.hydroLayer,
+    required this.geo,
+    required this.geoLayer,
+    required this.depth,
     required this.phone,
     required this.language,
     required this.onLayer,
     required this.onWindLayer,
     required this.onHeight,
     required this.onHydroLayer,
+    required this.onGeoLayer,
+    required this.onDepth,
     required this.onClose,
   });
 
@@ -908,23 +968,33 @@ class _ResultCard extends StatelessWidget {
   final int height;
   final HydroLayers hydro;
   final HydroLayerId hydroLayer;
+  final GeoLayers geo;
+  final GeoLayerId geoLayer;
+  final int depth;
   final bool phone;
   final String language;
   final ValueChanged<SolarLayerId> onLayer;
   final ValueChanged<WindLayerId> onWindLayer;
   final ValueChanged<int> onHeight;
   final ValueChanged<HydroLayerId> onHydroLayer;
+  final ValueChanged<GeoLayerId> onGeoLayer;
+  final ValueChanged<int> onDepth;
   final VoidCallback onClose;
 
   bool get _isWind => resource == _Resource.wind;
   bool get _isHydro => resource == _Resource.hydro;
+  bool get _isGeo => resource == _Resource.geothermal;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final p = context.palette;
     final s = selection;
-    final accent = _isHydro ? hydro[hydroLayer].accent : (_isWind ? wind[windLayer].accent : layers[layer].accent);
+    final accent = _isGeo
+        ? geo[geoLayer].accent
+        : _isHydro
+            ? hydro[hydroLayer].accent
+            : (_isWind ? wind[windLayer].accent : layers[layer].accent);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -991,6 +1061,10 @@ class _ResultCard extends StatelessWidget {
         padding: const EdgeInsets.only(top: 12),
         child: Text(selection.error!, style: TextStyle(color: p.error, fontSize: 13)),
       );
+    }
+    if (_isGeo) {
+      final point = selection.geo;
+      return point == null ? _loading(p, accent) : _geoBody(t, p, point, accent);
     }
     if (_isHydro) {
       final point = selection.hydro;
@@ -1152,6 +1226,67 @@ class _ResultCard extends StatelessWidget {
     );
   }
 
+  Widget _geoBody(AppStrings t, WeShapePalette p, GeoPoint point, Color accent) {
+    final atDepth = point.temperatureAt(depth);
+    final q = point.heatFlow;
+    String value(GeoLayerId id) => switch (id) {
+          GeoLayerId.ground => _decimal(point.groundTemperature, language),
+          GeoLayerId.depth => atDepth == null ? '–' : '${atDepth.round()}',
+          GeoLayerId.heatflow => q == null ? '–' : '${q.round()}',
+        };
+    final title = switch (geoLayer) {
+      GeoLayerId.ground => t.groundTempTitle,
+      GeoLayerId.depth => t.depthTempTitleFor(depth),
+      GeoLayerId.heatflow => t.heatFlowTitle,
+    };
+    final missing = geoLayer != GeoLayerId.ground && q == null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _headline(p, title, value(geoLayer), missing ? '' : geo[geoLayer].unit,
+            geoLayer == GeoLayerId.ground ? t.nearSurface : ''),
+        if (point.depths.isNotEmpty && !phone) ...[
+          const SizedBox(height: 8),
+          _DepthProfile(
+            depths: point.depths,
+            selected: geoLayer == GeoLayerId.depth ? depth : null,
+            color: accent,
+            onDepth: onDepth,
+          ),
+        ],
+        if (q == null) ...[
+          const SizedBox(height: 8),
+          Text(t.noHeatFlowNearby, style: TextStyle(fontSize: 11.5, color: p.muted, height: 1.35)),
+        ],
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            for (final id in GeoLayerId.values) ...[
+              if (id != GeoLayerId.ground) const SizedBox(width: 6),
+              Expanded(
+                child: _MetricTile(
+                  label: _geoShort(t, id),
+                  value: value(id),
+                  unit: id == GeoLayerId.depth ? '°C · $depth km' : geo[id].unit,
+                  selected: id == geoLayer,
+                  accent: geo[id].accent,
+                  onTap: () => onGeoLayer(id),
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (!phone) ...[
+          const SizedBox(height: 10),
+          Text(
+            '${t.depthEstimateNoteFor(_decimal(point.conductivity, language))} ${point.source}',
+            style: TextStyle(fontSize: 10.5, color: p.muted),
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _hydroBody(AppStrings t, WeShapePalette p, HydroPoint point, Color accent) {
     String value(HydroLayerId id) => switch (id) {
           HydroLayerId.potential => _number(point.potentialKw, language),
@@ -1260,6 +1395,76 @@ class _FlowBars extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(labels[i], maxLines: 1, overflow: TextOverflow.ellipsis, style: _mono(9, p.muted)),
                 ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Estimated temperature at each depth as bars; a bar picks that depth for the map.
+class _DepthProfile extends StatelessWidget {
+  const _DepthProfile({required this.depths, required this.selected, required this.color, required this.onDepth});
+
+  final List<GeoDepth> depths;
+  final int? selected;
+  final Color color;
+  final ValueChanged<int> onDepth;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final max = depths.fold<double>(0, (m, d) => math.max(m, d.temperature));
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(depths.map((d) => d.temperature).join(',')),
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutCubic,
+      builder: (context, grow, _) => Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (var i = 0; i < depths.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onDepth(depths[i].depthKm),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('${depths[i].temperature.round()}',
+                          style: _mono(9.5, depths[i].depthKm == selected ? p.text : p.muted)),
+                      const SizedBox(height: 2),
+                      SizedBox(
+                        height: 38,
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 250),
+                            opacity: selected == null || depths[i].depthKm == selected ? 1 : 0.55,
+                            child: Container(
+                              height: 38 * (0.12 + 0.88 * depths[i].temperature / (max <= 0 ? 1 : max)) * grow,
+                              decoration: BoxDecoration(
+                                borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [color, color.withValues(alpha: 0.35)],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text('${depths[i].depthKm} km', style: _mono(9, p.muted)),
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
@@ -1544,12 +1749,17 @@ class _Dock extends StatelessWidget {
     required this.height,
     required this.hydro,
     required this.hydroLayer,
+    required this.geo,
+    required this.geoLayer,
+    required this.depth,
     required this.language,
     required this.onResource,
     required this.onLayer,
     required this.onWindLayer,
     required this.onHeight,
     required this.onHydroLayer,
+    required this.onGeoLayer,
+    required this.onDepth,
     required this.onComingSoon,
   });
 
@@ -1562,17 +1772,25 @@ class _Dock extends StatelessWidget {
   final int height;
   final HydroLayers hydro;
   final HydroLayerId hydroLayer;
+  final GeoLayers geo;
+  final GeoLayerId geoLayer;
+  final int depth;
   final String language;
   final ValueChanged<_Resource> onResource;
   final ValueChanged<SolarLayerId> onLayer;
   final ValueChanged<WindLayerId> onWindLayer;
   final ValueChanged<int> onHeight;
   final ValueChanged<HydroLayerId> onHydroLayer;
+  final ValueChanged<GeoLayerId> onGeoLayer;
+  final ValueChanged<int> onDepth;
   final ValueChanged<String> onComingSoon;
 
-  /// Hydro opens once the backend reports its river tiles are there.
+  /// Hydro and geothermal open once the backend reports their data is there.
   bool _ready(_Resource r) =>
-      r == _Resource.solar || r == _Resource.wind || (r == _Resource.hydro && hydro.available);
+      r == _Resource.solar ||
+      r == _Resource.wind ||
+      (r == _Resource.hydro && hydro.available) ||
+      (r == _Resource.geothermal && geo.available);
 
   @override
   Widget build(BuildContext context) {
@@ -1598,7 +1816,22 @@ class _Dock extends StatelessWidget {
     final String low;
     final String high;
     final List<Color> colors;
-    if (resource == _Resource.hydro) {
+    if (resource == _Resource.geothermal) {
+      final info = geo[geoLayer];
+      chips = [
+        for (final id in GeoLayerId.values)
+          _LayerChip(label: _geoShort(t, id), selected: id == geoLayer, accent: info.accent, onTap: () => onGeoLayer(id)),
+      ];
+      legend = switch (geoLayer) {
+        GeoLayerId.ground => t.legendGroundTemp,
+        GeoLayerId.depth => t.legendDepthTempFor(depth),
+        GeoLayerId.heatflow => t.legendHeatFlow,
+      };
+      final (lo, hi) = info.rangeAt(depth);
+      low = '${lo.round()}';
+      high = '${hi.round()}';
+      colors = info.colors;
+    } else if (resource == _Resource.hydro) {
       final info = hydro[hydroLayer];
       chips = [
         for (final id in HydroLayerId.values)
@@ -1668,6 +1901,17 @@ class _Dock extends StatelessWidget {
               children: [
                 for (final h in wind.heights)
                   _HeightChip(label: '$h m', selected: h == height, accent: wind[WindLayerId.height].accent, onTap: () => onHeight(h)),
+              ],
+            ),
+          ],
+          if (resource == _Resource.geothermal && geoLayer == GeoLayerId.depth) ...[
+            const SizedBox(height: 4),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 2,
+              children: [
+                for (final d in geo.depths)
+                  _HeightChip(label: '$d km', selected: d == depth, accent: geo[GeoLayerId.depth].accent, onTap: () => onDepth(d)),
               ],
             ),
           ],
@@ -1964,6 +2208,12 @@ String _windShort(AppStrings t, WindLayerId id) => switch (id) {
       WindLayerId.speed => t.layerWindSpeed,
       WindLayerId.power => t.layerPowerDensity,
       WindLayerId.height => t.layerByHeight,
+    };
+
+String _geoShort(AppStrings t, GeoLayerId id) => switch (id) {
+      GeoLayerId.ground => t.layerGroundTemp,
+      GeoLayerId.depth => t.layerAtDepth,
+      GeoLayerId.heatflow => t.layerHeatFlow,
     };
 
 String _hydroShort(AppStrings t, HydroLayerId id) => switch (id) {
