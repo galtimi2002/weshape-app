@@ -125,6 +125,21 @@ class AppStrings {
     required this.noGeoDataHere,
     required this.noHeatFlowNearby,
     required this.depthEstimateNote,
+    required this.layerBioDensity,
+    required this.layerBioResource,
+    required this.layerBioEnergy,
+    required this.bioDensityTitle,
+    required this.bioResourceTitle,
+    required this.bioEnergyTitle,
+    required this.legendBioDensity,
+    required this.legendBioResource,
+    required this.legendBioEnergy,
+    required this.withinRadius,
+    required this.cropResidues,
+    required this.forestResidues,
+    required this.homesHeated,
+    required this.bioNote,
+    required this.noBioDataHere,
   });
 
   final String tagline;
@@ -257,6 +272,21 @@ class AppStrings {
   final String noGeoDataHere;
   final String noHeatFlowNearby;
   final String depthEstimateNote;
+  final String layerBioDensity;
+  final String layerBioResource;
+  final String layerBioEnergy;
+  final String bioDensityTitle;
+  final String bioResourceTitle;
+  final String bioEnergyTitle;
+  final String legendBioDensity;
+  final String legendBioResource;
+  final String legendBioEnergy;
+  final String withinRadius;
+  final String cropResidues;
+  final String forestResidues;
+  final String homesHeated;
+  final String bioNote;
+  final String noBioDataHere;
 
   /// "Hi, Ada" in the current language.
   String greet(String name) => greeting.replaceAll('{name}', name);
@@ -287,4 +317,10 @@ class AppStrings {
 
   /// "Temperature at depth = ground temperature + heat flow ÷ 2.5 W/m·K × depth: …"
   String depthEstimateNoteFor(String conductivity) => depthEstimateNote.replaceAll('{k}', conductivity);
+
+  /// "within 25 km, per year"
+  String withinRadiusFor(int km) => withinRadius.replaceAll('{km}', '$km');
+
+  /// "≈ 59,400 family homes heated for a year"
+  String homesHeatedFor(String n) => homesHeated.replaceAll('{n}', n);
 }

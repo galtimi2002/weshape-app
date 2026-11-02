@@ -11,6 +11,7 @@ import '../../../core/api/api_exception.dart';
 import '../../../core/i18n/app_localizations.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../core/i18n/countries.dart';
+import '../../../core/models/bio.dart';
 import '../../../core/models/geo.dart';
 import '../../../core/models/hydro.dart';
 import '../../../core/models/solar.dart';
@@ -25,7 +26,7 @@ import 'map_bridge.dart';
 /// The home screen's map: the person's country first, then any address or
 /// any point they click, with the solar, wind, river or geothermal resource there.
 ///
-/// Solar, wind, hydro and geothermal work; biomass is shown as coming soon.
+/// All five work once the backend reports their data is there.
 class ResourceMap extends StatefulWidget {
   const ResourceMap({super.key, required this.countryCode});
 
@@ -47,6 +48,7 @@ class _Selection {
     this.wind,
     this.hydro,
     this.geo,
+    this.bio,
     this.error,
     this.zoom,
   });
@@ -59,12 +61,13 @@ class _Selection {
   final WindPoint? wind;
   final HydroPoint? hydro;
   final GeoPoint? geo;
+  final BioPoint? bio;
   final String? error;
 
   /// The map's zoom when the place was picked (for hydro: the rivers drawn then).
   final double? zoom;
 
-  _Selection copyWith({String? title, String? detail, SolarPoint? point, WindPoint? wind, HydroPoint? hydro, GeoPoint? geo, String? error}) =>
+  _Selection copyWith({String? title, String? detail, SolarPoint? point, WindPoint? wind, HydroPoint? hydro, GeoPoint? geo, BioPoint? bio, String? error}) =>
       _Selection(
         lat: lat,
         lon: lon,
@@ -74,6 +77,7 @@ class _Selection {
         wind: wind ?? this.wind,
         hydro: hydro ?? this.hydro,
         geo: geo ?? this.geo,
+        bio: bio ?? this.bio,
         error: error ?? this.error,
         zoom: zoom,
       );
@@ -88,6 +92,7 @@ const double _overlayOpacity = 0.66;
 const double _windOpacity = 0.72;
 const double _riverOpacity = 0.95;
 const double _geoOpacity = 0.72;
+const double _bioOpacity = 0.75;
 
 /// The credit PVGIS asks for in its usage conditions, linked to its home page.
 const String _solarAttribution =
@@ -110,6 +115,8 @@ class _ResourceMapState extends State<ResourceMap> {
   GeoLayers _geo = GeoLayers.fallback;
   GeoLayerId _geoLayer = GeoLayerId.ground;
   int _depth = 2;
+  BioLayers _bio = BioLayers.fallback;
+  BioLayerId _bioLayer = BioLayerId.density;
   List<double> _country = CountryBounds.europe;
   _Selection? _selection;
   Widget? _mapView;
@@ -254,12 +261,26 @@ class _ResourceMapState extends State<ResourceMap> {
     } on ApiException {
       // Geothermal stays "coming soon" until the backend says its data is there.
     }
+    try {
+      final bio = await _api.bioLayers();
+      if (!mounted) return;
+      setState(() => _bio = bio);
+      _showOverlay();
+    } on ApiException {
+      // Biomass stays "coming soon" until the backend says its data is there.
+    }
   }
 
   String? _overlayUrl;
 
   void _showOverlay() {
-    if (_resource == _Resource.geothermal) {
+    if (_resource == _Resource.biomass) {
+      final url = _api.urlOf(_bio[_bioLayer].tiles);
+      if (url == _overlayUrl) return;
+      _overlayUrl = url;
+      _map.setTileOverlay(url, _bio.bounds, _bioOpacity, maxZoom: _bio.maxZoom);
+      _map.setAttribution(_bio.attribution);
+    } else if (_resource == _Resource.geothermal) {
       final url = _api.urlOf(_geo[_geoLayer].tiles.replaceAll('{d}', '$_depth'));
       if (url == _overlayUrl) return;
       _overlayUrl = url;
@@ -307,6 +328,7 @@ class _ResourceMapState extends State<ResourceMap> {
         _Resource.wind => _wind[_windLayer].accent,
         _Resource.hydro => _hydro[_hydroLayer].accent,
         _Resource.geothermal => _geo[_geoLayer].accent,
+        _Resource.biomass => _bio[_bioLayer].accent,
         _ => _layers[_layer].accent,
       };
 
@@ -325,7 +347,6 @@ class _ResourceMapState extends State<ResourceMap> {
 
   Future<void> _select(double lat, double lon, {Place? place, double? zoom}) async {
     final request = ++_request;
-    final t = context.t;
     // A searched address: the map flies to zoom 12, where most streams are drawn.
     setState(() => _selection =
         _Selection(lat: lat, lon: lon, title: place?.title, detail: place?.detail, zoom: place != null ? 12 : zoom));
@@ -333,18 +354,23 @@ class _ResourceMapState extends State<ResourceMap> {
     if (place != null) {
       _map.flyTo(lat, lon, zoom: 12, offset: _phone ? const Offset(0, -110) : const Offset(-170, 0));
     } else {
-      _geocoder.reverse(lat, lon, language: _language ?? 'en').then((found) {
-        if (!mounted || request != _request) return;
-        setState(() => _selection = _selection?.copyWith(
-              title: found?.title ?? t.selectedPoint,
-              detail: found?.detail ?? '',
-            ));
-      }, onError: (Object _) {
-        if (!mounted || request != _request) return;
-        setState(() => _selection = _selection?.copyWith(title: t.selectedPoint, detail: ''));
-      });
+      _nameSelection(request);
     }
     await _fetchValues(lat, lon);
+  }
+
+  /// Looks up the selected place's name in the current language. An empty title means "no
+  /// name found": the card then says "Selected point" in whatever language is current.
+  void _nameSelection(int request) {
+    final s = _selection;
+    if (s == null) return;
+    _geocoder.reverse(s.lat, s.lon, language: _language ?? 'en').then((found) {
+      if (!mounted || request != _request) return;
+      setState(() => _selection = _selection?.copyWith(title: found?.title ?? '', detail: found?.detail ?? ''));
+    }, onError: (Object _) {
+      if (!mounted || request != _request) return;
+      setState(() => _selection = _selection?.copyWith(title: '', detail: ''));
+    });
   }
 
   /// The values of the current resource for the selected place.
@@ -353,7 +379,11 @@ class _ResourceMapState extends State<ResourceMap> {
     final t = context.t;
     final resource = _resource;
     try {
-      if (resource == _Resource.geothermal) {
+      if (resource == _Resource.biomass) {
+        final point = await _api.bioPoint(lat, lon);
+        if (!mounted || request != _valuesRequest) return;
+        setState(() => _selection = _selection?.copyWith(bio: point));
+      } else if (resource == _Resource.geothermal) {
         final point = await _api.geoPoint(lat, lon);
         if (!mounted || request != _valuesRequest) return;
         setState(() => _selection = _selection?.copyWith(geo: point));
@@ -376,6 +406,7 @@ class _ResourceMapState extends State<ResourceMap> {
         _Resource.wind => t.noWindDataHere,
         _Resource.hydro => t.noHydroDataHere,
         _Resource.geothermal => t.noGeoDataHere,
+        _Resource.biomass => t.noBioDataHere,
         _ => t.noSolarDataHere,
       };
       setState(() => _selection = _selection?.copyWith(error: e.statusCode == 404 ? noData : e.message(t)));
@@ -400,6 +431,13 @@ class _ResourceMapState extends State<ResourceMap> {
   void _setWindLayer(WindLayerId layer) {
     if (layer == _windLayer) return;
     setState(() => _windLayer = layer);
+    _showOverlay();
+    _recolorMarker();
+  }
+
+  void _setBioLayer(BioLayerId layer) {
+    if (layer == _bioLayer) return;
+    setState(() => _bioLayer = layer);
     _showOverlay();
     _recolorMarker();
   }
@@ -478,8 +516,22 @@ class _ResourceMapState extends State<ResourceMap> {
     final p = context.palette;
     final language = context.watch<SettingsController>().languageCode;
     if (language != _language) {
+      final changed = _language != null;
       _language = language;
       _map.setLanguage(language);
+      // The card's place name follows the new language too.
+      if (changed && _selection != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          final s = _selection;
+          if (!mounted || s == null) return;
+          _nameSelection(_request);
+          // An error message was written in the old language: ask again.
+          if (s.error != null) {
+            setState(() => _selection = s.place());
+            _fetchValues(s.lat, s.lon);
+          }
+        });
+      }
     }
 
     return LayoutBuilder(builder: (context, constraints) {
@@ -576,6 +628,8 @@ class _ResourceMapState extends State<ResourceMap> {
                   geo: _geo,
                   geoLayer: _geoLayer,
                   depth: _depth,
+                  bio: _bio,
+                  bioLayer: _bioLayer,
                   phone: phone,
                   language: language,
                   onLayer: _setLayer,
@@ -584,6 +638,7 @@ class _ResourceMapState extends State<ResourceMap> {
                   onHydroLayer: _setHydroLayer,
                   onGeoLayer: _setGeoLayer,
                   onDepth: _setDepth,
+                  onBioLayer: _setBioLayer,
                   onClose: _closeCard,
                 ),
               ),
@@ -616,6 +671,8 @@ class _ResourceMapState extends State<ResourceMap> {
                   geo: _geo,
                   geoLayer: _geoLayer,
                   depth: _depth,
+                  bio: _bio,
+                  bioLayer: _bioLayer,
                   language: language,
                   onResource: _setResource,
                   onLayer: _setLayer,
@@ -624,6 +681,7 @@ class _ResourceMapState extends State<ResourceMap> {
                   onHydroLayer: _setHydroLayer,
                   onGeoLayer: _setGeoLayer,
                   onDepth: _setDepth,
+                  onBioLayer: _setBioLayer,
                   onComingSoon: (name) => _showToast(t.comingSoonFor(name)),
                 ),
               ),
@@ -954,6 +1012,8 @@ class _ResultCard extends StatelessWidget {
     required this.geo,
     required this.geoLayer,
     required this.depth,
+    required this.bio,
+    required this.bioLayer,
     required this.phone,
     required this.language,
     required this.onLayer,
@@ -962,6 +1022,7 @@ class _ResultCard extends StatelessWidget {
     required this.onHydroLayer,
     required this.onGeoLayer,
     required this.onDepth,
+    required this.onBioLayer,
     required this.onClose,
   });
 
@@ -977,6 +1038,8 @@ class _ResultCard extends StatelessWidget {
   final GeoLayers geo;
   final GeoLayerId geoLayer;
   final int depth;
+  final BioLayers bio;
+  final BioLayerId bioLayer;
   final bool phone;
   final String language;
   final ValueChanged<SolarLayerId> onLayer;
@@ -985,18 +1048,22 @@ class _ResultCard extends StatelessWidget {
   final ValueChanged<HydroLayerId> onHydroLayer;
   final ValueChanged<GeoLayerId> onGeoLayer;
   final ValueChanged<int> onDepth;
+  final ValueChanged<BioLayerId> onBioLayer;
   final VoidCallback onClose;
 
   bool get _isWind => resource == _Resource.wind;
   bool get _isHydro => resource == _Resource.hydro;
   bool get _isGeo => resource == _Resource.geothermal;
+  bool get _isBio => resource == _Resource.biomass;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final p = context.palette;
     final s = selection;
-    final accent = _isGeo
+    final accent = _isBio
+        ? bio[bioLayer].accent
+        : _isGeo
         ? geo[geoLayer].accent
         : _isHydro
             ? hydro[hydroLayer].accent
@@ -1030,7 +1097,7 @@ class _ResultCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        s.title ?? '…',
+                        s.title == null ? '…' : (s.title!.isEmpty ? t.selectedPoint : s.title!),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: p.text),
@@ -1067,6 +1134,10 @@ class _ResultCard extends StatelessWidget {
         padding: const EdgeInsets.only(top: 12),
         child: Text(selection.error!, style: TextStyle(color: p.error, fontSize: 13)),
       );
+    }
+    if (_isBio) {
+      final point = selection.bio;
+      return point == null ? _loading(p, accent) : _bioBody(t, p, point, accent);
     }
     if (_isGeo) {
       final point = selection.geo;
@@ -1232,6 +1303,64 @@ class _ResultCard extends StatelessWidget {
     );
   }
 
+  Widget _bioBody(AppStrings t, WeShapePalette p, BioPoint point, Color accent) {
+    String value(BioLayerId id) => switch (id) {
+          BioLayerId.density => _number(point.density, language),
+          BioLayerId.resource => _number(point.resourceKt, language),
+          BioLayerId.energy => _number(point.energyGwh, language),
+        };
+    final title = switch (bioLayer) {
+      BioLayerId.density => t.bioDensityTitle,
+      BioLayerId.resource => t.bioResourceTitle,
+      BioLayerId.energy => t.bioEnergyTitle,
+    };
+    final note = bioLayer == BioLayerId.density ? t.perYear : t.withinRadiusFor(point.radiusKm);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _headline(p, title, value(bioLayer), bio[bioLayer].unit, note),
+        if (!phone) ...[
+          const SizedBox(height: 8),
+          _FlowBars(
+            values: [point.cropKt, point.forestKt],
+            labels: [t.cropResidues, t.forestResidues],
+            color: accent,
+            language: language,
+            highlight: -1,
+            unit: ' kt',
+          ),
+        ],
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            for (final id in BioLayerId.values) ...[
+              if (id != BioLayerId.density) const SizedBox(width: 6),
+              Expanded(
+                child: _MetricTile(
+                  label: _bioShort(t, id),
+                  value: value(id),
+                  unit: bio[id].unit,
+                  selected: id == bioLayer,
+                  accent: bio[id].accent,
+                  onTap: () => onBioLayer(id),
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (point.homes > 0) ...[
+          const SizedBox(height: 8),
+          Text(t.homesHeatedFor(_group(point.homes, language)),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: p.text)),
+        ],
+        if (!phone) ...[
+          const SizedBox(height: 8),
+          Text('${t.bioNote} ${point.source}', style: TextStyle(fontSize: 10.5, color: p.muted)),
+        ],
+      ],
+    );
+  }
+
   Widget _geoBody(AppStrings t, WeShapePalette p, GeoPoint point, Color accent) {
     final atDepth = point.temperatureAt(depth);
     final q = point.heatFlow;
@@ -1354,12 +1483,25 @@ class _ResultCard extends StatelessWidget {
 
 /// Mean flow of the driest month, the year and the wettest month, as three bars.
 class _FlowBars extends StatelessWidget {
-  const _FlowBars({required this.values, required this.labels, required this.color, required this.language});
+  const _FlowBars({
+    required this.values,
+    required this.labels,
+    required this.color,
+    required this.language,
+    this.highlight = 1,
+    this.unit = '',
+  });
 
   final List<double> values;
   final List<String> labels;
   final Color color;
   final String language;
+
+  /// The bar drawn strongest (the average month); -1 draws them all alike.
+  final int highlight;
+
+  /// Written after each number, e.g. " kt".
+  final String unit;
 
   @override
   Widget build(BuildContext context) {
@@ -1379,7 +1521,8 @@ class _FlowBars extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_number(values[i], language), style: _mono(9.5, i == 1 ? p.text : p.muted)),
+                  Text('${_number(values[i], language)}$unit',
+                      style: _mono(9.5, i == highlight || highlight < 0 ? p.text : p.muted)),
                   const SizedBox(height: 2),
                   SizedBox(
                     height: 38,
@@ -1392,7 +1535,7 @@ class _FlowBars extends StatelessWidget {
                           gradient: LinearGradient(
                             begin: Alignment.topCenter,
                             end: Alignment.bottomCenter,
-                            colors: [color.withValues(alpha: i == 1 ? 1 : 0.7), color.withValues(alpha: 0.3)],
+                            colors: [color.withValues(alpha: i == highlight || highlight < 0 ? 1 : 0.7), color.withValues(alpha: 0.3)],
                           ),
                         ),
                       ),
@@ -1758,6 +1901,8 @@ class _Dock extends StatelessWidget {
     required this.geo,
     required this.geoLayer,
     required this.depth,
+    required this.bio,
+    required this.bioLayer,
     required this.language,
     required this.onResource,
     required this.onLayer,
@@ -1766,6 +1911,7 @@ class _Dock extends StatelessWidget {
     required this.onHydroLayer,
     required this.onGeoLayer,
     required this.onDepth,
+    required this.onBioLayer,
     required this.onComingSoon,
   });
 
@@ -1781,6 +1927,8 @@ class _Dock extends StatelessWidget {
   final GeoLayers geo;
   final GeoLayerId geoLayer;
   final int depth;
+  final BioLayers bio;
+  final BioLayerId bioLayer;
   final String language;
   final ValueChanged<_Resource> onResource;
   final ValueChanged<SolarLayerId> onLayer;
@@ -1789,6 +1937,7 @@ class _Dock extends StatelessWidget {
   final ValueChanged<HydroLayerId> onHydroLayer;
   final ValueChanged<GeoLayerId> onGeoLayer;
   final ValueChanged<int> onDepth;
+  final ValueChanged<BioLayerId> onBioLayer;
   final ValueChanged<String> onComingSoon;
 
   /// Hydro and geothermal open once the backend reports their data is there.
@@ -1796,7 +1945,8 @@ class _Dock extends StatelessWidget {
       r == _Resource.solar ||
       r == _Resource.wind ||
       (r == _Resource.hydro && hydro.available) ||
-      (r == _Resource.geothermal && geo.available);
+      (r == _Resource.geothermal && geo.available) ||
+      (r == _Resource.biomass && bio.available);
 
   @override
   Widget build(BuildContext context) {
@@ -1822,7 +1972,21 @@ class _Dock extends StatelessWidget {
     final String low;
     final String high;
     final List<Color> colors;
-    if (resource == _Resource.geothermal) {
+    if (resource == _Resource.biomass) {
+      final info = bio[bioLayer];
+      chips = [
+        for (final id in BioLayerId.values)
+          _LayerChip(label: _bioShort(t, id), selected: id == bioLayer, accent: info.accent, onTap: () => onBioLayer(id)),
+      ];
+      legend = switch (bioLayer) {
+        BioLayerId.density => t.legendBioDensity,
+        BioLayerId.resource => t.legendBioResource,
+        BioLayerId.energy => t.legendBioEnergy,
+      };
+      low = _group(info.min.round(), language);
+      high = '${_group(info.max.round(), language)}+';
+      colors = info.colors;
+    } else if (resource == _Resource.geothermal) {
       final info = geo[geoLayer];
       chips = [
         for (final id in GeoLayerId.values)
@@ -2214,6 +2378,12 @@ String _windShort(AppStrings t, WindLayerId id) => switch (id) {
       WindLayerId.speed => t.layerWindSpeed,
       WindLayerId.power => t.layerPowerDensity,
       WindLayerId.height => t.layerByHeight,
+    };
+
+String _bioShort(AppStrings t, BioLayerId id) => switch (id) {
+      BioLayerId.density => t.layerBioDensity,
+      BioLayerId.resource => t.layerBioResource,
+      BioLayerId.energy => t.layerBioEnergy,
     };
 
 String _geoShort(AppStrings t, GeoLayerId id) => switch (id) {

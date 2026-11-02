@@ -37,9 +37,9 @@ them in the console and run `flutterfire configure`.
 
 The home screen is one full-screen map that opens on the country from the
 person's profile. They can search an address or click anywhere, and a card
-shows the resource there. **Solar**, **Wind**, **Hydro** and **Geothermal**
-work; Biomass is shown as coming soon (Hydro and Geothermal too, until the
-backend reports their data is built).
+shows the resource there. **Solar**, **Wind**, **Hydro**, **Geothermal** and
+**Biomass** work (the last three show as coming soon until the backend reports
+their data is built).
 
 Solar has three layers, switchable under the resource buttons and from the
 card: irradiation on an optimally inclined plane (GTI, kWh/m²), annual PV
@@ -160,7 +160,17 @@ Agreed while designing the home page (resource map). Solar is built; the other r
   One orange–brick colour scale, the depth layer with its own range per depth.
   The card shows the three values and the temperature by depth as bars.
   Built by the backend's "Build geothermal map data" workflow.
-- Biomass needs its own data source; still to choose.
+- **Biomass data**: three layers, as asked for: **Biomass availability density**
+  (t/ha per year here), **Biomass resource potential** (thousand t per year
+  within a 25 km collection radius) and **Biomass energy potential** (GWh per
+  year within 25 km). Crop residues from MapSPAM 2020 crop production
+  (residue ratio per crop, 40 % taken, the rest stays on the field), forest
+  residues from ESA CCI above-ground biomass. One green colour scale. The card
+  shows the three values, crop and forest residues as two bars and roughly how
+  many family homes that heat would warm for a year (15 MWh each). Built by the
+  backend's "Build biomass map data" workflow.
+- **The card follows the language switch**: "Selected point", the place name and
+  a "no data" message are looked up again in the new language.
 
 ## Before launch (to do once the company exists)
 

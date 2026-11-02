@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../auth/auth_service.dart';
 import '../config/app_config.dart';
+import '../models/bio.dart';
 import '../models/geo.dart';
 import '../models/hydro.dart';
 import '../models/solar.dart';
@@ -73,6 +74,15 @@ class ApiClient {
   Future<GeoPoint> geoPoint(double lat, double lon) async => GeoPoint.fromJson(
       await _send('GET', '/api/v1/geo/point?lat=${lat.toStringAsFixed(5)}&lon=${lon.toStringAsFixed(5)}')
           as Map<String, dynamic>);
+
+  /// Available biomass, crop and forest residues within 25 km and their energy for one place.
+  Future<BioPoint> bioPoint(double lat, double lon) async => BioPoint.fromJson(
+      await _send('GET', '/api/v1/bio/point?lat=${lat.toStringAsFixed(5)}&lon=${lon.toStringAsFixed(5)}')
+          as Map<String, dynamic>);
+
+  /// How the biomass map layers are drawn and where their tiles are.
+  Future<BioLayers> bioLayers() async =>
+      BioLayers.fromJson(await _send('GET', '/api/v1/bio/layers') as Map<String, dynamic>);
 
   /// How the geothermal map layers are drawn and where their tiles are.
   Future<GeoLayers> geoLayers() async =>
