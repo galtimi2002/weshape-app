@@ -135,6 +135,9 @@ class _ResourceMapState extends State<ResourceMap> {
   List<Rect> _blockers = const [];
   double _attributionLift = 0;
 
+  /// How far the dock reaches up from the bottom of the map; on phones the card sits above it.
+  double _dockTop = 140;
+
   @override
   void initState() {
     super.initState();
@@ -164,6 +167,9 @@ class _ResourceMapState extends State<ResourceMap> {
     if (dock is RenderBox && dock.hasSize && dock.attached) {
       final dockRect = dock.localToGlobal(Offset.zero, ancestor: stack) & dock.size;
       final lift = dockRect.left < 460 ? stack.size.height - dockRect.top + 6 : 0.0;
+      // The dock grows when a row of heights or depths opens: keep the card above it.
+      final dockTop = stack.size.height - dockRect.top;
+      if ((dockTop - _dockTop).abs() > 0.5) setState(() => _dockTop = dockTop);
       if ((lift - _attributionLift).abs() > 0.5) {
         _attributionLift = lift;
         _map.setAttributionBottom(lift);
@@ -552,7 +558,7 @@ class _ResourceMapState extends State<ResourceMap> {
               right: phone ? 10 : 16,
               left: phone ? 10 : null,
               top: phone ? null : 70,
-              bottom: phone ? 150 : null,
+              bottom: phone ? _dockTop + 10 : null,
               width: phone ? null : 310,
               child: KeyedSubtree(
                 key: _cardKey,
@@ -626,7 +632,7 @@ class _ResourceMapState extends State<ResourceMap> {
           Positioned(
             left: 0,
             right: 0,
-            bottom: phone ? 160 : 130,
+            bottom: phone ? _dockTop + 20 : 130,
             child: IgnorePointer(
               child: Center(
                 child: AnimatedOpacity(
