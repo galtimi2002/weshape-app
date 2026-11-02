@@ -11,6 +11,7 @@ import '../../../core/api/api_exception.dart';
 import '../../../core/i18n/app_localizations.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../core/i18n/countries.dart';
+import '../../../core/models/hydro.dart';
 import '../../../core/models/solar.dart';
 import '../../../core/models/wind.dart';
 import '../../../core/settings/settings_controller.dart';
@@ -21,9 +22,9 @@ import 'geocoder.dart';
 import 'map_bridge.dart';
 
 /// The home screen's map: the person's country first, then any address or
-/// any point they click, with the solar or wind resource there.
+/// any point they click, with the solar, wind or river resource there.
 ///
-/// Solar and wind work; the other resources are shown as coming soon.
+/// Solar, wind and hydro work; the other resources are shown as coming soon.
 class ResourceMap extends StatefulWidget {
   const ResourceMap({super.key, required this.countryCode});
 
@@ -36,7 +37,16 @@ class ResourceMap extends StatefulWidget {
 
 /// What the card shows: a place, and its values once they arrive.
 class _Selection {
-  const _Selection({required this.lat, required this.lon, this.title, this.detail, this.point, this.wind, this.error});
+  const _Selection({
+    required this.lat,
+    required this.lon,
+    this.title,
+    this.detail,
+    this.point,
+    this.wind,
+    this.hydro,
+    this.error,
+  });
 
   final double lat;
   final double lon;
@@ -44,15 +54,18 @@ class _Selection {
   final String? detail;
   final SolarPoint? point;
   final WindPoint? wind;
+  final HydroPoint? hydro;
   final String? error;
 
-  _Selection copyWith({String? title, String? detail, SolarPoint? point, WindPoint? wind, String? error}) => _Selection(
+  _Selection copyWith({String? title, String? detail, SolarPoint? point, WindPoint? wind, HydroPoint? hydro, String? error}) =>
+      _Selection(
         lat: lat,
         lon: lon,
         title: title ?? this.title,
         detail: detail ?? this.detail,
         point: point ?? this.point,
         wind: wind ?? this.wind,
+        hydro: hydro ?? this.hydro,
         error: error ?? this.error,
       );
 
@@ -64,6 +77,7 @@ class _Selection {
 const double _phoneWidth = 900;
 const double _overlayOpacity = 0.66;
 const double _windOpacity = 0.72;
+const double _riverOpacity = 0.95;
 
 /// The credit PVGIS asks for in its usage conditions, linked to its home page.
 const String _solarAttribution =
@@ -81,6 +95,8 @@ class _ResourceMapState extends State<ResourceMap> {
   WindLayers _wind = WindLayers.fallback;
   WindLayerId _windLayer = WindLayerId.speed;
   int _height = 100;
+  HydroLayers _hydro = HydroLayers.fallback;
+  HydroLayerId _hydroLayer = HydroLayerId.potential;
   List<double> _country = CountryBounds.europe;
   _Selection? _selection;
   Widget? _mapView;
@@ -203,12 +219,42 @@ class _ResourceMapState extends State<ResourceMap> {
     } on ApiException {
       // Same: the built-in description matches the backend.
     }
+    try {
+      final hydro = await _api.hydroLayers();
+      if (!mounted) return;
+      setState(() => _hydro = hydro);
+      _showOverlay();
+    } on ApiException {
+      // Hydro stays "coming soon" until the backend says its river tiles are there.
+    }
   }
 
   String? _overlayUrl;
 
   void _showOverlay() {
-    if (_resource == _Resource.wind) {
+    if (_resource == _Resource.hydro) {
+      final info = _hydro[_hydroLayer];
+      final url = _api.urlOf(_hydro.tiles);
+      final key = '$url|${info.property}';
+      if (key == _overlayUrl) return;
+      _overlayUrl = key;
+      _map.setRiverOverlay(
+        url,
+        _hydro.bounds,
+        _riverOpacity,
+        RiverStyle(
+          sourceLayer: _hydro.sourceLayer,
+          property: info.property,
+          min: info.min,
+          max: info.max,
+          logarithmic: info.logarithmic,
+          colors: info.colors,
+          widthProperty: _hydro.widthProperty,
+        ),
+        maxZoom: _hydro.maxZoom,
+      );
+      _map.setAttribution(_hydro.attribution);
+    } else if (_resource == _Resource.wind) {
       final url = _api.urlOf(_wind[_windLayer].tiles.replaceAll('{h}', '$_height'));
       if (url == _overlayUrl) return;
       _overlayUrl = url;
@@ -224,7 +270,11 @@ class _ResourceMapState extends State<ResourceMap> {
   }
 
   /// The colour of the current layer, for the pin.
-  Color get _accent => _resource == _Resource.wind ? _wind[_windLayer].accent : _layers[_layer].accent;
+  Color get _accent => switch (_resource) {
+        _Resource.wind => _wind[_windLayer].accent,
+        _Resource.hydro => _hydro[_hydroLayer].accent,
+        _ => _layers[_layer].accent,
+      };
 
   Future<void> _lookUpCountryIfUnknown() async {
     final code = widget.countryCode;
@@ -265,9 +315,13 @@ class _ResourceMapState extends State<ResourceMap> {
   Future<void> _fetchValues(double lat, double lon) async {
     final request = ++_valuesRequest;
     final t = context.t;
-    final wind = _resource == _Resource.wind;
+    final resource = _resource;
     try {
-      if (wind) {
+      if (resource == _Resource.hydro) {
+        final point = await _api.hydroPoint(lat, lon);
+        if (!mounted || request != _valuesRequest) return;
+        setState(() => _selection = _selection?.copyWith(hydro: point));
+      } else if (resource == _Resource.wind) {
         final point = await _api.windPoint(lat, lon);
         if (!mounted || request != _valuesRequest) return;
         setState(() => _selection = _selection?.copyWith(wind: point));
@@ -278,7 +332,11 @@ class _ResourceMapState extends State<ResourceMap> {
       }
     } on ApiException catch (e) {
       if (!mounted || request != _valuesRequest) return;
-      final noData = wind ? t.noWindDataHere : t.noSolarDataHere;
+      final noData = switch (resource) {
+        _Resource.wind => t.noWindDataHere,
+        _Resource.hydro => t.noHydroDataHere,
+        _ => t.noSolarDataHere,
+      };
       setState(() => _selection = _selection?.copyWith(error: e.statusCode == 404 ? noData : e.message(t)));
     }
   }
@@ -301,6 +359,13 @@ class _ResourceMapState extends State<ResourceMap> {
   void _setWindLayer(WindLayerId layer) {
     if (layer == _windLayer) return;
     setState(() => _windLayer = layer);
+    _showOverlay();
+    _recolorMarker();
+  }
+
+  void _setHydroLayer(HydroLayerId layer) {
+    if (layer == _hydroLayer) return;
+    setState(() => _hydroLayer = layer);
     _showOverlay();
     _recolorMarker();
   }
@@ -448,11 +513,14 @@ class _ResourceMapState extends State<ResourceMap> {
                   wind: _wind,
                   windLayer: _windLayer,
                   height: _height,
+                  hydro: _hydro,
+                  hydroLayer: _hydroLayer,
                   phone: phone,
                   language: language,
                   onLayer: _setLayer,
                   onWindLayer: _setWindLayer,
                   onHeight: _setHeight,
+                  onHydroLayer: _setHydroLayer,
                   onClose: _closeCard,
                 ),
               ),
@@ -480,11 +548,14 @@ class _ResourceMapState extends State<ResourceMap> {
                   windLayer: _windLayer,
                   wind: _wind,
                   height: _height,
+                  hydro: _hydro,
+                  hydroLayer: _hydroLayer,
                   language: language,
                   onResource: _setResource,
                   onLayer: _setLayer,
                   onWindLayer: _setWindLayer,
                   onHeight: _setHeight,
+                  onHydroLayer: _setHydroLayer,
                   onComingSoon: (name) => _showToast(t.comingSoonFor(name)),
                 ),
               ),
@@ -810,11 +881,14 @@ class _ResultCard extends StatelessWidget {
     required this.wind,
     required this.windLayer,
     required this.height,
+    required this.hydro,
+    required this.hydroLayer,
     required this.phone,
     required this.language,
     required this.onLayer,
     required this.onWindLayer,
     required this.onHeight,
+    required this.onHydroLayer,
     required this.onClose,
   });
 
@@ -825,21 +899,25 @@ class _ResultCard extends StatelessWidget {
   final WindLayers wind;
   final WindLayerId windLayer;
   final int height;
+  final HydroLayers hydro;
+  final HydroLayerId hydroLayer;
   final bool phone;
   final String language;
   final ValueChanged<SolarLayerId> onLayer;
   final ValueChanged<WindLayerId> onWindLayer;
   final ValueChanged<int> onHeight;
+  final ValueChanged<HydroLayerId> onHydroLayer;
   final VoidCallback onClose;
 
   bool get _isWind => resource == _Resource.wind;
+  bool get _isHydro => resource == _Resource.hydro;
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final p = context.palette;
     final s = selection;
-    final accent = _isWind ? wind[windLayer].accent : layers[layer].accent;
+    final accent = _isHydro ? hydro[hydroLayer].accent : (_isWind ? wind[windLayer].accent : layers[layer].accent);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
@@ -906,6 +984,10 @@ class _ResultCard extends StatelessWidget {
         padding: const EdgeInsets.only(top: 12),
         child: Text(selection.error!, style: TextStyle(color: p.error, fontSize: 13)),
       );
+    }
+    if (_isHydro) {
+      final point = selection.hydro;
+      return point == null ? _loading(p, accent) : _hydroBody(t, p, point, accent);
     }
     if (_isWind) {
       final point = selection.wind;
@@ -1060,6 +1142,118 @@ class _ResultCard extends StatelessWidget {
           Text('${point.source} · CC BY 4.0', style: TextStyle(fontSize: 10.5, color: p.muted)),
         ],
       ],
+    );
+  }
+
+  Widget _hydroBody(AppStrings t, WeShapePalette p, HydroPoint point, Color accent) {
+    String value(HydroLayerId id) => switch (id) {
+          HydroLayerId.potential => _number(point.potentialKw, language),
+          HydroLayerId.flow => _number(point.availableFlow, language),
+          HydroLayerId.head => _number(point.headM, language),
+        };
+    final title = switch (hydroLayer) {
+      HydroLayerId.potential => t.hydroPotentialTitle,
+      HydroLayerId.flow => t.riverFlowTitle,
+      HydroLayerId.head => t.headTitle,
+    };
+    final km = _number(point.distanceKm < 0.05 ? 0.05 : point.distanceKm, language);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _headline(p, title, value(hydroLayer), hydro[hydroLayer].unit, t.riverAwayFor(km)),
+        if (!phone) ...[
+          const SizedBox(height: 8),
+          _FlowBars(
+            values: [point.driestMonthFlow, point.meanFlow, point.wettestMonthFlow],
+            labels: [t.driestMonth, t.averageFlow, t.wettestMonth],
+            color: hydro[HydroLayerId.flow].accent,
+            language: language,
+          ),
+        ],
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            for (final id in HydroLayerId.values) ...[
+              if (id != HydroLayerId.potential) const SizedBox(width: 6),
+              Expanded(
+                child: _MetricTile(
+                  label: _hydroShort(t, id),
+                  value: value(id),
+                  unit: hydro[id].unit,
+                  selected: id == hydroLayer,
+                  accent: hydro[id].accent,
+                  onTap: () => onHydroLayer(id),
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (!phone) ...[
+          const SizedBox(height: 10),
+          Text(
+            '${t.ecologicalFlowNoteFor((point.ecologicalShare * 100).round())} ${point.source} · CC BY 4.0',
+            style: TextStyle(fontSize: 10.5, color: p.muted),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+/// Mean flow of the driest month, the year and the wettest month, as three bars.
+class _FlowBars extends StatelessWidget {
+  const _FlowBars({required this.values, required this.labels, required this.color, required this.language});
+
+  final List<double> values;
+  final List<String> labels;
+  final Color color;
+  final String language;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    final max = values.fold<double>(0, math.max);
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(values.join(',')),
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutCubic,
+      builder: (context, grow, _) => Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (var i = 0; i < values.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_number(values[i], language), style: _mono(9.5, i == 1 ? p.text : p.muted)),
+                  const SizedBox(height: 2),
+                  SizedBox(
+                    height: 38,
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Container(
+                        height: 38 * (0.08 + 0.92 * values[i] / (max == 0 ? 1 : max)) * grow,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(2)),
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [color.withValues(alpha: i == 1 ? 1 : 0.7), color.withValues(alpha: 0.3)],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(labels[i], maxLines: 1, overflow: TextOverflow.ellipsis, style: _mono(9, p.muted)),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
@@ -1337,11 +1531,14 @@ class _Dock extends StatelessWidget {
     required this.windLayer,
     required this.wind,
     required this.height,
+    required this.hydro,
+    required this.hydroLayer,
     required this.language,
     required this.onResource,
     required this.onLayer,
     required this.onWindLayer,
     required this.onHeight,
+    required this.onHydroLayer,
     required this.onComingSoon,
   });
 
@@ -1352,14 +1549,19 @@ class _Dock extends StatelessWidget {
   final WindLayerId windLayer;
   final WindLayers wind;
   final int height;
+  final HydroLayers hydro;
+  final HydroLayerId hydroLayer;
   final String language;
   final ValueChanged<_Resource> onResource;
   final ValueChanged<SolarLayerId> onLayer;
   final ValueChanged<WindLayerId> onWindLayer;
   final ValueChanged<int> onHeight;
+  final ValueChanged<HydroLayerId> onHydroLayer;
   final ValueChanged<String> onComingSoon;
 
-  static bool _ready(_Resource r) => r == _Resource.solar || r == _Resource.wind;
+  /// Hydro opens once the backend reports its river tiles are there.
+  bool _ready(_Resource r) =>
+      r == _Resource.solar || r == _Resource.wind || (r == _Resource.hydro && hydro.available);
 
   @override
   Widget build(BuildContext context) {
@@ -1385,7 +1587,21 @@ class _Dock extends StatelessWidget {
     final String low;
     final String high;
     final List<Color> colors;
-    if (isWind) {
+    if (resource == _Resource.hydro) {
+      final info = hydro[hydroLayer];
+      chips = [
+        for (final id in HydroLayerId.values)
+          _LayerChip(label: _hydroShort(t, id), selected: id == hydroLayer, accent: info.accent, onTap: () => onHydroLayer(id)),
+      ];
+      legend = switch (hydroLayer) {
+        HydroLayerId.potential => t.legendHydroPotential,
+        HydroLayerId.flow => t.legendRiverFlow,
+        HydroLayerId.head => t.legendHead,
+      };
+      low = _number(info.min, language);
+      high = '${_number(info.max, language)}+';
+      colors = info.colors;
+    } else if (isWind) {
       final info = wind[windLayer];
       chips = [
         for (final id in WindLayerId.values)
@@ -1738,6 +1954,23 @@ String _windShort(AppStrings t, WindLayerId id) => switch (id) {
       WindLayerId.power => t.layerPowerDensity,
       WindLayerId.height => t.layerByHeight,
     };
+
+String _hydroShort(AppStrings t, HydroLayerId id) => switch (id) {
+      HydroLayerId.potential => t.layerHydroPotential,
+      HydroLayerId.flow => t.layerRiverFlow,
+      HydroLayerId.head => t.layerHead,
+    };
+
+/// A measured value with as many digits as it deserves: 1,230 · 42 · 7.2 · 0.45.
+String _number(double v, String language) {
+  final a = v.abs();
+  if (a >= 100) return _group(v.round(), language);
+  if (a >= 10) return '${v.round()}';
+  const comma = {'de', 'nl', 'id', 'it', 'es', 'pt', 'tr', 'da', 'el', 'ro', 'hr', 'vi', 'hu', 'fr', 'pl', 'fi', 'sv', 'ru'};
+  var text = v.toStringAsFixed(a >= 1 ? 1 : 2);
+  if (text.contains('.')) text = text.replaceFirst(RegExp(r'\.?0+$'), '');
+  return comma.contains(language) ? text.replaceAll('.', ',') : text;
+}
 
 /// 5.2 / 5,2, as each language writes decimals.
 String _decimal(double v, String language) {

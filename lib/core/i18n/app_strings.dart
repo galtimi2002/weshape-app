@@ -96,6 +96,21 @@ class AppStrings {
     required this.legendWindSpeed,
     required this.legendPowerDensity,
     required this.noWindDataHere,
+    required this.layerHydroPotential,
+    required this.layerRiverFlow,
+    required this.layerHead,
+    required this.hydroPotentialTitle,
+    required this.riverFlowTitle,
+    required this.headTitle,
+    required this.legendHydroPotential,
+    required this.legendRiverFlow,
+    required this.legendHead,
+    required this.riverAway,
+    required this.driestMonth,
+    required this.averageFlow,
+    required this.wettestMonth,
+    required this.noHydroDataHere,
+    required this.ecologicalFlowNote,
   });
 
   final String tagline;
@@ -199,6 +214,21 @@ class AppStrings {
   final String legendWindSpeed;
   final String legendPowerDensity;
   final String noWindDataHere;
+  final String layerHydroPotential;
+  final String layerRiverFlow;
+  final String layerHead;
+  final String hydroPotentialTitle;
+  final String riverFlowTitle;
+  final String headTitle;
+  final String legendHydroPotential;
+  final String legendRiverFlow;
+  final String legendHead;
+  final String riverAway;
+  final String driestMonth;
+  final String averageFlow;
+  final String wettestMonth;
+  final String noHydroDataHere;
+  final String ecologicalFlowNote;
 
   /// "Hi, Ada" in the current language.
   String greet(String name) => greeting.replaceAll('{name}', name);
@@ -214,4 +244,10 @@ class AppStrings {
 
   /// "Mean wind speed at 100 m · m/s"
   String legendWindSpeedFor(int height) => legendWindSpeed.replaceAll('{height}', '$height');
+
+  /// "River reach 0.4 km away"
+  String riverAwayFor(String km) => riverAway.replaceAll('{km}', km);
+
+  /// "10% of the mean flow stays in the river for nature."
+  String ecologicalFlowNoteFor(int percent) => ecologicalFlowNote.replaceAll('{percent}', '$percent');
 }

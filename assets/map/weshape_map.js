@@ -9,7 +9,7 @@
   'use strict';
   // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
   // (after a hot restart the page still holds the previous script).
-  var VERSION = 9;
+  var VERSION = 10;
   if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
   if (window.WeShapeMap && window.WeShapeMap.destroy) {
     try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
@@ -240,11 +240,20 @@
 
   function overlayOpacity() {
     var o = state.overlay;
-    return o ? (state.dark ? o.opacity * .88 : o.opacity) : 0;
+    return o ? (state.dark && o.kind !== 'rivers' ? o.opacity * .88 : o.opacity) : 0;
+  }
+
+  /** The paint property that fades our layer: raster for pictures and tiles, line for rivers. */
+  function opacityProperty() {
+    return state.overlayKind === 'rivers' ? 'line-opacity' : 'raster-opacity';
   }
 
   function applyOverlayOpacity() {
-    if (map.getLayer('ws-overlay')) map.setPaintProperty('ws-overlay', 'raster-opacity', overlayOpacity());
+    if (map.getLayer('ws-overlay')) map.setPaintProperty('ws-overlay', opacityProperty(), overlayOpacity());
+  }
+
+  function setOverlayOpacity(value) {
+    if (map.getLayer('ws-overlay')) map.setPaintProperty('ws-overlay', opacityProperty(), value);
   }
 
   /** The first layer above the land fills (roads, borders, names), not counting our own. */
@@ -257,9 +266,22 @@
     return id;
   }
 
+  /** The first layer above the land, the water and the base map's own river lines. */
+  function aboveWaterId() {
+    var id;
+    map.getStyle().layers.some(function (l) {
+      if (l.id === 'ws-overlay' || l.type === 'background' || l.type === 'fill') return false;
+      if (l.type === 'line' && isWaterLayer(l.id)) return false;
+      id = l.id;
+      return true;
+    });
+    return id;
+  }
+
   /**
    * Solar: seas and lakes cover the data, as in the solar atlases.
    * Wind: the data covers them too, because the atlas has values along the coast.
+   * Rivers: lakes and seas stay under the lines, which sit above the water.
    */
   function arrangeWater(waterOnTop) {
     var target = waterOnTop ? aboveFillsId() : 'ws-overlay';
@@ -270,8 +292,44 @@
     });
   }
 
+  /** A value on the layer's scale (log or linear) mapped onto its colours. */
+  function riverColor(r) {
+    var value = ['to-number', ['get', r.property], 0];
+    var lo = r.min, hi = r.max, n = r.colors.length;
+    var input = r.log ? ['ln', ['max', value, lo / 10]] : value;
+    var a = r.log ? Math.log(lo) : lo, b = r.log ? Math.log(hi) : hi;
+    var expr = ['interpolate', ['linear'], input];
+    r.colors.forEach(function (c, i) { expr.push(a + (b - a) * i / (n - 1), c); });
+    return expr;
+  }
+
+  /** Wider lines for bigger rivers, and all of them wider as the map zooms in. */
+  function riverWidth(r) {
+    function byFlow(thin, wide) {
+      return ['interpolate', ['linear'], ['ln', ['max', ['to-number', ['get', r.widthProperty], 0.1], 0.1]],
+        Math.log(0.1), thin, Math.log(5000), wide];
+    }
+    return ['interpolate', ['linear'], ['zoom'],
+      0, byFlow(0.5, 2), 5, byFlow(0.7, 3.2), 8, byFlow(1, 5), 11, byFlow(1.6, 8), 15, byFlow(2.5, 14)];
+  }
+
   function addOverlay(o, opacity) {
     var b = o.bounds; // west, south, east, north
+    if (o.kind === 'rivers') {
+      map.addSource('ws-overlay', { type: 'vector', tiles: [o.url], bounds: b, minzoom: 0, maxzoom: o.maxZoom || 10 });
+      arrangeWater(true);
+      map.addLayer({
+        id: 'ws-overlay', type: 'line', source: 'ws-overlay', 'source-layer': o.river.sourceLayer,
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-color': riverColor(o.river), 'line-width': riverWidth(o.river), 'line-opacity': opacity,
+          'line-opacity-transition': { duration: 300 }, 'line-color-transition': { duration: 300 }
+        }
+      }, aboveWaterId());
+      state.overlayKey = o.kind + '|' + o.url;
+      state.overlayKind = o.kind;
+      return;
+    }
     var spec = o.kind === 'tiles'
       ? { type: 'raster', tiles: [o.url], tileSize: 256, bounds: b, minzoom: 0, maxzoom: o.maxZoom || 10 }
       : { type: 'image', url: o.url, coordinates: [[b[0], b[3]], [b[2], b[3]], [b[2], b[1]], [b[0], b[1]]] };
@@ -301,14 +359,19 @@
     var key = o.kind + '|' + o.url;
     var source = map.getSource('ws-overlay');
     if (!source) { addOverlay(o, overlayOpacity()); return; }
-    if (key === state.overlayKey) { applyOverlayOpacity(); return; }
+    if (key === state.overlayKey) {
+      // Same river tiles, another layer: only the colours change.
+      if (o.kind === 'rivers') map.setPaintProperty('ws-overlay', 'line-color', riverColor(o.river));
+      applyOverlayOpacity();
+      return;
+    }
     var token = ++state.overlayToken;
     if (o.kind === 'image' && state.overlayKind === 'image') {
       var b = o.bounds;
       var coords = [[b[0], b[3]], [b[2], b[3]], [b[2], b[1]], [b[0], b[1]]];
       state.overlayKey = key;
       if (!fade) { source.updateImage({ url: o.url, coordinates: coords }); return; }
-      map.setPaintProperty('ws-overlay', 'raster-opacity', 0);
+      setOverlayOpacity(0);
       setTimeout(function () {
         if (token !== state.overlayToken || !map) return;
         source.updateImage({ url: o.url, coordinates: coords });
@@ -316,8 +379,8 @@
       }, 280);
       return;
     }
-    // Between a picture and tiles, or between tile sets: fade out, swap, fade in.
-    map.setPaintProperty('ws-overlay', 'raster-opacity', 0);
+    // Between a picture, tiles and rivers, or between tile sets: fade out, swap, fade in.
+    setOverlayOpacity(0);
     setTimeout(function () {
       if (token !== state.overlayToken || !map) return;
       removeOverlay();
@@ -505,6 +568,17 @@
     setTileOverlay: function (url, bounds, opacity, maxZoom) {
       var had = !!state.overlay;
       state.overlay = { kind: 'tiles', url: url, bounds: bounds, opacity: opacity, maxZoom: maxZoom };
+      whenLoaded(function () { applyOverlay(had); });
+    },
+
+    /**
+     * River lines from vector tiles instead of a picture: url has {z}/{x}/{y}; style is a
+     * JSON string {sourceLayer, property, min, max, log, colors, widthProperty}: the line
+     * colour follows that value on the scale, the width follows widthProperty (mean flow).
+     */
+    setRiverOverlay: function (url, bounds, opacity, maxZoom, style) {
+      var had = !!state.overlay;
+      state.overlay = { kind: 'rivers', url: url, bounds: bounds, opacity: opacity, maxZoom: maxZoom, river: JSON.parse(style) };
       whenLoaded(function () { applyOverlay(had); });
     },
 

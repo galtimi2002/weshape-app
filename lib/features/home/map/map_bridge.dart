@@ -44,6 +44,10 @@ abstract class MapBridge {
   /// {z}/{x}/{y}; [bounds] is west, south, east, north; tiles exist up to [maxZoom].
   void setTileOverlay(String urlTemplate, List<double> bounds, double opacity, {int maxZoom = 10});
 
+  /// River lines from vector tiles ([urlTemplate] has {z}/{x}/{y}) instead of a picture.
+  /// [style] says which tile value colours the lines and how: see [RiverStyle].
+  void setRiverOverlay(String urlTemplate, List<double> bounds, double opacity, RiverStyle style, {int maxZoom = 10});
+
   /// Replaces the data credit in the map's attribution line (HTML).
   void setAttribution(String html);
 
@@ -72,6 +76,39 @@ abstract class MapBridge {
   void setInteractive(bool interactive);
 
   void dispose();
+}
+
+/// How the river lines are drawn: [property] (a value in the tiles' [sourceLayer])
+/// picks the colour on the [min]–[max] scale, [widthProperty] (mean flow) the width.
+@immutable
+class RiverStyle {
+  const RiverStyle({
+    required this.sourceLayer,
+    required this.property,
+    required this.min,
+    required this.max,
+    required this.logarithmic,
+    required this.colors,
+    required this.widthProperty,
+  });
+
+  final String sourceLayer;
+  final String property;
+  final double min;
+  final double max;
+  final bool logarithmic;
+  final List<Color> colors;
+  final String widthProperty;
+
+  Map<String, Object> toJson() => {
+        'sourceLayer': sourceLayer,
+        'property': property,
+        'min': min,
+        'max': max,
+        'log': logarithmic,
+        'colors': [for (final c in colors) cssColor(c)],
+        'widthProperty': widthProperty,
+      };
 }
 
 String cssColor(Color c) => '#${(c.toARGB32() & 0xFFFFFF).toRadixString(16).padLeft(6, '0')}';

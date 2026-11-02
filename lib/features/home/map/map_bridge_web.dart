@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:js_interop';
 import 'dart:ui_web' as ui_web;
 
@@ -21,6 +22,7 @@ extension type _WeShapeMapJs._(JSObject _) implements JSObject {
   external void setLanguage(String code);
   external void setOverlay(String url, JSArray<JSNumber> bounds, double opacity);
   external void setTileOverlay(String url, JSArray<JSNumber> bounds, double opacity, int maxZoom);
+  external void setRiverOverlay(String url, JSArray<JSNumber> bounds, double opacity, int maxZoom, String style);
   external void setAttribution(String html);
   external void playBreeze();
   external void fitBounds(JSArray<JSNumber> bounds, double top, double right, double bottom, double left, bool animate);
@@ -36,7 +38,7 @@ extension type _WeShapeMapJs._(JSObject _) implements JSObject {
 }
 
 /// Raise together with VERSION in assets/map/weshape_map.js whenever that file changes.
-const _bridgeVersion = 9;
+const _bridgeVersion = 10;
 
 Future<void>? _scriptLoading;
 
@@ -134,6 +136,10 @@ class _WebMapBridge implements MapBridge {
   @override
   void setTileOverlay(String urlTemplate, List<double> bounds, double opacity, {int maxZoom = 10}) =>
       _run((m) => m.setTileOverlay(urlTemplate, _numbers(bounds), opacity, maxZoom));
+
+  @override
+  void setRiverOverlay(String urlTemplate, List<double> bounds, double opacity, RiverStyle style, {int maxZoom = 10}) =>
+      _run((m) => m.setRiverOverlay(urlTemplate, _numbers(bounds), opacity, maxZoom, jsonEncode(style.toJson())));
 
   @override
   void setAttribution(String html) => _run((m) => m.setAttribution(html));

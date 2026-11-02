@@ -37,8 +37,9 @@ them in the console and run `flutterfire configure`.
 
 The home screen is one full-screen map that opens on the country from the
 person's profile. They can search an address or click anywhere, and a card
-shows the solar resource there. Only **Solar** works for now; Wind, Hydro,
-Geothermal and Biomass are shown as coming soon.
+shows the resource there. **Solar**, **Wind** and **Hydro** work; Geothermal
+and Biomass are shown as coming soon (Hydro too, until the backend reports its
+river tiles are built).
 
 Solar has three layers, switchable under the resource buttons and from the
 card: irradiation on an optimally inclined plane (GTI, kWh/m²), annual PV
@@ -150,8 +151,7 @@ Agreed while designing the home page (resource map). Solar is built; the other r
   - Optimum tilt angle (degrees, like OPTA)
 - **Google Solar API**: maybe later, only as a paid extra (free monthly quota,
   then paid; Romania coverage not confirmed).
-- Wind, hydro, geothermal and biomass need their own data sources (e.g.
-  Global Wind Atlas for wind); still to choose.
+- Geothermal and biomass need their own data sources; still to choose.
 
 ## Before launch (to do once the company exists)
 

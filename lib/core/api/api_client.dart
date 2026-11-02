@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../auth/auth_service.dart';
 import '../config/app_config.dart';
+import '../models/hydro.dart';
 import '../models/solar.dart';
 import '../models/user_profile.dart';
 import '../models/wind.dart';
@@ -58,6 +59,15 @@ class ApiClient {
   /// How the wind map layers are drawn and where their tiles are.
   Future<WindLayers> windLayers() async =>
       WindLayers.fromJson(await _send('GET', '/api/v1/wind/layers') as Map<String, dynamic>);
+
+  /// The nearest river reach to a place: potential, available flow, head.
+  Future<HydroPoint> hydroPoint(double lat, double lon) async => HydroPoint.fromJson(
+      await _send('GET', '/api/v1/hydro/point?lat=${lat.toStringAsFixed(5)}&lon=${lon.toStringAsFixed(5)}')
+          as Map<String, dynamic>);
+
+  /// How the river map layers are drawn and where their tiles are.
+  Future<HydroLayers> hydroLayers() async =>
+      HydroLayers.fromJson(await _send('GET', '/api/v1/hydro/layers') as Map<String, dynamic>);
 
   /// Full address of a backend path, for things the map loads by itself (layer pictures).
   String urlOf(String path) => '$_baseUrl$path';

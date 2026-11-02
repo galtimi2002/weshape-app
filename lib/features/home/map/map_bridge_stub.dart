@@ -38,6 +38,8 @@ class _NoMap implements MapBridge {
   @override
   void setTileOverlay(String urlTemplate, List<double> bounds, double opacity, {int maxZoom = 10}) {}
   @override
+  void setRiverOverlay(String urlTemplate, List<double> bounds, double opacity, RiverStyle style, {int maxZoom = 10}) {}
+  @override
   void setAttribution(String html) {}
   @override
   void playBreeze() {}
