@@ -9,7 +9,7 @@
   'use strict';
   // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
   // (after a hot restart the page still holds the previous script).
-  var VERSION = 10;
+  var VERSION = 12;
   if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
   if (window.WeShapeMap && window.WeShapeMap.destroy) {
     try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
@@ -226,7 +226,9 @@
         if (l.type !== 'symbol') return;
         try {
           var f = map.getLayoutProperty(l.id, 'text-field');
-          if (f !== undefined) labelFields[l.id] = f;
+          // Only place names: road shields show a road number ("ref"), not a name,
+          // and turning them into names left them empty.
+          if (f !== undefined && /name/.test(JSON.stringify(f))) labelFields[l.id] = f;
         } catch (e) { /* no label */ }
       });
     }
@@ -248,12 +250,21 @@
     return state.overlayKind === 'rivers' ? 'line-opacity' : 'raster-opacity';
   }
 
+  /**
+   * Rivers: the reaches follow a ~500 m grid, so from zoom 11 on they fade and the base
+   * map's real river bed takes over; they stay clickable and keep their colour.
+   */
+  function opacityValue(value) {
+    if (state.overlayKind !== 'rivers' || !value) return value;
+    return ['interpolate', ['linear'], ['zoom'], 10, value, 13, value * 0.4];
+  }
+
   function applyOverlayOpacity() {
-    if (map.getLayer('ws-overlay')) map.setPaintProperty('ws-overlay', opacityProperty(), overlayOpacity());
+    if (map.getLayer('ws-overlay')) map.setPaintProperty('ws-overlay', opacityProperty(), opacityValue(overlayOpacity()));
   }
 
   function setOverlayOpacity(value) {
-    if (map.getLayer('ws-overlay')) map.setPaintProperty('ws-overlay', opacityProperty(), value);
+    if (map.getLayer('ws-overlay')) map.setPaintProperty('ws-overlay', opacityProperty(), opacityValue(value));
   }
 
   /** The first layer above the land fills (roads, borders, names), not counting our own. */
@@ -310,11 +321,12 @@
         Math.log(0.1), thin, Math.log(5000), wide];
     }
     return ['interpolate', ['linear'], ['zoom'],
-      0, byFlow(0.5, 2), 5, byFlow(0.7, 3.2), 8, byFlow(1, 5), 11, byFlow(1.6, 8), 15, byFlow(2.5, 14)];
+      0, byFlow(0.9, 2.6), 5, byFlow(1.3, 4.2), 8, byFlow(1.7, 6), 11, byFlow(2, 7), 15, byFlow(2.4, 8)];
   }
 
   function addOverlay(o, opacity) {
     var b = o.bounds; // west, south, east, north
+    state.overlayKind = o.kind;
     if (o.kind === 'rivers') {
       map.addSource('ws-overlay', { type: 'vector', tiles: [o.url], bounds: b, minzoom: 0, maxzoom: o.maxZoom || 10 });
       arrangeWater(true);
@@ -322,7 +334,7 @@
         id: 'ws-overlay', type: 'line', source: 'ws-overlay', 'source-layer': o.river.sourceLayer,
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': riverColor(o.river), 'line-width': riverWidth(o.river), 'line-opacity': opacity,
+          'line-color': riverColor(o.river), 'line-width': riverWidth(o.river), 'line-opacity': opacityValue(opacity),
           'line-opacity-transition': { duration: 300 }, 'line-color-transition': { duration: 300 }
         }
       }, aboveWaterId());

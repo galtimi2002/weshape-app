@@ -88,7 +88,7 @@ class HydroLayers {
     );
   }
 
-  static const _colors = [Color(0xFFDDF1F4), Color(0xFF7CC5D6), Color(0xFF2B8BA8), Color(0xFF145A73)];
+  static const _colors = [Color(0xFF9FD7E3), Color(0xFF52B1C8), Color(0xFF1F7FA0), Color(0xFF0D4864)];
 
   /// The same as the backend sends today, but closed (available: false) until its
   /// answer says the river tiles are there.
