@@ -38,10 +38,15 @@ them in the console and run `flutterfire configure`.
   icons only under 340 px). Assessment and Saved assessments are full pages
   (`lib/features/assessment/`) that fade and slide in over the map; the map stays
   alive underneath (`ResourceMap.active` turns its clicks off meanwhile).
-  For now the assessment has its start page (only "just looking around" leads
-  anywhere; the home questions come next, business and community later) and
-  Saved assessments its empty state. What is not built yet shows "Soon" and
-  cannot be clicked.
+  The assessment (`assessment_flow.dart`, answers in `home_answers.dart`, kept
+  while switching tabs): a start page, then six steps for a house or flat —
+  place (address search, or "Assess this place" on the map card), building,
+  how it is built (or "I don't know": a typical house), heating, electricity
+  (or an estimate for the household), what the place has and what matters most.
+  Every step starts from a typical house, so it can be skipped. The result is
+  next, so "See my result" is shown but cannot be pressed yet; business and
+  community paths come later. Saved assessments shows its empty state. What is
+  not built yet shows "Soon" and cannot be clicked.
 
 ## Home: resource map
 

@@ -164,6 +164,86 @@ class AppStrings {
     required this.savedEmptyHint,
     required this.savedCompare,
     required this.savedCompareHint,
+    required this.stepOf,
+    required this.back,
+    required this.seeResult,
+    required this.resultSoon,
+    required this.placeTitle,
+    required this.placeHint,
+    required this.placeFromMap,
+    required this.placePickOnMap,
+    required this.placeChosen,
+    required this.assessThisPlace,
+    required this.buildingTitle,
+    required this.buildingHint,
+    required this.typeLabel,
+    required this.typeHouse,
+    required this.typeFlat,
+    required this.floorsLabel,
+    required this.peopleLabel,
+    required this.areaLabel,
+    required this.condTitle,
+    required this.condHint,
+    required this.builtLabel,
+    required this.eraBefore1960,
+    required this.era1960,
+    required this.era1990,
+    required this.era2010,
+    required this.wallsLabel,
+    required this.wallBrick,
+    required this.wallPanel,
+    required this.wallAerated,
+    required this.wallWood,
+    required this.wallStone,
+    required this.insLabel,
+    required this.insNone,
+    required this.insThin,
+    required this.insThick,
+    required this.windowsLabel,
+    required this.winSingle,
+    required this.winDouble,
+    required this.winTriple,
+    required this.condUnknown,
+    required this.heatTitle,
+    required this.heatHint,
+    required this.heatGas,
+    required this.heatWood,
+    required this.heatElectric,
+    required this.heatDistrict,
+    required this.heatPump,
+    required this.elecTitle,
+    required this.elecHint,
+    required this.kwhPerMonth,
+    required this.kwhPerYearAbout,
+    required this.elecUnknown,
+    required this.elecKnown,
+    required this.elecEstimated,
+    required this.spaceTitle,
+    required this.spaceHint,
+    required this.hasRoof,
+    required this.hasRoofDesc,
+    required this.hasGarden,
+    required this.hasGardenDesc,
+    required this.hasLand,
+    required this.hasLandDesc,
+    required this.hasStream,
+    required this.hasStreamDesc,
+    required this.hasBalcony,
+    required this.hasBalconyDesc,
+    required this.roofSizeLabel,
+    required this.roofSmall,
+    required this.roofMedium,
+    required this.roofLarge,
+    required this.facingLabel,
+    required this.faceSouth,
+    required this.faceEastWest,
+    required this.faceNorth,
+    required this.aimLabel,
+    required this.aimBills,
+    required this.aimIndep,
+    required this.aimCo2,
+    required this.pickOnMapHint,
+    required this.pickConfirm,
   });
 
   final String tagline;
@@ -342,10 +422,98 @@ class AppStrings {
   final String savedCompare;
   final String savedCompareHint;
 
+  /// The home assessment's six steps.
+  final String stepOf;
+  final String back;
+  final String seeResult;
+  final String resultSoon;
+  final String placeTitle;
+  final String placeHint;
+  final String placeFromMap;
+  final String placePickOnMap;
+  final String placeChosen;
+  final String assessThisPlace;
+  final String buildingTitle;
+  final String buildingHint;
+  final String typeLabel;
+  final String typeHouse;
+  final String typeFlat;
+  final String floorsLabel;
+  final String peopleLabel;
+  final String areaLabel;
+  final String condTitle;
+  final String condHint;
+  final String builtLabel;
+  final String eraBefore1960;
+  final String era1960;
+  final String era1990;
+  final String era2010;
+  final String wallsLabel;
+  final String wallBrick;
+  final String wallPanel;
+  final String wallAerated;
+  final String wallWood;
+  final String wallStone;
+  final String insLabel;
+  final String insNone;
+  final String insThin;
+  final String insThick;
+  final String windowsLabel;
+  final String winSingle;
+  final String winDouble;
+  final String winTriple;
+  final String condUnknown;
+  final String heatTitle;
+  final String heatHint;
+  final String heatGas;
+  final String heatWood;
+  final String heatElectric;
+  final String heatDistrict;
+  final String heatPump;
+  final String elecTitle;
+  final String elecHint;
+  final String kwhPerMonth;
+  final String kwhPerYearAbout;
+  final String elecUnknown;
+  final String elecKnown;
+  final String elecEstimated;
+  final String spaceTitle;
+  final String spaceHint;
+  final String hasRoof;
+  final String hasRoofDesc;
+  final String hasGarden;
+  final String hasGardenDesc;
+  final String hasLand;
+  final String hasLandDesc;
+  final String hasStream;
+  final String hasStreamDesc;
+  final String hasBalcony;
+  final String hasBalconyDesc;
+  final String roofSizeLabel;
+  final String roofSmall;
+  final String roofMedium;
+  final String roofLarge;
+  final String facingLabel;
+  final String faceSouth;
+  final String faceEastWest;
+  final String faceNorth;
+  final String aimLabel;
+  final String aimBills;
+  final String aimIndep;
+  final String aimCo2;
+
+  /// Banner on the map while a place is being chosen for the assessment.
+  final String pickOnMapHint;
+  final String pickConfirm;
+
   /// "Hi, Ada" in the current language.
   String greet(String name) => greeting.replaceAll('{name}', name);
 
   /// "Wind is coming soon."
+  String stepOfN(int n) => stepOf.replaceAll('{n}', '$n');
+  String kwhPerYearAboutN(String n) => kwhPerYearAbout.replaceAll('{n}', n);
+  String elecEstimatedFor(int people, String n) =>
+      elecEstimated.replaceAll('{people}', '$people').replaceAll('{n}', n);
   String comingSoonFor(String resource) => comingSoonMessage.replaceAll('{resource}', resource);
 
   /// "Showing Romania from your profile. …"

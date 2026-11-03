@@ -19,6 +19,7 @@ import '../../../core/models/wind.dart';
 import '../../../core/settings/settings_controller.dart';
 import '../../../core/theme/weshape_palette.dart';
 import '../../../core/theme/weshape_theme.dart';
+import '../../assessment/home_answers.dart';
 import 'country_bounds.dart';
 import 'geocoder.dart';
 import 'map_bridge.dart';
@@ -28,7 +29,14 @@ import 'map_bridge.dart';
 ///
 /// All five work once the backend reports their data is there.
 class ResourceMap extends StatefulWidget {
-  const ResourceMap({super.key, required this.countryCode, this.active = true});
+  const ResourceMap({
+    super.key,
+    required this.countryCode,
+    this.active = true,
+    this.onAssess,
+    this.picking = false,
+    this.onCancelPick,
+  });
 
   /// From the profile; the map opens on this country.
   final String? countryCode;
@@ -36,6 +44,14 @@ class ResourceMap extends StatefulWidget {
   /// False while another page (the assessment, the saved assessments) covers the map:
   /// the map then ignores clicks and drags, so they reach that page.
   final bool active;
+
+  /// "Assess this place" on the card: starts the assessment with the selected point.
+  final ValueChanged<AssessmentPlace>? onAssess;
+
+  /// The assessment asked for a place: a banner says to click one, shows the point chosen
+  /// (it can be clicked again as often as needed) and takes it back with "Use this place".
+  final bool picking;
+  final VoidCallback? onCancelPick;
 
   @override
   State<ResourceMap> createState() => _ResourceMapState();
@@ -140,6 +156,7 @@ class _ResourceMapState extends State<ResourceMap> {
   final _stackKey = GlobalKey();
   final _searchKey = GlobalKey();
   final _cardKey = GlobalKey();
+  final _pickKey = GlobalKey();
   final _zoomKey = GlobalKey();
   final _dockKey = GlobalKey();
   Timer? _blockerTimer;
@@ -166,7 +183,7 @@ class _ResourceMapState extends State<ResourceMap> {
     final stack = _stackKey.currentContext?.findRenderObject();
     if (!mounted || stack is! RenderBox || !stack.hasSize) return;
     final rects = <Rect>[];
-    for (final key in [_searchKey, _cardKey, _zoomKey, _dockKey]) {
+    for (final key in [_searchKey, _cardKey, _zoomKey, _dockKey, _pickKey]) {
       final box = key.currentContext?.findRenderObject();
       if (box is RenderBox && box.hasSize && box.attached) {
         final topLeft = box.localToGlobal(Offset.zero, ancestor: stack);
@@ -242,46 +259,44 @@ class _ResourceMapState extends State<ResourceMap> {
 
   // ------------------------------------------------------------------ data
 
+  /// Resources whose layer description has arrived (or definitely failed). Until then
+  /// their dock button is neither "Soon" nor clickable: the answer is not known yet.
+  final Set<_Resource> _checked = {};
+
   Future<void> _loadLayers() async {
-    try {
-      final layers = await _api.solarLayers();
-      if (!mounted) return;
-      setState(() => _layers = layers);
-      _showOverlay();
-    } on ApiException {
-      // The built-in description matches the backend; the pictures still load from it.
-    }
-    try {
-      final wind = await _api.windLayers();
-      if (!mounted) return;
-      setState(() => _wind = wind);
-      _showOverlay();
-    } on ApiException {
-      // Same: the built-in description matches the backend.
-    }
-    try {
-      final hydro = await _api.hydroLayers();
-      if (!mounted) return;
-      setState(() => _hydro = hydro);
-      _showOverlay();
-    } on ApiException {
-      // Hydro stays "coming soon" until the backend says its river tiles are there.
-    }
-    try {
-      final geo = await _api.geoLayers();
-      if (!mounted) return;
-      setState(() => _geo = geo);
-      _showOverlay();
-    } on ApiException {
-      // Geothermal stays "coming soon" until the backend says its data is there.
-    }
-    try {
-      final bio = await _api.bioLayers();
-      if (!mounted) return;
-      setState(() => _bio = bio);
-      _showOverlay();
-    } on ApiException {
-      // Biomass stays "coming soon" until the backend says its data is there.
+    // All at once: biomass should not wait for four other answers before it can open.
+    await Future.wait([
+      _fetchLayers(_Resource.solar, _api.solarLayers, (v) => _layers = v),
+      _fetchLayers(_Resource.wind, _api.windLayers, (v) => _wind = v),
+      _fetchLayers(_Resource.hydro, _api.hydroLayers, (v) => _hydro = v),
+      _fetchLayers(_Resource.geothermal, _api.geoLayers, (v) => _geo = v),
+      _fetchLayers(_Resource.biomass, _api.bioLayers, (v) => _bio = v),
+    ]);
+  }
+
+  /// Asks the backend for one resource's layers. A server that is waking up (no answer,
+  /// or a 5xx) is asked again a few times; any other answer is final. Without an answer
+  /// the built-in description stays: solar and wind still work, the others show "Soon".
+  Future<void> _fetchLayers<T>(_Resource resource, Future<T> Function() call, void Function(T) apply) async {
+    for (var attempt = 0;; attempt++) {
+      try {
+        final value = await call();
+        if (!mounted) return;
+        setState(() {
+          apply(value);
+          _checked.add(resource);
+        });
+        _showOverlay();
+        return;
+      } on ApiException catch (e) {
+        final waking = e.isNetwork || e.statusCode >= 500;
+        if (!waking || attempt >= 5) {
+          if (mounted) setState(() => _checked.add(resource));
+          return;
+        }
+        await Future<void>.delayed(Duration(seconds: 4 + 4 * attempt));
+        if (!mounted) return;
+      }
     }
   }
 
@@ -619,6 +634,65 @@ class _ResourceMapState extends State<ResourceMap> {
               ),
             ),
           ),
+          if (widget.picking)
+            Positioned(
+              top: phone ? 78 : 14,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: KeyedSubtree(
+                  key: _pickKey,
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+                    decoration: BoxDecoration(
+                      color: p.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: p.border),
+                      boxShadow: const [BoxShadow(color: Color(0x30102040), blurRadius: 24, offset: Offset(0, 8), spreadRadius: -6)],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(_selection == null ? Icons.touch_app_outlined : Icons.place_rounded, size: 18, color: p.primary),
+                        const SizedBox(width: 10),
+                        Flexible(
+                          child: Text(
+                            _selection == null
+                                ? t.pickOnMapHint
+                                : ((_selection!.title ?? '').isEmpty ? t.selectedPoint : _selection!.title!),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: p.text, fontSize: 14, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        TextButton(
+                          onPressed: widget.onCancelPick,
+                          style: TextButton.styleFrom(foregroundColor: p.muted, visualDensity: VisualDensity.compact),
+                          child: Text(t.cancel),
+                        ),
+                        if (_selection != null) ...[
+                          const SizedBox(width: 4),
+                          FilledButton(
+                            onPressed: () {
+                              final s = _selection!;
+                              widget.onAssess?.call(AssessmentPlace(lat: s.lat, lon: s.lon, title: s.title ?? '', detail: s.detail ?? ''));
+                            },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: p.primary,
+                              foregroundColor: p.onPrimary,
+                              visualDensity: VisualDensity.compact,
+                              textStyle: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
+                            ),
+                            child: Text(t.pickConfirm),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
           if (_selection != null)
             Positioned(
               right: phone ? 10 : 16,
@@ -654,6 +728,12 @@ class _ResourceMapState extends State<ResourceMap> {
                   onDepth: _setDepth,
                   onBioLayer: _setBioLayer,
                   onClose: _closeCard,
+                  onAssess: widget.onAssess == null
+                      ? null
+                      : () {
+                          final s = _selection!;
+                          widget.onAssess!(AssessmentPlace(lat: s.lat, lon: s.lon, title: s.title ?? '', detail: s.detail ?? ''));
+                        },
                 ),
               ),
             ),
@@ -696,7 +776,7 @@ class _ResourceMapState extends State<ResourceMap> {
                   onGeoLayer: _setGeoLayer,
                   onDepth: _setDepth,
                   onBioLayer: _setBioLayer,
-                  onComingSoon: (name) => _showToast(t.comingSoonFor(name)),
+                  checked: _checked,
                 ),
               ),
             ),
@@ -1038,8 +1118,10 @@ class _ResultCard extends StatelessWidget {
     required this.onDepth,
     required this.onBioLayer,
     required this.onClose,
+    this.onAssess,
   });
 
+  final VoidCallback? onAssess;
   final _Selection selection;
   final _Resource resource;
   final SolarLayers layers;
@@ -1136,6 +1218,25 @@ class _ResultCard extends StatelessWidget {
               padding: const EdgeInsets.only(right: 6),
               child: _body(t, p, accent),
             ),
+            if (onAssess != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8, right: 6),
+                child: Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: TextButton(
+                    onPressed: onAssess,
+                    style: TextButton.styleFrom(
+                      foregroundColor: p.primary,
+                      textStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [Text(t.assessThisPlace), const SizedBox(width: 6), const Icon(Icons.arrow_forward_rounded, size: 16)],
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -1926,7 +2027,7 @@ class _Dock extends StatelessWidget {
     required this.onGeoLayer,
     required this.onDepth,
     required this.onBioLayer,
-    required this.onComingSoon,
+    required this.checked,
   });
 
   final bool phone;
@@ -1952,9 +2053,11 @@ class _Dock extends StatelessWidget {
   final ValueChanged<GeoLayerId> onGeoLayer;
   final ValueChanged<int> onDepth;
   final ValueChanged<BioLayerId> onBioLayer;
-  final ValueChanged<String> onComingSoon;
+  final Set<_Resource> checked;
 
   /// Hydro and geothermal open once the backend reports their data is there.
+  bool _known(_Resource r) => r == _Resource.solar || r == _Resource.wind || checked.contains(r);
+
   bool _ready(_Resource r) =>
       r == _Resource.solar ||
       r == _Resource.wind ||
@@ -1973,10 +2076,12 @@ class _Dock extends StatelessWidget {
         _ResourceButton(
           icon: _icon(r),
           label: _resourceName(t, r),
-          soon: _ready(r) ? null : t.comingSoon,
+          // Solar and wind always work; the others wait for the backend's answer before
+          // they show either "Soon" or open.
+          soon: _ready(r) || !_known(r) ? null : t.comingSoon,
           selected: r == resource,
           phone: phone,
-          onTap: _ready(r) ? () => onResource(r) : () => onComingSoon(_resourceName(t, r)),
+          onTap: _ready(r) ? () => onResource(r) : null,
         ),
     ];
 

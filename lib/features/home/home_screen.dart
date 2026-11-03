@@ -10,7 +10,8 @@ import '../../core/widgets/language_menu.dart';
 import '../../core/widgets/theme_switch.dart';
 import '../../core/widgets/weshape_logo.dart';
 import '../profile/profile_controller.dart';
-import '../assessment/assessment_start_page.dart';
+import '../assessment/assessment_flow.dart';
+import '../assessment/home_answers.dart';
 import '../assessment/saved_assessments_page.dart';
 import 'map/resource_map.dart';
 import 'nav_tabs.dart';
@@ -28,8 +29,35 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   HomeTab _tab = HomeTab.map;
 
+  /// The home assessment's answers live here, so they survive switching tabs.
+  final _answers = HomeAnswers();
+
+  @override
+  void dispose() {
+    _answers.dispose();
+    super.dispose();
+  }
+
+  /// The assessment's place step sent the person to the map to click a point.
+  bool _picking = false;
+
   void _go(HomeTab tab) {
-    if (tab != _tab) setState(() => _tab = tab);
+    if (tab != _tab || _picking) {
+      setState(() {
+        _tab = tab;
+        _picking = false;
+      });
+    }
+  }
+
+  /// "Assess this place" on the map card: the place becomes the assessment's, and the
+  /// assessment opens at the place step so the person sees it and continues from there.
+  void _assess(AssessmentPlace place) {
+    _answers.update((a) {
+      a.place = place;
+      if (a.step <= 1) a.step = 1;
+    });
+    _go(HomeTab.assessment);
   }
 
   @override
@@ -43,7 +71,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
     final Widget page = switch (_tab) {
       HomeTab.map => const SizedBox.shrink(key: ValueKey('map')),
-      HomeTab.assessment => AssessmentStartPage(key: const ValueKey('assessment'), onExplore: () => _go(HomeTab.map)),
+      HomeTab.assessment => AssessmentFlow(
+          key: const ValueKey('assessment'),
+          answers: _answers,
+          countryCode: profile.country,
+          onExplore: () => _go(HomeTab.map),
+          onPickOnMap: () => setState(() {
+            _tab = HomeTab.map;
+            _picking = true;
+          }),
+        ),
       HomeTab.saved => SavedAssessmentsPage(key: const ValueKey('saved'), onNew: () => _go(HomeTab.assessment)),
     };
 
@@ -67,7 +104,15 @@ class _HomeScreenState extends State<HomeScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  Positioned.fill(child: ResourceMap(countryCode: profile.country, active: _tab == HomeTab.map)),
+                  Positioned.fill(
+                    child: ResourceMap(
+                      countryCode: profile.country,
+                      active: _tab == HomeTab.map,
+                      onAssess: _assess,
+                      picking: _picking,
+                      onCancelPick: () => _go(HomeTab.assessment),
+                    ),
+                  ),
                   Positioned.fill(
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 450),
