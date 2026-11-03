@@ -140,6 +140,30 @@ class AppStrings {
     required this.homesHeated,
     required this.bioNote,
     required this.noBioDataHere,
+    required this.navMap,
+    required this.navAssessment,
+    required this.navSaved,
+    required this.navSavedShort,
+    required this.assessStep,
+    required this.assessTitle,
+    required this.assessHint,
+    required this.assessHome,
+    required this.assessHomeDesc,
+    required this.assessBusiness,
+    required this.assessBusinessDesc,
+    required this.assessCommunity,
+    required this.assessCommunityDesc,
+    required this.assessExplore,
+    required this.assessExploreDesc,
+    required this.assessContinue,
+    required this.assessStepsSoon,
+    required this.savedTitle,
+    required this.savedHint,
+    required this.savedNew,
+    required this.savedEmpty,
+    required this.savedEmptyHint,
+    required this.savedCompare,
+    required this.savedCompareHint,
   });
 
   final String tagline;
@@ -287,6 +311,36 @@ class AppStrings {
   final String homesHeated;
   final String bioNote;
   final String noBioDataHere;
+
+  /// Header tabs: the map, the assessment, the saved assessments (short form on phones).
+  final String navMap;
+  final String navAssessment;
+  final String navSaved;
+  final String navSavedShort;
+
+  /// Assessment start page.
+  final String assessStep;
+  final String assessTitle;
+  final String assessHint;
+  final String assessHome;
+  final String assessHomeDesc;
+  final String assessBusiness;
+  final String assessBusinessDesc;
+  final String assessCommunity;
+  final String assessCommunityDesc;
+  final String assessExplore;
+  final String assessExploreDesc;
+  final String assessContinue;
+  final String assessStepsSoon;
+
+  /// Saved assessments page.
+  final String savedTitle;
+  final String savedHint;
+  final String savedNew;
+  final String savedEmpty;
+  final String savedEmptyHint;
+  final String savedCompare;
+  final String savedCompareHint;
 
   /// "Hi, Ada" in the current language.
   String greet(String name) => greeting.replaceAll('{name}', name);

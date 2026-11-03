@@ -28,10 +28,14 @@ import 'map_bridge.dart';
 ///
 /// All five work once the backend reports their data is there.
 class ResourceMap extends StatefulWidget {
-  const ResourceMap({super.key, required this.countryCode});
+  const ResourceMap({super.key, required this.countryCode, this.active = true});
 
   /// From the profile; the map opens on this country.
   final String? countryCode;
+
+  /// False while another page (the assessment, the saved assessments) covers the map:
+  /// the map then ignores clicks and drags, so they reach that page.
+  final bool active;
 
   @override
   State<ResourceMap> createState() => _ResourceMapState();
@@ -218,8 +222,18 @@ class _ResourceMapState extends State<ResourceMap> {
 
     _language ??= context.read<SettingsController>().languageCode;
 
-    // A menu or dialog above the map: clicks on it must not also land on the map.
-    final interactive = ModalRoute.of(context)?.isCurrent ?? true;
+    _syncInteractive();
+  }
+
+  @override
+  void didUpdateWidget(ResourceMap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.active != widget.active) _syncInteractive();
+  }
+
+  /// A menu, a dialog or a page above the map: clicks on it must not also land on the map.
+  void _syncInteractive() {
+    final interactive = (ModalRoute.of(context)?.isCurrent ?? true) && widget.active;
     if (interactive != _interactive) {
       _interactive = interactive;
       _map.setInteractive(interactive);

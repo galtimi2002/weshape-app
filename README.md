@@ -32,6 +32,16 @@ them in the console and run `flutterfire configure`.
   give (country, and names if missing).
 - **Home**: header with language, sun/moon theme switch, log out and the
   account card, and under it the resource map (below).
+- **Tabs: Map · Assessment · Saved assessments**: in the header, left of the
+  language menu, in the thin search font with a line that slides under the
+  active tab; on narrow screens in a strip under the header (icon + short name,
+  icons only under 340 px). Assessment and Saved assessments are full pages
+  (`lib/features/assessment/`) that fade and slide in over the map; the map stays
+  alive underneath (`ResourceMap.active` turns its clicks off meanwhile).
+  For now the assessment has its start page (only "just looking around" leads
+  anywhere; the home questions come next, business and community later) and
+  Saved assessments its empty state. What is not built yet shows "Soon" and
+  cannot be clicked.
 
 ## Home: resource map
 
