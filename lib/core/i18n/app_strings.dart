@@ -144,19 +144,7 @@ class AppStrings {
     required this.navAssessment,
     required this.navSaved,
     required this.navSavedShort,
-    required this.assessStep,
-    required this.assessTitle,
-    required this.assessHint,
-    required this.assessHome,
-    required this.assessHomeDesc,
-    required this.assessBusiness,
-    required this.assessBusinessDesc,
-    required this.assessCommunity,
-    required this.assessCommunityDesc,
-    required this.assessExplore,
-    required this.assessExploreDesc,
     required this.assessContinue,
-    required this.assessStepsSoon,
     required this.savedTitle,
     required this.savedHint,
     required this.savedNew,
@@ -164,13 +152,11 @@ class AppStrings {
     required this.savedEmptyHint,
     required this.savedCompare,
     required this.savedCompareHint,
-    required this.stepOf,
     required this.back,
     required this.seeResult,
     required this.resultSoon,
     required this.placeTitle,
     required this.placeHint,
-    required this.placeFromMap,
     required this.placePickOnMap,
     required this.placeChosen,
     required this.assessThisPlace,
@@ -182,68 +168,252 @@ class AppStrings {
     required this.floorsLabel,
     required this.peopleLabel,
     required this.areaLabel,
-    required this.condTitle,
-    required this.condHint,
-    required this.builtLabel,
     required this.eraBefore1960,
     required this.era1960,
     required this.era1990,
     required this.era2010,
-    required this.wallsLabel,
-    required this.wallBrick,
-    required this.wallPanel,
-    required this.wallAerated,
-    required this.wallWood,
-    required this.wallStone,
-    required this.insLabel,
     required this.insNone,
     required this.insThin,
     required this.insThick,
-    required this.windowsLabel,
     required this.winSingle,
-    required this.winDouble,
     required this.winTriple,
-    required this.condUnknown,
-    required this.heatTitle,
-    required this.heatHint,
-    required this.heatGas,
-    required this.heatWood,
-    required this.heatElectric,
-    required this.heatDistrict,
-    required this.heatPump,
-    required this.elecTitle,
-    required this.elecHint,
-    required this.kwhPerMonth,
-    required this.kwhPerYearAbout,
-    required this.elecUnknown,
-    required this.elecKnown,
-    required this.elecEstimated,
-    required this.spaceTitle,
-    required this.spaceHint,
-    required this.hasRoof,
-    required this.hasRoofDesc,
-    required this.hasGarden,
-    required this.hasGardenDesc,
-    required this.hasLand,
-    required this.hasLandDesc,
-    required this.hasStream,
-    required this.hasStreamDesc,
-    required this.hasBalcony,
-    required this.hasBalconyDesc,
-    required this.roofSizeLabel,
     required this.roofSmall,
     required this.roofMedium,
     required this.roofLarge,
-    required this.facingLabel,
     required this.faceSouth,
     required this.faceEastWest,
     required this.faceNorth,
-    required this.aimLabel,
-    required this.aimBills,
-    required this.aimIndep,
-    required this.aimCo2,
     required this.pickOnMapHint,
     required this.pickConfirm,
+    required this.stepOfTotal,
+    required this.toFirst,
+    required this.resetAnswers,
+    required this.resetTitle,
+    required this.resetBody,
+    required this.resetConfirm,
+    required this.oneMore,
+    required this.confirmTitle,
+    required this.confirmBody,
+    required this.confirmCheck,
+    required this.confirmGo,
+    required this.assessIntro,
+    required this.audTitle,
+    required this.audHome,
+    required this.audHomeDesc,
+    required this.audFarm,
+    required this.audFarmDesc,
+    required this.audBusiness,
+    required this.audBusinessDesc,
+    required this.audCommunity,
+    required this.audCommunityDesc,
+    required this.audVillage,
+    required this.audVillageDesc,
+    required this.audSite,
+    required this.audSiteDesc,
+    required this.usesTitle,
+    required this.useAppliances,
+    required this.useCooking,
+    required this.useHeating,
+    required this.useHotWater,
+    required this.useCar,
+    required this.usePumping,
+    required this.eraTitle,
+    required this.eraTitleFlat,
+    required this.dontKnow,
+    required this.renoTitle,
+    required this.renoWalls,
+    required this.renoRoof,
+    required this.renoWindows,
+    required this.renoHeating,
+    required this.renoNone,
+    required this.renoWhen,
+    required this.ageRecent,
+    required this.ageMiddle,
+    required this.ageOld,
+    required this.insTitle,
+    required this.insWalls,
+    required this.insRoof,
+    required this.insFloor,
+    required this.insMedium,
+    required this.insInsulated,
+    required this.helpCheck,
+    required this.takePhoto,
+    required this.insHelpWalls,
+    required this.insHelpRoof,
+    required this.insHelpFloor,
+    required this.winTitle,
+    required this.winDoubleOld,
+    required this.winDoubleNew,
+    required this.winMix,
+    required this.winHelpPanes,
+    required this.winHelpDate,
+    required this.srcTitle,
+    required this.srcOutside,
+    required this.srcOwn,
+    required this.srcMains,
+    required this.srcPipedGas,
+    required this.srcDistrict,
+    required this.srcBottles,
+    required this.srcWood,
+    required this.srcGenerator,
+    required this.srcNothing,
+    required this.srcSolarPanels,
+    required this.srcSolarWater,
+    required this.srcHeatPump,
+    required this.srcBattery,
+    required this.srcSmallWind,
+    required this.srcOther,
+    required this.cutsTitle,
+    required this.cutsNever,
+    required this.cutsHardly,
+    required this.cutsMonthly,
+    required this.cutsDaily,
+    required this.elecUseTitle,
+    required this.kwhFromGrid,
+    required this.monthNames,
+    required this.dontKnowExact,
+    required this.knowExact,
+    required this.avgElecQuestion,
+    required this.avgNote,
+    required this.tooHigh,
+    required this.sameMonthTwice,
+    required this.billPhoto,
+    required this.paidTitle,
+    required this.avgPaidQuestion,
+    required this.currencyLabel,
+    required this.gasTitle,
+    required this.gasUnitLabel,
+    required this.gasUsed,
+    required this.gasPaid,
+    required this.unitLooksKwh,
+    required this.unitLooksM3,
+    required this.yes,
+    required this.no,
+    required this.fuelsTitle,
+    required this.fuelFirewood,
+    required this.fuelPellets,
+    required this.fuelBottles,
+    required this.fuelDistrict,
+    required this.tariffTitle,
+    required this.exportTitle,
+    required this.optional,
+    required this.kwhIn3Months,
+    required this.spacesTitle,
+    required this.spacesHint,
+    required this.spRoof,
+    required this.spGarden,
+    required this.spLand,
+    required this.spBalcony,
+    required this.spNotSure,
+    required this.spNowhere,
+    required this.sizesTitle,
+    required this.notSureNote,
+    required this.sizeRoofLabel,
+    required this.aboutM2,
+    required this.exactSize,
+    required this.facingQuestion,
+    required this.faceFlat,
+    required this.sizeGardenLabel,
+    required this.sizeLandLabel,
+    required this.sizeBalconyLabel,
+    required this.landSmall,
+    required this.landMedium,
+    required this.landLarge,
+    required this.noGarden,
+    required this.drawOnMap,
+    required this.balconySmall,
+    required this.balconyLarge,
+    required this.ownTitle,
+    required this.ownHint,
+    required this.ownYes,
+    required this.ownBuilding,
+    required this.ownRent,
+    required this.ownShared,
+    required this.fixTitle,
+    required this.fixHint,
+    required this.fixSelf,
+    required this.fixTech,
+    required this.fixInstaller,
+    required this.fixUnknown,
+    required this.handsTitle,
+    required this.handsNone,
+    required this.handsLittle,
+    required this.handsRegular,
+    required this.prioTitle,
+    required this.prioUpfront,
+    required this.prioUpfrontDesc,
+    required this.prioRunning,
+    required this.prioRunningDesc,
+    required this.prioReliable,
+    required this.prioReliableDesc,
+    required this.prioEnv,
+    required this.prioEnvDesc,
+    required this.prioBalanced,
+    required this.prioBalancedDesc,
+    required this.followTitle,
+    required this.animalsQ,
+    required this.animFew,
+    required this.animHerd,
+    required this.animWaste,
+    required this.animNone,
+    required this.riverFound,
+    required this.riverThrough,
+    required this.riverOthers,
+    required this.riverCannot,
+    required this.riverNotSure,
+    required this.brookQ,
+    required this.windFound,
+    required this.windOpen,
+    required this.windSome,
+    required this.windLots,
+    required this.checkingMap,
+    required this.nothingMore,
+    required this.exclTitle,
+    required this.exclNo,
+    required this.exclYes,
+    required this.exclTapHint,
+    required this.exclSketchNote,
+    required this.exclSketchNoteHouse,
+    required this.roofShapeLabel,
+    required this.roofGable,
+    required this.roofHip,
+    required this.zoneRoofWhole,
+    required this.zoneSideLeft,
+    required this.zoneSideRight,
+    required this.rotateLeft,
+    required this.rotateRight,
+    required this.roofHidden,
+    required this.markModeLabel,
+    required this.markKeepFree,
+    required this.markMissing,
+    required this.keepFreeList,
+    required this.missingList,
+    required this.newKindQ,
+    required this.newBuilding,
+    required this.newPool,
+    required this.newTrees,
+    required this.newOther,
+    required this.newWhereQ,
+    required this.newTitle,
+    required this.newNo,
+    required this.newYes,
+    required this.newWhereHint,
+    required this.newUseQ,
+    required this.zoneRoofFront,
+    required this.zoneRoofBack,
+    required this.zoneRoofLeft,
+    required this.zoneRoofRight,
+    required this.zoneFrontYard,
+    required this.zoneBackYard,
+    required this.markOnMap,
+    required this.whyLabel,
+    required this.whyUnsafe,
+    required this.whyReach,
+    required this.whyLooks,
+    required this.whyRules,
+    required this.whyPlans,
+    required this.dirFront,
+    required this.fuelsHint,
   });
 
   final String tagline;
@@ -399,19 +569,7 @@ class AppStrings {
   final String navSavedShort;
 
   /// Assessment start page.
-  final String assessStep;
-  final String assessTitle;
-  final String assessHint;
-  final String assessHome;
-  final String assessHomeDesc;
-  final String assessBusiness;
-  final String assessBusinessDesc;
-  final String assessCommunity;
-  final String assessCommunityDesc;
-  final String assessExplore;
-  final String assessExploreDesc;
   final String assessContinue;
-  final String assessStepsSoon;
 
   /// Saved assessments page.
   final String savedTitle;
@@ -423,13 +581,11 @@ class AppStrings {
   final String savedCompareHint;
 
   /// The home assessment's six steps.
-  final String stepOf;
   final String back;
   final String seeResult;
   final String resultSoon;
   final String placeTitle;
   final String placeHint;
-  final String placeFromMap;
   final String placePickOnMap;
   final String placeChosen;
   final String assessThisPlace;
@@ -441,79 +597,271 @@ class AppStrings {
   final String floorsLabel;
   final String peopleLabel;
   final String areaLabel;
-  final String condTitle;
-  final String condHint;
-  final String builtLabel;
   final String eraBefore1960;
   final String era1960;
   final String era1990;
   final String era2010;
-  final String wallsLabel;
-  final String wallBrick;
-  final String wallPanel;
-  final String wallAerated;
-  final String wallWood;
-  final String wallStone;
-  final String insLabel;
   final String insNone;
   final String insThin;
   final String insThick;
-  final String windowsLabel;
   final String winSingle;
-  final String winDouble;
   final String winTriple;
-  final String condUnknown;
-  final String heatTitle;
-  final String heatHint;
-  final String heatGas;
-  final String heatWood;
-  final String heatElectric;
-  final String heatDistrict;
-  final String heatPump;
-  final String elecTitle;
-  final String elecHint;
-  final String kwhPerMonth;
-  final String kwhPerYearAbout;
-  final String elecUnknown;
-  final String elecKnown;
-  final String elecEstimated;
-  final String spaceTitle;
-  final String spaceHint;
-  final String hasRoof;
-  final String hasRoofDesc;
-  final String hasGarden;
-  final String hasGardenDesc;
-  final String hasLand;
-  final String hasLandDesc;
-  final String hasStream;
-  final String hasStreamDesc;
-  final String hasBalcony;
-  final String hasBalconyDesc;
-  final String roofSizeLabel;
   final String roofSmall;
   final String roofMedium;
   final String roofLarge;
-  final String facingLabel;
   final String faceSouth;
   final String faceEastWest;
   final String faceNorth;
-  final String aimLabel;
-  final String aimBills;
-  final String aimIndep;
-  final String aimCo2;
 
   /// Banner on the map while a place is being chosen for the assessment.
   final String pickOnMapHint;
   final String pickConfirm;
+  final String stepOfTotal;
+  final String toFirst;
+  final String resetAnswers;
+  final String resetTitle;
+  final String resetBody;
+  final String resetConfirm;
+  final String oneMore;
+  final String confirmTitle;
+  final String confirmBody;
+  final String confirmCheck;
+  final String confirmGo;
+  final String assessIntro;
+  final String audTitle;
+  final String audHome;
+  final String audHomeDesc;
+  final String audFarm;
+  final String audFarmDesc;
+  final String audBusiness;
+  final String audBusinessDesc;
+  final String audCommunity;
+  final String audCommunityDesc;
+  final String audVillage;
+  final String audVillageDesc;
+  final String audSite;
+  final String audSiteDesc;
+  final String usesTitle;
+  final String useAppliances;
+  final String useCooking;
+  final String useHeating;
+  final String useHotWater;
+  final String useCar;
+  final String usePumping;
+  final String eraTitle;
+  final String eraTitleFlat;
+  final String dontKnow;
+  final String renoTitle;
+  final String renoWalls;
+  final String renoRoof;
+  final String renoWindows;
+  final String renoHeating;
+  final String renoNone;
+  final String renoWhen;
+  final String ageRecent;
+  final String ageMiddle;
+  final String ageOld;
+  final String insTitle;
+  final String insWalls;
+  final String insRoof;
+  final String insFloor;
+  final String insMedium;
+  final String insInsulated;
+  final String helpCheck;
+  final String takePhoto;
+  final String insHelpWalls;
+  final String insHelpRoof;
+  final String insHelpFloor;
+  final String winTitle;
+  final String winDoubleOld;
+  final String winDoubleNew;
+  final String winMix;
+  final String winHelpPanes;
+  final String winHelpDate;
+  final String srcTitle;
+  final String srcOutside;
+  final String srcOwn;
+  final String srcMains;
+  final String srcPipedGas;
+  final String srcDistrict;
+  final String srcBottles;
+  final String srcWood;
+  final String srcGenerator;
+  final String srcNothing;
+  final String srcSolarPanels;
+  final String srcSolarWater;
+  final String srcHeatPump;
+  final String srcBattery;
+  final String srcSmallWind;
+  final String srcOther;
+  final String cutsTitle;
+  final String cutsNever;
+  final String cutsHardly;
+  final String cutsMonthly;
+  final String cutsDaily;
+  final String elecUseTitle;
+  final String kwhFromGrid;
+  final String monthNames;
+  final String dontKnowExact;
+  final String knowExact;
+  final String avgElecQuestion;
+  final String avgNote;
+  final String tooHigh;
+  final String sameMonthTwice;
+  final String billPhoto;
+  final String paidTitle;
+  final String avgPaidQuestion;
+  final String currencyLabel;
+  final String gasTitle;
+  final String gasUnitLabel;
+  final String gasUsed;
+  final String gasPaid;
+  final String unitLooksKwh;
+  final String unitLooksM3;
+  final String yes;
+  final String no;
+  final String fuelsTitle;
+  final String fuelFirewood;
+  final String fuelPellets;
+  final String fuelBottles;
+  final String fuelDistrict;
+  final String tariffTitle;
+  final String exportTitle;
+  final String optional;
+  final String kwhIn3Months;
+  final String spacesTitle;
+  final String spacesHint;
+  final String spRoof;
+  final String spGarden;
+  final String spLand;
+  final String spBalcony;
+  final String spNotSure;
+  final String spNowhere;
+  final String sizesTitle;
+  final String notSureNote;
+  final String sizeRoofLabel;
+  final String aboutM2;
+  final String exactSize;
+  final String facingQuestion;
+  final String faceFlat;
+  final String sizeGardenLabel;
+  final String sizeLandLabel;
+  final String sizeBalconyLabel;
+  final String landSmall;
+  final String landMedium;
+  final String landLarge;
+  final String noGarden;
+  final String drawOnMap;
+  final String balconySmall;
+  final String balconyLarge;
+  final String ownTitle;
+  final String ownHint;
+  final String ownYes;
+  final String ownBuilding;
+  final String ownRent;
+  final String ownShared;
+  final String fixTitle;
+  final String fixHint;
+  final String fixSelf;
+  final String fixTech;
+  final String fixInstaller;
+  final String fixUnknown;
+  final String handsTitle;
+  final String handsNone;
+  final String handsLittle;
+  final String handsRegular;
+  final String prioTitle;
+  final String prioUpfront;
+  final String prioUpfrontDesc;
+  final String prioRunning;
+  final String prioRunningDesc;
+  final String prioReliable;
+  final String prioReliableDesc;
+  final String prioEnv;
+  final String prioEnvDesc;
+  final String prioBalanced;
+  final String prioBalancedDesc;
+  final String followTitle;
+  final String animalsQ;
+  final String animFew;
+  final String animHerd;
+  final String animWaste;
+  final String animNone;
+  final String riverFound;
+  final String riverThrough;
+  final String riverOthers;
+  final String riverCannot;
+  final String riverNotSure;
+  final String brookQ;
+  final String windFound;
+  final String windOpen;
+  final String windSome;
+  final String windLots;
+  final String checkingMap;
+  final String nothingMore;
+  final String exclTitle;
+  final String exclNo;
+  final String exclYes;
+  final String exclTapHint;
+  final String exclSketchNote;
+  final String exclSketchNoteHouse;
+  final String roofShapeLabel;
+  final String roofGable;
+  final String roofHip;
+  final String zoneRoofWhole;
+  final String zoneSideLeft;
+  final String zoneSideRight;
+  final String rotateLeft;
+  final String rotateRight;
+  final String roofHidden;
+  final String markModeLabel;
+  final String markKeepFree;
+  final String markMissing;
+  final String keepFreeList;
+  final String missingList;
+  final String newKindQ;
+  final String newBuilding;
+  final String newPool;
+  final String newTrees;
+  final String newOther;
+  final String newWhereQ;
+  final String newTitle;
+  final String newNo;
+  final String newYes;
+  final String newWhereHint;
+  final String newUseQ;
+  final String zoneRoofFront;
+  final String zoneRoofBack;
+  final String zoneRoofLeft;
+  final String zoneRoofRight;
+  final String zoneFrontYard;
+  final String zoneBackYard;
+  final String markOnMap;
+  final String whyLabel;
+  final String whyUnsafe;
+  final String whyReach;
+  final String whyLooks;
+  final String whyRules;
+  final String whyPlans;
+  final String dirFront;
+  final String fuelsHint;
 
   /// "Hi, Ada" in the current language.
   String greet(String name) => greeting.replaceAll('{name}', name);
 
+  /// "Step 3 of 14"
+  String stepOfTotalFor(int n, int total) => stepOfTotal.replaceAll('{n}', '$n').replaceAll('{total}', '$total');
+
+  /// "about 60 m²"
+  String aboutM2For(int n) => aboutM2.replaceAll('{n}', '$n');
+
+  /// "We found a river about 350 m from your place. …"
+  String riverFoundFor(int metres) => riverFound.replaceAll('{m}', '$metres');
+
+  /// "The wind here is about 4.2 m/s at 20 m height. …"
+  String windFoundFor(String speed) => windFound.replaceAll('{speed}', speed);
+
   /// "Wind is coming soon."
-  String stepOfN(int n) => stepOf.replaceAll('{n}', '$n');
-  String kwhPerYearAboutN(String n) => kwhPerYearAbout.replaceAll('{n}', n);
-  String elecEstimatedFor(int people, String n) =>
-      elecEstimated.replaceAll('{people}', '$people').replaceAll('{n}', n);
   String comingSoonFor(String resource) => comingSoonMessage.replaceAll('{resource}', resource);
 
   /// "Showing Romania from your profile. …"

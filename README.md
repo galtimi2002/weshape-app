@@ -38,15 +38,33 @@ them in the console and run `flutterfire configure`.
   icons only under 340 px). Assessment and Saved assessments are full pages
   (`lib/features/assessment/`) that fade and slide in over the map; the map stays
   alive underneath (`ResourceMap.active` turns its clicks off meanwhile).
-  The assessment (`assessment_flow.dart`, answers in `home_answers.dart`, kept
-  while switching tabs): a start page, then six steps for a house or flat —
-  place (address search, or "Assess this place" on the map card), building,
-  how it is built (or "I don't know": a typical house), heating, electricity
-  (or an estimate for the household), what the place has and what matters most.
-  Every step starts from a typical house, so it can be skipped. The result is
-  next, so "See my result" is shown but cannot be pressed yet; business and
-  community paths come later. Saved assessments shows its empty state. What is
-  not built yet shows "Soon" and cannot be clicked.
+  The assessment (`assessment_flow.dart`, answers in `home_answers.dart`): one
+  question per screen, and which screens appear depends on the answers (the
+  building questions only when heating is chosen, the bill questions only for
+  mains electricity, gas only for piped gas, and so on), so the "Step n of N"
+  count follows them. The order: who it is for (six cards, only "My home" open),
+  where it is, what to power, the building (type, area, floors, people; when it
+  was built; renovations for older ones; insulation; windows, with "Help me
+  check" tips), how energy comes in today (several answers across "From
+  outside" and "Your own"), power cuts, electricity used and paid in the last
+  three full months (or a monthly average, with a note that months are more
+  accurate; currency from the country, searchable, in `currencies.dart`), gas in
+  m³ or kWh with a check for the wrong unit, other fuels, day/night tariff and
+  what was sent back to the grid, free space and its size, who owns it, upkeep,
+  what matters most, follow-ups read from our maps (river within 500 m, wind at
+  20 m from the 10 m and 50 m values, skipped below 3 m/s; animals and a brook
+  only with a garden or land) and places to keep free (the roof shape, then a
+  3D house on its plot that turns in quarter steps: roof sides and yard parts are
+  tapped to keep them free, or, for the yard parts, marked as not there; left
+  and right as seen from the street), and last, after a short "Just one more question",
+  whether there is something new the map does not show yet: what it is, where
+  (tapped on the same 3D house), and whether it could be used. The questions never name an energy type: the result
+  says what suits the place. Answers are saved on the device
+  (`shared_preferences`, key `assessment.home.v2`), so someone who leaves to find
+  a bill continues where they stopped. The result is next, so "See my result"
+  is shown but cannot be pressed yet. Saved assessments shows its empty state.
+  What is not built yet (the other audiences, photos, drawing on the map, reading
+  a bill) shows "Soon" and cannot be clicked.
 
 ## Home: resource map
 
