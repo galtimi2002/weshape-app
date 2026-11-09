@@ -45,12 +45,10 @@ them in the console and run `flutterfire configure`.
   count follows them. The order: who it is for (six cards, only "My home" open),
   where it is, what to power, the building (type, area, floors, people; when it
   was built; renovations for older ones; insulation; windows, with "Help me
-  check" tips), how energy comes in today (several answers across "From
-  outside" and "Your own"), power cuts, electricity used and paid in the last
+  check" tips), how energy comes in today (several answers), power cuts, electricity used and paid in the last
   three full months (or a monthly average, with a note that months are more
   accurate; currency from the country, searchable, in `currencies.dart`), gas in
-  m³ or kWh with a check for the wrong unit, other fuels, day/night tariff and
-  what was sent back to the grid, free space and its size, who owns it, upkeep,
+  m³ or kWh with a check for the wrong unit, other fuels, free space and its size, who owns it, upkeep,
   what matters most, follow-ups read from our maps (river within 500 m, wind at
   20 m from the 10 m and 50 m values, skipped below 3 m/s; animals and a brook
   only with a garden or land) and places to keep free (the roof shape, then a

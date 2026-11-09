@@ -167,7 +167,6 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
       if (mains) ...['electricity', 'paid'],
       if (a.sources.contains(Source.pipedGas)) 'gas',
       if (a.hasFuels) 'fuels',
-      if (mains) 'tariff',
       'spaces',
       if (a.hasPlaces) 'sizes',
       'ownership',
@@ -213,7 +212,6 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
           'paid' => _PaidStep(answers: a, nav: nav, countryCode: widget.countryCode),
           'gas' => _GasStep(answers: a, nav: nav, countryCode: widget.countryCode),
           'fuels' => _FuelsStep(answers: a, nav: nav, countryCode: widget.countryCode),
-          'tariff' => _TariffStep(answers: a, nav: nav),
           'spaces' => _SpacesStep(answers: a, nav: nav),
           'sizes' => _SizesStep(answers: a, nav: nav),
           'ownership' => _OwnershipStep(answers: a, nav: nav),
@@ -1301,23 +1299,13 @@ class _SourcesStep extends StatelessWidget {
           Source.wood => t.srcWood,
           Source.generator => t.srcGenerator,
           Source.nothing => t.srcNothing,
-          Source.solarPanels => t.srcSolarPanels,
-          Source.solarWater => t.srcSolarWater,
-          Source.heatPump => t.srcHeatPump,
-          Source.battery => t.srcBattery,
-          Source.smallWind => t.srcSmallWind,
-          Source.other => t.srcOther,
         };
     return _StepPage(
       nav: nav,
       title: t.srcTitle,
       canContinue: a.sources.isNotEmpty,
       children: [
-        FieldLabel(t.srcOutside),
-        MultiChips<Source>(values: outsideSources, label: label, selected: a.sources, onToggle: a.toggleSource),
-        _gap,
-        FieldLabel(t.srcOwn),
-        MultiChips<Source>(values: ownSources, label: label, selected: a.sources, onToggle: a.toggleSource),
+        MultiChips<Source>(values: Source.values, label: label, selected: a.sources, onToggle: a.toggleSource),
       ],
     );
   }
@@ -1430,7 +1418,7 @@ class _ElectricityStep extends StatelessWidget {
     final t = context.t;
     final p = context.palette;
     final a = answers;
-    final unit = a.hasSolar ? t.kwhFromGrid : 'kWh';
+    const unit = 'kWh';
     final values = a.useAverage ? [a.electricityAverageKwh] : a.electricityKwh;
     final high = values.any((v) => (v ?? 0) > _highKwhMonth);
     return _StepPage(
@@ -1528,12 +1516,12 @@ class _PaidStep extends StatelessWidget {
             answers: a,
             monthsEditable: false,
             fields: (i) => [
-              NumberField(value: a.paid[i], suffix: currency, width: 170, onChanged: (v) => a.update((x) => x.paid[i] = v)),
+              NumberField(value: a.paid[i], suffix: currency, width: 170, money: true, onChanged: (v) => a.update((x) => x.paid[i] = v)),
             ],
           )
         else ...[
           SubQuestion(t.avgPaidQuestion),
-          NumberField(value: a.paidAverage, suffix: currency, width: 170, onChanged: (v) => a.update((x) => x.paidAverage = v)),
+          NumberField(value: a.paidAverage, suffix: currency, width: 170, money: true, onChanged: (v) => a.update((x) => x.paidAverage = v)),
           const SizedBox(height: 10),
           Text(t.avgNote, style: TextStyle(fontSize: 12.5, color: p.muted)),
         ],
@@ -1584,6 +1572,8 @@ class _GasStepState extends State<_GasStep> {
       nav: widget.nav,
       title: t.gasTitle,
       children: [
+        _CurrencyPicker(answers: a, countryCode: widget.countryCode),
+        _gap,
         FieldLabel(t.gasUnitLabel),
         ChoiceChips<GasUnit>(
           values: GasUnit.values,
@@ -1594,7 +1584,8 @@ class _GasStepState extends State<_GasStep> {
         _gap,
         _MonthRows(
           answers: a,
-          monthsEditable: false,
+          // The months can be changed here too (shared with the electricity questions).
+          monthsEditable: true,
           fields: (i) => [
             NumberField(
               value: a.gasAmount[i],
@@ -1606,6 +1597,7 @@ class _GasStepState extends State<_GasStep> {
             NumberField(
               value: a.gasPaid[i],
               suffix: currency,
+              money: true,
               width: 150,
               hint: t.gasPaid,
               onChanged: (v) => a.update((x) => x.gasPaid[i] = v),
@@ -1636,13 +1628,13 @@ class _FuelsStep extends StatelessWidget {
     final t = context.t;
     final a = answers;
     final currency = a.currency ?? currencyOf(countryCode);
-    Widget row(String question, double? value, String? suffix, ValueChanged<double?> onChanged) => Padding(
+    Widget row(String question, double? value, String? suffix, ValueChanged<double?> onChanged, {bool money = false}) => Padding(
           padding: const EdgeInsets.only(bottom: 22),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SubQuestion(question),
-              NumberField(value: value, suffix: suffix, width: 200, onChanged: onChanged),
+              NumberField(value: value, suffix: suffix, width: 200, money: money, onChanged: onChanged),
             ],
           ),
         );
@@ -1651,6 +1643,10 @@ class _FuelsStep extends StatelessWidget {
       title: t.fuelsTitle,
       hint: t.fuelsHint,
       children: [
+        if (a.sources.contains(Source.district)) ...[
+          _CurrencyPicker(answers: a, countryCode: countryCode),
+          _gap,
+        ],
         if (a.sources.contains(Source.wood)) ...[
           row(t.fuelFirewood, a.firewoodM3, 'm³', (v) => a.update((x) => x.firewoodM3 = v)),
           row(t.fuelPellets, a.pelletsTonnes, 't', (v) => a.update((x) => x.pelletsTonnes = v)),
@@ -1658,43 +1654,7 @@ class _FuelsStep extends StatelessWidget {
         if (a.sources.contains(Source.gasBottles))
           row(t.fuelBottles, a.gasBottlesPerMonth, null, (v) => a.update((x) => x.gasBottlesPerMonth = v)),
         if (a.sources.contains(Source.district))
-          row(t.fuelDistrict, a.districtPerMonth, currency, (v) => a.update((x) => x.districtPerMonth = v)),
-      ],
-    );
-  }
-}
-
-class _TariffStep extends StatelessWidget {
-  const _TariffStep({required this.answers, required this.nav});
-
-  final HomeAnswers answers;
-  final _Nav nav;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final a = answers;
-    return _StepPage(
-      nav: nav,
-      title: t.tariffTitle,
-      canContinue: a.dayNightTariff != null,
-      children: [
-        ChoiceChips<bool>(
-          values: const [true, false],
-          label: (v) => v ? t.yes : t.no,
-          selected: a.dayNightTariff,
-          onSelect: (v) => a.update((x) => x.dayNightTariff = v),
-        ),
-        if (a.hasSolar) ...[
-          const SizedBox(height: 30),
-          SubQuestion(t.exportTitle, helper: t.optional),
-          NumberField(
-            value: a.exportedKwh,
-            suffix: t.kwhIn3Months,
-            width: 240,
-            onChanged: (v) => a.update((x) => x.exportedKwh = v),
-          ),
-        ],
+          row(t.fuelDistrict, a.districtPerMonth, currency, (v) => a.update((x) => x.districtPerMonth = v), money: true),
       ],
     );
   }
@@ -2031,9 +1991,17 @@ class _FollowUpsStep extends StatelessWidget {
     final loading = facts?.loading ?? false;
     final language = Localizations.localeOf(context).languageCode;
     final metres = math.max(10, ((facts?.riverKm ?? 0) * 100).round() * 10);
+    // Every question shown here needs an answer ("None", "No" count), and the map
+    // check has to finish first.
+    final answered = !loading &&
+        (!animals || a.animals != null) &&
+        (!river || a.river != null) &&
+        (!brook || a.brook != null) &&
+        (!(wind && facts?.wind20 != null) || a.wind != null);
     return _StepPage(
       nav: nav,
       title: t.followTitle,
+      canContinue: answered,
       children: [
         if (animals) ...[
           SubQuestion(t.animalsQ),

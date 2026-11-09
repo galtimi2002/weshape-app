@@ -25,10 +25,10 @@ enum FloorInsulation { none, insulated, unknown }
 enum WindowKind { single, doubleOld, doubleNew, triple, mix, unknown }
 
 /// How the home gets energy today (question 5, pick any; [nothing] stands alone).
-enum Source { mains, pipedGas, district, gasBottles, wood, generator, nothing, solarPanels, solarWater, heatPump, battery, smallWind, other }
+/// How the home gets its energy today. Equipment of its own is not asked: the bills are
+/// what renewable energy would replace.
+enum Source { mains, pipedGas, district, gasBottles, wood, generator, nothing }
 
-const outsideSources = [Source.mains, Source.pipedGas, Source.district, Source.gasBottles, Source.wood, Source.generator, Source.nothing];
-const ownSources = [Source.solarPanels, Source.solarWater, Source.heatPump, Source.battery, Source.smallWind, Source.other];
 
 enum PowerCuts { never, hardlyEver, monthly, mostDays }
 
@@ -192,8 +192,6 @@ class HomeAnswers extends ChangeNotifier {
   double? gasBottlesPerMonth;
   double? districtPerMonth;
 
-  bool? dayNightTariff;
-  double? exportedKwh;
 
   Set<Space> spaces = {Space.roof, Space.garden};
   Map<Space, SpaceSize> sizes = {};
@@ -234,7 +232,6 @@ class HomeAnswers extends ChangeNotifier {
   bool get heats => uses.contains(Use.heating) || uses.contains(Use.hotWater);
   bool get oldBuilding => era == BuildEra.before1960 || era == BuildEra.from1960 || era == BuildEra.unknown;
   bool get hasGrid => sources.contains(Source.mains) || sources.contains(Source.generator);
-  bool get hasSolar => sources.contains(Source.solarPanels);
   bool get hasFuels =>
       sources.contains(Source.wood) || sources.contains(Source.gasBottles) || sources.contains(Source.district);
   /// Marks a part as kept free, or (with [isMissing]) as not there; a part is never both.
@@ -387,8 +384,6 @@ class HomeAnswers extends ChangeNotifier {
         'pelletsTonnes': pelletsTonnes,
         'gasBottlesPerMonth': gasBottlesPerMonth,
         'districtPerMonth': districtPerMonth,
-        'dayNightTariff': dayNightTariff,
-        'exportedKwh': exportedKwh,
         'spaces': [for (final s in spaces) s.name],
         'sizes': {for (final e in sizes.entries) e.key.name: e.value.toJson()},
         'facing': facing.name,
@@ -448,8 +443,6 @@ class HomeAnswers extends ChangeNotifier {
     pelletsTonnes = (j['pelletsTonnes'] as num?)?.toDouble();
     gasBottlesPerMonth = (j['gasBottlesPerMonth'] as num?)?.toDouble();
     districtPerMonth = (j['districtPerMonth'] as num?)?.toDouble();
-    dayNightTariff = j['dayNightTariff'] as bool?;
-    exportedKwh = (j['exportedKwh'] as num?)?.toDouble();
     spaces = _enumSet(Space.values, j['spaces']);
     sizes = {
       if (j['sizes'] is Map)

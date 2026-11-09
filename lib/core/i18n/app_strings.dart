@@ -248,8 +248,6 @@ class AppStrings {
     required this.winHelpPanes,
     required this.winHelpDate,
     required this.srcTitle,
-    required this.srcOutside,
-    required this.srcOwn,
     required this.srcMains,
     required this.srcPipedGas,
     required this.srcDistrict,
@@ -257,19 +255,12 @@ class AppStrings {
     required this.srcWood,
     required this.srcGenerator,
     required this.srcNothing,
-    required this.srcSolarPanels,
-    required this.srcSolarWater,
-    required this.srcHeatPump,
-    required this.srcBattery,
-    required this.srcSmallWind,
-    required this.srcOther,
     required this.cutsTitle,
     required this.cutsNever,
     required this.cutsHardly,
     required this.cutsMonthly,
     required this.cutsDaily,
     required this.elecUseTitle,
-    required this.kwhFromGrid,
     required this.monthNames,
     required this.dontKnowExact,
     required this.knowExact,
@@ -294,10 +285,6 @@ class AppStrings {
     required this.fuelPellets,
     required this.fuelBottles,
     required this.fuelDistrict,
-    required this.tariffTitle,
-    required this.exportTitle,
-    required this.optional,
-    required this.kwhIn3Months,
     required this.spacesTitle,
     required this.spacesHint,
     required this.spRoof,
@@ -679,8 +666,6 @@ class AppStrings {
   final String winHelpPanes;
   final String winHelpDate;
   final String srcTitle;
-  final String srcOutside;
-  final String srcOwn;
   final String srcMains;
   final String srcPipedGas;
   final String srcDistrict;
@@ -688,19 +673,12 @@ class AppStrings {
   final String srcWood;
   final String srcGenerator;
   final String srcNothing;
-  final String srcSolarPanels;
-  final String srcSolarWater;
-  final String srcHeatPump;
-  final String srcBattery;
-  final String srcSmallWind;
-  final String srcOther;
   final String cutsTitle;
   final String cutsNever;
   final String cutsHardly;
   final String cutsMonthly;
   final String cutsDaily;
   final String elecUseTitle;
-  final String kwhFromGrid;
   final String monthNames;
   final String dontKnowExact;
   final String knowExact;
@@ -725,10 +703,6 @@ class AppStrings {
   final String fuelPellets;
   final String fuelBottles;
   final String fuelDistrict;
-  final String tariffTitle;
-  final String exportTitle;
-  final String optional;
-  final String kwhIn3Months;
   final String spacesTitle;
   final String spacesHint;
   final String spRoof;

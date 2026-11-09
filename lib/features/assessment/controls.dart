@@ -275,7 +275,24 @@ class MultiChips<T> extends StatelessWidget {
 
 /// A number typed by the person; empty means "not given". Keeps its own text while typing.
 class NumberField extends StatefulWidget {
-  const NumberField({super.key, required this.value, required this.onChanged, this.suffix, this.width = 140, this.hint});
+  const NumberField({
+    super.key,
+    required this.value,
+    required this.onChanged,
+    this.suffix,
+    this.width = 140,
+    this.hint,
+    this.money = false,
+  });
+
+  /// An amount of money: a dot or a comma both start the cents (bani, fillér),
+  /// at most two digits after it.
+  final bool money;
+
+  /// The largest number that can be typed: kWh, m³ and m² of a home fit in five digits,
+  /// so a key held down by mistake cannot become a huge number. Money only has a length
+  /// limit, as currencies differ so much (300 lei is about 1,500,000 dong).
+  double get max => money ? 999999999.99 : 99999.99;
 
   final double? value;
   final ValueChanged<double?> onChanged;
@@ -317,7 +334,11 @@ class _NumberFieldState extends State<NumberField> {
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
           TextInputFormatter.withFunction(
-            (old, value) => RegExp(r'^\d*[.,]?\d*$').hasMatch(value.text) ? value : old,
+            (old, value) {
+              final shape = RegExp(widget.money ? r'^\d*([.,]\d{0,2})?$' : r'^\d*[.,]?\d*$').hasMatch(value.text);
+              final number = double.tryParse(value.text.replaceAll(',', '.')) ?? 0;
+              return shape && number <= widget.max ? value : old;
+            },
           ),
         ],
         style: TextStyle(fontSize: 15, color: p.text),
