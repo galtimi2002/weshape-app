@@ -12,6 +12,7 @@ import '../../../core/i18n/app_localizations.dart';
 import '../../../core/i18n/app_strings.dart';
 import '../../../core/i18n/countries.dart';
 import '../../../core/models/bio.dart';
+import '../../../core/models/building.dart';
 import '../../../core/models/geo.dart';
 import '../../../core/models/hydro.dart';
 import '../../../core/models/solar.dart';
@@ -23,6 +24,7 @@ import '../../assessment/home_answers.dart';
 import 'country_bounds.dart';
 import 'geocoder.dart';
 import 'map_bridge.dart';
+import 'map_peek.dart';
 
 /// The home screen's map: the person's country first, then any address or
 /// any point they click, with the solar, wind, river or geothermal resource there.
@@ -36,6 +38,13 @@ class ResourceMap extends StatefulWidget {
     this.onAssess,
     this.picking = false,
     this.onCancelPick,
+    this.peek,
+    this.peekMark,
+    this.peekShape,
+    this.peekDrawing = false,
+    this.onPeekMark,
+    this.onPeekDrawn,
+    this.onPeekRoads,
   });
 
   /// From the profile; the map opens on this country.
@@ -52,6 +61,29 @@ class ResourceMap extends StatefulWidget {
   /// (it can be clicked again as often as needed) and takes it back with "Use this place".
   final bool picking;
   final VoidCallback? onCancelPick;
+
+  /// The assessment's question about something new at the place shows the map under its
+  /// page: this place, close up, with the building outlines and none of the controls (see
+  /// [MapPeek]). Null otherwise.
+  final AssessmentPlace? peek;
+
+  /// While [peek]: the point marked on it (latitude, longitude), shown with a pin.
+  final (double, double)? peekMark;
+
+  /// While [peek]: an outline being drawn (GeoJSON of its area, line and corners), if any.
+  final String? peekShape;
+
+  /// While [peek]: pressing and dragging draws a rectangle (reported to [onPeekDrawn]).
+  final bool peekDrawing;
+
+  /// While [peek] and [peekDrawing]: the corners [latitude, longitude] of the rectangle drawn.
+  final void Function(List<List<double>> corners)? onPeekDrawn;
+
+  /// While [peek]: the roads around the place (half width kept free, m; line [lat, lon]).
+  final void Function(List<(double, List<List<double>>)> roads)? onPeekRoads;
+
+  /// While [peek]: a double click (or double tap) on the map marks a point.
+  final void Function(double lat, double lon)? onPeekMark;
 
   @override
   State<ResourceMap> createState() => _ResourceMapState();
@@ -119,6 +151,11 @@ const String _solarAttribution =
     'Solar data: <a href="https://joint-research-centre.ec.europa.eu/photovoltaic-geographical-information-system-pvgis_en" '
     'target="_blank" rel="noopener">PVGIS</a>, European Commission Joint Research Centre';
 
+/// The credit for the building outlines (Overture Maps, built on OpenStreetMap and others).
+const String _buildingAttribution =
+    'Buildings: <a href="https://overturemaps.org" target="_blank" rel="noopener">Overture Maps Foundation</a>, '
+    '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors';
+
 class _ResourceMapState extends State<ResourceMap> {
   final MapBridge _map = MapBridge();
   final Geocoder _geocoder = Geocoder();
@@ -170,7 +207,21 @@ class _ResourceMapState extends State<ResourceMap> {
   void initState() {
     super.initState();
     _country = CountryBounds.of(widget.countryCode) ?? CountryBounds.europe;
-    _clicks = _map.clicks.listen((p) => _select(p.lat, p.lon, zoom: p.zoom));
+    _clicks = _map.clicks.listen((p) {
+      if (widget.peek != null) {
+        // The assessment's map: a double click marks, a single one does nothing.
+        if (p.doubleClick) widget.onPeekMark?.call(p.lat, p.lon);
+        return;
+      }
+      _select(p.lat, p.lon, zoom: p.zoom);
+    });
+    MapPeek.place.addListener(_peekMoved);
+    _drawn = _map.drawn.listen((corners) {
+      if (widget.peek != null && widget.peekDrawing) widget.onPeekDrawn?.call(corners);
+    });
+    _roads = _map.roads.listen((roads) {
+      if (widget.peek != null) widget.onPeekRoads?.call(roads);
+    });
     _showOverlay();
     _loadLayers();
     _lookUpCountryIfUnknown();
@@ -183,6 +234,15 @@ class _ResourceMapState extends State<ResourceMap> {
     final stack = _stackKey.currentContext?.findRenderObject();
     if (!mounted || stack is! RenderBox || !stack.hasSize) return;
     final rects = <Rect>[];
+    if (widget.peek != null) {
+      // The assessment's page lies over the map: its panels block it.
+      final rects = MapPeek.blockers.value;
+      if (!_sameRects(rects, _blockers)) {
+        _blockers = rects;
+        _map.setBlockers(rects);
+      }
+      return;
+    }
     for (final key in [_searchKey, _cardKey, _zoomKey, _dockKey, _pickKey]) {
       final box = key.currentContext?.findRenderObject();
       if (box is RenderBox && box.hasSize && box.attached) {
@@ -224,6 +284,9 @@ class _ResourceMapState extends State<ResourceMap> {
   @override
   void dispose() {
     _clicks?.cancel();
+    MapPeek.place.removeListener(_peekMoved);
+    _drawn?.cancel();
+    _roads?.cancel();
     _toastTimer?.cancel();
     _blockerTimer?.cancel();
     _map.dispose();
@@ -245,12 +308,101 @@ class _ResourceMapState extends State<ResourceMap> {
   @override
   void didUpdateWidget(ResourceMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.active != widget.active) _syncInteractive();
+    if (oldWidget.active != widget.active || (oldWidget.peek == null) != (widget.peek == null)) _syncInteractive();
+    if (widget.peek != null && widget.peekMark != oldWidget.peekMark) _showPeekMark();
+    if (widget.peek != null && widget.peekShape != oldWidget.peekShape) _showPeekShape();
+    if (widget.peek != null && widget.peekDrawing != oldWidget.peekDrawing) _map.setDrawMode(widget.peekDrawing);
+    final peek = widget.peek, old = oldWidget.peek;
+    if (peek?.lat != old?.lat || peek?.lon != old?.lon) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (peek == null) {
+          _endPeek();
+        } else {
+          _startPeek(peek);
+        }
+      });
+    }
+  }
+
+  // ------------------------------------------------------------------ peek (the assessment's map)
+
+  StreamSubscription<List<List<double>>>? _drawn;
+  StreamSubscription<List<(double, List<List<double>>)>>? _roads;
+
+  /// The map's size when it last flew to the peek place; the place is placed by it.
+  Size? _peekSize;
+  int _peekRequest = 0;
+
+  /// The page moved the strip of map between its question and its buttons: the place
+  /// follows at once (no flight, or the tap and the map would disagree for a moment).
+  void _peekMoved() {
+    final peek = widget.peek, size = _stackSize;
+    // Once something is marked, the person has the map where they want it.
+    if (peek == null || size == null || _peekSize == null || widget.peekMark != null) return;
+    _map.jumpTo(peek.lat, peek.lon, zoom: MapPeek.zoom, offset: MapPeek.offsetFor(size));
+  }
+
+  void _startPeek(AssessmentPlace place) {
+    final size = _stackSize;
+    if (size == null) return;
+    final request = ++_peekRequest;
+    _peekSize = size;
+    _map.setPeek(true);
+    _map.setOverlayVisible(false);
+    _map.setAttribution(_buildingAttribution);
+    _map.setBuildings(BuildingsAt.pointGeoJson(place.lat, place.lon), context.palette.primary);
+    _showPeekMark();
+    _showPeekShape();
+    _map.setDrawMode(widget.peekDrawing);
+    _map.flyTo(place.lat, place.lon, zoom: MapPeek.zoom, offset: MapPeek.offsetFor(size));
+    // The roads, so nothing drawn reaches onto them (read once the tiles are there).
+    _map.requestRoads(place.lat, place.lon, 250);
+    _api.buildingsAt(place.lat, place.lon).then((found) {
+      if (!mounted || request != _peekRequest || widget.peek == null) return;
+      _map.setBuildings(found.toGeoJson(pointLat: place.lat, pointLon: place.lon), context.palette.primary);
+      if (found.attribution.isNotEmpty) _map.setAttribution(found.attribution);
+    }, onError: (Object _) {
+      // No outlines: the base map still shows the buildings it has.
+    });
+  }
+
+  /// The outline being drawn on the assessment's map, if any.
+  void _showPeekShape() => _map.setDrawing(widget.peekShape ?? '', context.palette.green);
+
+  /// The pin of what was marked on the assessment's map, if anything.
+  void _showPeekMark() {
+    final mark = widget.peekMark;
+    if (mark == null) {
+      _map.clearMarker();
+    } else {
+      _map.setMarker(mark.$1, mark.$2, context.palette.green);
+    }
+  }
+
+  void _endPeek() {
+    _peekRequest++;
+    _peekSize = null;
+    _map.setPeek(false);
+    _map.setDrawMode(false);
+    _map.clearMarker();
+    _map.setDrawing('', context.palette.green);
+    _map.setBuildings('', context.palette.primary);
+    _map.setOverlayVisible(true);
+    _overlayUrl = null;
+    _showOverlay();
+    _recolorMarker();
+  }
+
+  Size? get _stackSize {
+    final box = _stackKey.currentContext?.findRenderObject();
+    return box is RenderBox && box.hasSize ? box.size : null;
   }
 
   /// A menu, a dialog or a page above the map: clicks on it must not also land on the map.
   void _syncInteractive() {
-    final interactive = (ModalRoute.of(context)?.isCurrent ?? true) && widget.active;
+    // The assessment's question about something new uses the map too.
+    final interactive = (ModalRoute.of(context)?.isCurrent ?? true) && (widget.active || widget.peek != null);
     if (interactive != _interactive) {
       _interactive = interactive;
       _map.setInteractive(interactive);
@@ -521,6 +673,7 @@ class _ResourceMapState extends State<ResourceMap> {
   }
 
   void _recolorMarker() {
+    if (widget.peek != null) return;
     final s = _selection;
     if (s != null) _map.setMarker(s.lat, s.lon, _accent);
   }
@@ -575,6 +728,16 @@ class _ResourceMapState extends State<ResourceMap> {
       );
       final countryName = widget.countryCode == null ? null : Countries.nameOf(widget.countryCode!, language);
       final hint = _selection != null || countryName == null ? t.mapClickHint : t.mapCountryHintFor(countryName);
+
+      final peek = widget.peek;
+      if (peek != null) {
+        // Only the map: the page above shows the question. A new size moves the place.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || widget.peek != peek) return;
+          if (_peekSize != constraints.biggest) _startPeek(peek);
+        });
+        return Stack(key: _stackKey, fit: StackFit.expand, children: [Positioned.fill(child: _mapView!)]);
+      }
 
       WidgetsBinding.instance.addPostFrameCallback((_) => _syncBlockers());
       return Stack(

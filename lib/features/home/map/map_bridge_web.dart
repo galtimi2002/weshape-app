@@ -27,8 +27,17 @@ extension type _WeShapeMapJs._(JSObject _) implements JSObject {
   external void playBreeze();
   external void fitBounds(JSArray<JSNumber> bounds, double top, double right, double bottom, double left, bool animate);
   external void flyTo(double lon, double lat, double zoom, double offsetX, double offsetY);
+  external void setPeek(bool on);
+  external void jumpTo(double lon, double lat, double zoom, double offsetX, double offsetY);
   external void setMarker(double lon, double lat, String color);
   external void clearMarker();
+  external void setBuildings(String geojson, String color);
+  external void setOverlayVisible(bool visible);
+  external void setDrawing(String geojson, String color);
+  external void setDrawMode(bool on);
+  external void setOnDraw(JSFunction fn);
+  external void setOnRoads(JSFunction fn);
+  external void requestRoads(double lon, double lat, double metres);
   external void zoomIn();
   external void zoomOut();
   external void setInteractive(bool on);
@@ -38,7 +47,7 @@ extension type _WeShapeMapJs._(JSObject _) implements JSObject {
 }
 
 /// Raise together with VERSION in assets/map/weshape_map.js whenever that file changes.
-const _bridgeVersion = 14;
+const _bridgeVersion = 21;
 
 Future<void>? _scriptLoading;
 
@@ -67,6 +76,8 @@ JSArray<JSNumber> _numbers(List<double> values) => [for (final v in values) v.to
 
 class _WebMapBridge implements MapBridge {
   final _clicks = StreamController<MapPoint>.broadcast();
+  final _drawn = StreamController<List<List<double>>>.broadcast();
+  final _roads = StreamController<List<(double, List<List<double>>)>>.broadcast();
   final _error = ValueNotifier<String?>(null);
   late final Future<void> _ready = _loadScript();
   bool _disposed = false;
@@ -103,11 +114,31 @@ class _WebMapBridge implements MapBridge {
           'padding': [padding.top, padding.right, padding.bottom, padding.left],
           'attribution': attribution,
         }.jsify();
+        _run((map) => map.setOnDraw(((JSString json) {
+              if (_drawn.isClosed) return;
+              final corners = jsonDecode(json.toDart) as List;
+              _drawn.add([
+                for (final c in corners) [((c as List)[0] as num).toDouble(), (c[1] as num).toDouble()],
+              ]);
+            }).toJS));
+        _run((map) => map.setOnRoads(((JSString json) {
+              if (_roads.isClosed) return;
+              _roads.add([
+                for (final r in jsonDecode(json.toDart) as List)
+                  (
+                    ((r as Map)['w'] as num).toDouble(),
+                    [for (final c in r['c'] as List) [((c as List)[0] as num).toDouble(), (c[1] as num).toDouble()]],
+                  ),
+              ]);
+            }).toJS));
         _run((map) => map.mount(
               element,
               options,
-              ((JSNumber lon, JSNumber lat, JSNumber? zoom) {
-                if (!_clicks.isClosed) _clicks.add(MapPoint(lat.toDartDouble, lon.toDartDouble, zoom: zoom?.toDartDouble));
+              ((JSNumber lon, JSNumber lat, JSNumber? zoom, JSBoolean? doubleClick) {
+                if (!_clicks.isClosed) {
+                  _clicks.add(MapPoint(lat.toDartDouble, lon.toDartDouble,
+                      zoom: zoom?.toDartDouble, doubleClick: doubleClick?.toDart ?? false));
+                }
               }).toJS,
               ((JSString message) {
                 if (!_disposed) _error.value ??= message.toDart;
@@ -156,10 +187,38 @@ class _WebMapBridge implements MapBridge {
       _run((m) => m.flyTo(lon, lat, zoom, offset.dx, offset.dy));
 
   @override
+  void setPeek(bool on) => _run((m) => m.setPeek(on));
+
+  @override
+  void jumpTo(double lat, double lon, {double zoom = 11, Offset offset = Offset.zero}) =>
+      _run((m) => m.jumpTo(lon, lat, zoom, offset.dx, offset.dy));
+
+  @override
   void setMarker(double lat, double lon, Color color) => _run((m) => m.setMarker(lon, lat, cssColor(color)));
 
   @override
   void clearMarker() => _run((m) => m.clearMarker());
+
+  @override
+  void setBuildings(String geoJson, Color color) => _run((m) => m.setBuildings(geoJson, cssColor(color)));
+
+  @override
+  void setDrawMode(bool on) => _run((m) => m.setDrawMode(on));
+
+  @override
+  Stream<List<List<double>>> get drawn => _drawn.stream;
+
+  @override
+  void requestRoads(double lat, double lon, double metres) => _run((m) => m.requestRoads(lon, lat, metres));
+
+  @override
+  Stream<List<(double, List<List<double>>)>> get roads => _roads.stream;
+
+  @override
+  void setDrawing(String geoJson, Color color) => _run((m) => m.setDrawing(geoJson, cssColor(color)));
+
+  @override
+  void setOverlayVisible(bool visible) => _run((m) => m.setOverlayVisible(visible));
 
   @override
   void zoomIn() => _run((m) => m.zoomIn());
@@ -182,6 +241,8 @@ class _WebMapBridge implements MapBridge {
     _disposed = true;
     _weShapeMap?.destroy();
     _clicks.close();
+    _drawn.close();
+    _roads.close();
     _error.dispose();
   }
 }

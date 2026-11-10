@@ -385,7 +385,25 @@ class AppStrings {
     required this.newNo,
     required this.newYes,
     required this.newWhereHint,
+    required this.newMapNote,
+    required this.newMarked,
+    required this.newSizeQ,
+    required this.newSizeSmall,
+    required this.newSizeMedium,
+    required this.newSizeLarge,
+    required this.newTreeQ,
+    required this.treeLow,
+    required this.treeMedium,
+    required this.treeTall,
+    required this.newDraw,
+    required this.newDrawHint,
+    required this.newDrawDone,
+    required this.newRotate,
+    required this.newRoadPushed,
+    required this.newDrawArea,
     required this.newUseQ,
+    required this.newUseNo,
+    required this.newUseUnsure,
     required this.zoneRoofFront,
     required this.zoneRoofBack,
     required this.zoneRoofLeft,
@@ -803,7 +821,25 @@ class AppStrings {
   final String newNo;
   final String newYes;
   final String newWhereHint;
+  final String newMapNote;
+  final String newMarked;
+  final String newSizeQ;
+  final String newSizeSmall;
+  final String newSizeMedium;
+  final String newSizeLarge;
+  final String newTreeQ;
+  final String treeLow;
+  final String treeMedium;
+  final String treeTall;
+  final String newDraw;
+  final String newDrawHint;
+  final String newDrawDone;
+  final String newRotate;
+  final String newRoadPushed;
+  final String newDrawArea;
   final String newUseQ;
+  final String newUseNo;
+  final String newUseUnsure;
   final String zoneRoofFront;
   final String zoneRoofBack;
   final String zoneRoofLeft;
@@ -828,6 +864,7 @@ class AppStrings {
 
   /// "about 60 m²"
   String aboutM2For(int n) => aboutM2.replaceAll('{n}', '$n');
+  String newDrawAreaFor(int n) => newDrawArea.replaceAll('{n}', '$n');
 
   /// "We found a river about 350 m from your place. …"
   String riverFoundFor(int metres) => riverFound.replaceAll('{m}', '$metres');

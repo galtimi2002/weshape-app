@@ -6,13 +6,16 @@ import 'map_bridge_stub.dart' if (dart.library.js_interop) 'map_bridge_web.dart'
 /// A point on the map.
 @immutable
 class MapPoint {
-  const MapPoint(this.lat, this.lon, {this.zoom});
+  const MapPoint(this.lat, this.lon, {this.zoom, this.doubleClick = false});
 
   final double lat;
   final double lon;
 
   /// The map's zoom when it was clicked.
   final double? zoom;
+
+  /// The second click of a double click (or tap).
+  final bool doubleClick;
 }
 
 /// The interactive map, drawn by MapLibre GL JS in the browser.
@@ -63,8 +66,39 @@ abstract class MapBridge {
   /// [offset] shifts the target away from the centre, in pixels, to leave room for the card.
   void flyTo(double lat, double lon, {double zoom = 11, Offset offset = Offset.zero});
 
+  /// On: a double click is reported as a [MapPoint.doubleClick] instead of zooming in.
+  void setPeek(bool on);
+
+  /// Like [flyTo], without the flight.
+  void jumpTo(double lat, double lon, {double zoom = 11, Offset offset = Offset.zero});
+
   void setMarker(double lat, double lon, Color color);
   void clearMarker();
+
+  /// Building outlines on top of the map: [geoJson] is a FeatureCollection whose picked
+  /// building has `main: 1`, drawn in [color]; the others grey. An empty string clears them.
+  void setBuildings(String geoJson, Color color);
+
+  /// On: pressing and dragging on the map draws a rectangle (reported on [drawn]) instead
+  /// of moving the map.
+  void setDrawMode(bool on);
+
+  /// The corners [latitude, longitude] of each rectangle drawn in draw mode.
+  Stream<List<List<double>>> get drawn;
+
+  /// Asks for the roads within [metres] of a place; they arrive on [roads] once the map
+  /// has its tiles there.
+  void requestRoads(double lat, double lon, double metres);
+
+  /// Roads near a place: each with the half width kept free (m) and its line [lat, lon].
+  Stream<List<(double, List<List<double>>)>> get roads;
+
+  /// Something the person draws on the map (the outline of a new thing): a FeatureCollection
+  /// of its area, line and corners, in [color]. An empty string clears it.
+  void setDrawing(String geoJson, Color color);
+
+  /// Hides the resource layer (solar, wind ...) or shows it again.
+  void setOverlayVisible(bool visible);
   void zoomIn();
   void zoomOut();
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:http/http.dart' as http;
 
@@ -71,9 +72,60 @@ class Geocoder {
     final features = await _get('/reverse', {
       'lat': lat.toStringAsFixed(5),
       'lon': lon.toStringAsFixed(5),
+      'limit': '5',
       if (_languages.contains(language)) 'lang': language,
     });
-    return features.isEmpty ? null : _place(features.first);
+    // Photon answers with the nearest named things, which can be a church far off, or a
+    // stream or road whose box covers half the valley. A name is used only when the point
+    // is on that thing (or right by it); otherwise the place is named after the nearest
+    // village or town.
+    for (final feature in features) {
+      final props = feature['properties'] as Map<String, dynamic>? ?? const {};
+      if (const {'waterway', 'natural', 'landuse', 'boundary', 'place'}.contains(props['osm_key'])) continue;
+      if (_isAt(feature, lat, lon)) return _place(feature);
+    }
+    final near = await _settlements(lat, lon, language);
+    if (near.isEmpty) return null;
+    final place = _place(near.first);
+    if (place == null) return null;
+    return Place(title: place.title, detail: place.detail, lat: lat, lon: lon, countryCode: place.countryCode);
+  }
+
+  /// The villages, towns and cities nearest to a point (Photon's layers can repeat in
+  /// a query, which a map of parameters cannot hold).
+  Future<List<Map<String, dynamic>>> _settlements(double lat, double lon, String language) async {
+    final query = [
+      'lat=${lat.toStringAsFixed(5)}',
+      'lon=${lon.toStringAsFixed(5)}',
+      'radius=15',
+      'limit=1',
+      'layer=city',
+      'layer=district',
+      'layer=locality',
+      if (_languages.contains(language)) 'lang=$language',
+    ].join('&');
+    final response = await _http.get(Uri.parse('$_base/reverse?$query')).timeout(const Duration(seconds: 8));
+    if (response.statusCode != 200) throw http.ClientException('geocoder ${response.statusCode}');
+    final body = jsonDecode(utf8.decode(response.bodyBytes)) as Map<String, dynamic>;
+    return [for (final f in body['features'] as List? ?? const []) f as Map<String, dynamic>];
+  }
+
+  /// Within about 40 m of the feature: inside its box when that is small (a building, a
+  /// short street), otherwise near its point.
+  static bool _isAt(Map<String, dynamic> feature, double lat, double lon) {
+    const metres = 40.0;
+    const dLat = metres / 111195;
+    final dLon = dLat / math.max(0.05, math.cos(lat * math.pi / 180));
+    final extent = (feature['properties'] as Map<String, dynamic>?)?['extent'];
+    if (extent is List && extent.length == 4) {
+      // Photon gives [minLon, maxLat, maxLon, minLat].
+      final e = [for (final v in extent) (v as num).toDouble()];
+      final small = (e[1] - e[3]) < 8 * dLat && (e[2] - e[0]) < 8 * dLon;
+      if (small) return lon >= e[0] - dLon && lon <= e[2] + dLon && lat >= e[3] - dLat && lat <= e[1] + dLat;
+    }
+    final coords = (feature['geometry'] as Map<String, dynamic>?)?['coordinates'];
+    if (coords is! List || coords.length < 2) return false;
+    return ((coords[1] as num).toDouble() - lat).abs() <= dLat && ((coords[0] as num).toDouble() - lon).abs() <= dLon;
   }
 
   /// A country's extent as west, south, east, north, looked up by name.
@@ -108,17 +160,27 @@ class Geocoder {
     final street = s('street');
     final number = s('housenumber');
     final name = s('name');
-    final city = s('city') ?? s('town') ?? s('village') ?? s('district');
+    // A village that belongs to a commune comes as the district, the commune as the city
+    // (Sfăraș in Almașu): the village is where the place is, so it goes first.
+    final village = s('district');
+    final city = s('city') ?? s('town') ?? s('village');
     final region = s('county') ?? s('state');
     final country = s('country');
 
-    final title = name ?? (street != null ? [street, if (number != null) number].join(' ') : null) ?? city ?? region;
+    final title =
+        name ?? (street != null ? [street, if (number != null) number].join(' ') : null) ?? village ?? city ?? region;
     if (title == null) return null;
     final detail = <String>[];
-    for (final part in [if (name != null && street != null) [street, if (number != null) number].join(' '), city, region, country]) {
+    for (final part in [
+      if (name != null && street != null) [street, if (number != null) number].join(' '),
+      village,
+      city,
+      region,
+      country,
+    ]) {
       if (part != null && part != title && !detail.contains(part)) detail.add(part);
     }
-    // Keep it short: the nearest two levels and the country.
+    // Keep it short: the nearest levels and the country.
     final short = detail.length > 3 ? [detail[0], detail[1], detail.last] : detail;
     return Place(
       title: title,

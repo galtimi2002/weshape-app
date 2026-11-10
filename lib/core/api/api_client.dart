@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../auth/auth_service.dart';
 import '../config/app_config.dart';
 import '../models/bio.dart';
+import '../models/building.dart';
 import '../models/geo.dart';
 import '../models/hydro.dart';
 import '../models/solar.dart';
@@ -69,6 +70,11 @@ class ApiClient {
           '/api/v1/hydro/point?lat=${lat.toStringAsFixed(5)}&lon=${lon.toStringAsFixed(5)}'
               '${zoom == null ? '' : '&zoom=${zoom.toStringAsFixed(1)}'}')
       as Map<String, dynamic>);
+
+  /// The building at a place (or the nearest within 20 m) and the buildings within 50 m of it.
+  Future<BuildingsAt> buildingsAt(double lat, double lon) async => BuildingsAt.fromJson(
+      await _send('GET', '/api/v1/buildings/at?lat=${lat.toStringAsFixed(6)}&lon=${lon.toStringAsFixed(6)}')
+          as Map<String, dynamic>);
 
   /// Ground temperature, heat flow and the estimated temperature at depth for one place.
   Future<GeoPoint> geoPoint(double lat, double lon) async => GeoPoint.fromJson(

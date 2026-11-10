@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +15,7 @@ import '../../core/theme/weshape_theme.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/stage_background.dart';
 import '../home/map/geocoder.dart';
+import '../home/map/map_peek.dart';
 import 'controls.dart';
 import 'currencies.dart';
 import 'home_answers.dart';
@@ -174,8 +176,9 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
       'priority',
       if (_askFollowUps) 'followUps',
       'exclude',
-      // Something new on the plot: only asked when there is a yard or land.
-      if (a.hasYard) 'newThing',
+      // Something new at the place that the map does not show yet: asked of everyone,
+      // over the map of the place.
+      'newThing',
     ];
   }
 
@@ -347,7 +350,6 @@ class _StepPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.t;
     final p = context.palette;
     final columns = MediaQuery.sizeOf(context).width >= 1000 ? wide : null;
     return PageFrame(
@@ -373,6 +375,27 @@ class _StepPage extends StatelessWidget {
             ],
           ),
         const SizedBox(height: 28),
+        _StepButtons(nav: nav, canContinue: canContinue),
+      ],
+    );
+  }
+}
+
+/// Continue (or "See the result" on the last screen), then Back, Back to the first question
+/// and "I made a mistake".
+class _StepButtons extends StatelessWidget {
+  const _StepButtons({required this.nav, required this.canContinue});
+
+  final _Nav nav;
+  final bool canContinue;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final p = context.palette;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         Center(
           child: SizedBox(
             width: nav.last ? 230 : 200,
@@ -2235,84 +2258,410 @@ class _ExcludeStepState extends State<_ExcludeStep> {
 
 // ---------------------------------------------------------------- 14: something new
 
-/// Something new at the place that the map does not show yet (a garage, a pool): what it is,
-/// where, and whether it could be used. Its outline is drawn on the map in a later version.
-class _NewThingStep extends StatelessWidget {
+/// Something new at the place that the map does not show yet (a garage, a pool). The map of
+/// the place shows through the middle of the page (see MapPeek), between the question at the
+/// top and the buttons at the bottom: with "Yes", a tap on it marks where the new thing is,
+/// and the questions about it follow in the bottom part.
+class _NewThingStep extends StatefulWidget {
   const _NewThingStep({required this.answers, required this.nav});
 
   final HomeAnswers answers;
   final _Nav nav;
 
   @override
+  State<_NewThingStep> createState() => _NewThingStepState();
+}
+
+class _NewThingStepState extends State<_NewThingStep> {
+  /// A mark further than this from the place belongs to an earlier place: asked again.
+  static const _markRangeM = 600.0;
+  static const _fade = 36.0;
+
+  /// From this width the question sits on the left and the map on the right.
+  static const _sideBySide = 1000.0;
+
+  final _first = GlobalKey();
+  final _second = GlobalKey();
+
+  /// "The road cannot be part of the area": shown for the change that moved the outline off
+  /// a road, until the next change or for 4 seconds.
+  int _noticeFor = 0;
+  bool _noticeTimedOut = false;
+  Timer? _noticeTimer;
+
+  /// Puts the place in the middle of the map left free by the panels, and tells the map
+  /// where the panels are (their clicks are the page's).
+  void _measure() {
+    if (!mounted) return;
+    final page = context.findRenderObject();
+    if (page is! RenderBox || !page.hasSize || page.size.isEmpty) return;
+    final boxes = [
+      for (final key in [_first, _second])
+        if (key.currentContext?.findRenderObject() case final RenderBox box when box.hasSize) box,
+    ];
+    if (boxes.isEmpty) return;
+    final rects = [for (final box in boxes) box.localToGlobal(Offset.zero, ancestor: page) & box.size];
+    final size = page.size;
+    final Rect free;
+    if (size.width >= _sideBySide) {
+      free = Rect.fromLTRB(rects.first.right + _fade, 0, size.width, size.height);
+    } else {
+      final top = rects.first.bottom + _fade;
+      final bottom = rects.length > 1 ? rects[1].top - _fade : size.height;
+      free = Rect.fromLTRB(0, top, size.width, math.max(top + 1, bottom));
+    }
+    final share = Offset(
+      (free.center.dx / size.width).clamp(0.2, 0.85),
+      (free.center.dy / size.height).clamp(0.25, 0.85),
+    );
+    if ((share - MapPeek.place.value).distance * size.shortestSide > 2) MapPeek.place.value = share;
+    if (!listEquals(MapPeek.blockers.value, rects)) MapPeek.blockers.value = rects;
+  }
+
+  @override
+  void dispose() {
+    _noticeTimer?.cancel();
+    MapPeek.blockers.value = const [];
+    super.dispose();
+  }
+
+  /// Whether the notice about the road shows now (starts its 4 seconds on a new push).
+  bool _roadNotice(HomeAnswers a) {
+    if (a.roadPushAt == 0) return false;
+    if (a.roadPushAt != _noticeFor) {
+      _noticeFor = a.roadPushAt;
+      _noticeTimedOut = false;
+      _noticeTimer?.cancel();
+      _noticeTimer = Timer(const Duration(seconds: 4), () {
+        if (mounted) setState(() => _noticeTimedOut = true);
+      });
+    }
+    return !_noticeTimedOut && a.changes == a.roadPushAt;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.t;
     final p = context.palette;
-    final a = answers;
+    final a = widget.answers;
+    final nav = widget.nav;
+    final place = a.place;
     final yes = a.newThing ?? false;
-    void place(Zone z) {
-      if (groundZones.contains(z)) a.update((x) => x.newWhere = z);
-    }
+    final phone = MediaQuery.sizeOf(context).width < 700;
 
-    final choice = _Options<bool>(
-      values: const [false, true],
-      title: (v) => v ? t.newYes : t.newNo,
-      selected: a.newThing,
-      onSelect: (v) => a.update((x) => x.newThing = v),
-    );
-    final what = [
-      FieldLabel(t.newKindQ),
-      ChoiceChips<NewThingKind>(
-        values: NewThingKind.values,
-        label: (k) => switch (k) {
-          NewThingKind.building => t.newBuilding,
-          NewThingKind.pool => t.newPool,
-          NewThingKind.trees => t.newTrees,
-          NewThingKind.other => t.newOther,
-        },
-        selected: a.newKind,
-        onSelect: (k) => a.update((x) => x.newKind = k),
-      ),
-    ];
-    final where = [
-      FieldLabel(t.newWhereQ),
-      Text(t.newWhereHint, style: TextStyle(fontSize: 13.5, color: p.muted)),
-      const SizedBox(height: 8),
-      _House3D(
-        shape: a.roofShape,
-        selected: {if (a.newWhere case final Zone z) z},
-        missing: a.missing,
-        onToggle: place,
-        highlight: p.primary,
-      ),
-      const SizedBox(height: 8),
-      ChoiceChips<Zone>(
-        values: groundZones,
-        label: (z) => _zoneLabel(t, z),
-        selected: a.newWhere,
-        onSelect: place,
-      ),
-      const SizedBox(height: 10),
-      _SoonAction(icon: Icons.draw_outlined, label: t.drawOnMap),
-    ];
-    final use = [
-      SubQuestion(t.newUseQ),
-      ChoiceChips<bool>(
-        values: const [true, false],
-        label: (v) => v ? t.yes : t.no,
-        selected: a.newUsable,
-        onSelect: (v) => a.update((x) => x.newUsable = v),
-      ),
-    ];
-    return _StepPage(
-      nav: nav,
-      title: t.newTitle,
-      canContinue: a.newThing == false || (yes && a.newKind != null && a.newWhere != null && a.newUsable != null),
-      wide: yes ? (where, [choice, _gap, ...what, _gap, ...use]) : null,
-      children: [
-        choice,
-        if (yes) ...[_gap, ...what, _gap, ...where, _gap, ...use],
+    final markLat = a.newLat, markLon = a.newLon;
+    final marked = place != null &&
+        markLat != null &&
+        markLon != null &&
+        _metres(place.lat, place.lon, markLat, markLon) <= _markRangeM;
+
+    final question = <Widget>[
+      _Progress(nav: nav),
+      SizedBox(height: phone ? 12 : 18),
+      PageTitle(t.newTitle),
+      if (place != null) ...[
+        const SizedBox(height: 6),
+        Text(t.newMapNote, style: TextStyle(fontSize: 14, color: p.muted)),
       ],
+      SizedBox(height: phone ? 12 : 18),
+      _Options<bool>(
+        values: const [false, true],
+        title: (v) => v ? t.newYes : t.newNo,
+        selected: a.newThing,
+        onSelect: (v) => a.update((x) => x.newThing = v),
+      ),
+      if (yes) ...[
+        const SizedBox(height: 12),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Icon(marked ? Icons.check_circle_rounded : Icons.touch_app_outlined, size: 18, color: p.primary),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(a.drawingNew ? t.newDrawHint : (marked ? t.newMarked : t.newWhereHint),
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: p.text)),
+            ),
+          ],
+        ),
+      ],
+      if (yes && marked) ...[
+        const SizedBox(height: 18),
+        FieldLabel(t.newKindQ),
+        ChoiceChips<NewThingKind>(
+          values: NewThingKind.values,
+          label: (k) => switch (k) {
+            NewThingKind.building => t.newBuilding,
+            NewThingKind.pool => t.newPool,
+            NewThingKind.trees => t.newTrees,
+            NewThingKind.other => t.newOther,
+          },
+          selected: a.newKind,
+          onSelect: (k) => a.update((x) {
+            x.newKind = k;
+            x.squareNew();
+          }),
+        ),
+        if (a.newKind != null) ...[
+          const SizedBox(height: 14),
+          ..._newSize(context, a),
+        ],
+        if (a.asksNewUse) ...[
+          const SizedBox(height: 14),
+          SubQuestion(t.newUseQ),
+          ChoiceChips<NewUse>(
+            values: NewUse.values,
+            label: (v) => switch (v) {
+              NewUse.yes => t.yes,
+              NewUse.no => t.newUseNo,
+              NewUse.unsure => t.newUseUnsure,
+            },
+            selected: a.newUsable,
+            onSelect: (v) => a.update((x) => x.newUsable = v),
+          ),
+        ],
+      ],
+    ];
+    final buttons = _StepButtons(
+      nav: nav,
+      canContinue: a.newThing == false ||
+          (yes &&
+              marked &&
+              !a.drawingNew &&
+              a.newKind != null &&
+              (!a.asksNewUse || a.newUsable != null) &&
+              (a.newKind == NewThingKind.trees ? a.newTreeHeight != null : a.newSize != null || (a.newAreaM2 ?? 0) > 0)),
     );
+
+    Widget panel(Key key, List<Widget> children, EdgeInsets padding, {double maxWidth = 680}) => DecoratedBox(
+          key: key,
+          decoration: BoxDecoration(gradient: p.stageGradient),
+          child: SingleChildScrollView(
+            child: Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: maxWidth),
+                child: Padding(
+                  padding: padding,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
+                ),
+              ),
+            ),
+          ),
+        );
+    Widget fade(Alignment from, {double? width, double? height}) => IgnorePointer(
+          child: Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: from,
+                end: -from,
+                colors: [p.stageMiddle, p.stageMiddle.withValues(alpha: 0)],
+              ),
+            ),
+          ),
+        );
+    final side = phone ? 18.0 : 28.0;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measure());
+    return LayoutBuilder(builder: (context, constraints) {
+      final size = constraints.biggest;
+      // Wherever the panels leave room, the page is empty: the map under it is moved,
+      // zoomed and double-clicked directly.
+      if (size.width >= _sideBySide) {
+        // Laptop: the question (and everything about it) on the left, the map on the right.
+        final width = math.min(600.0, size.width * 0.45);
+        return Stack(
+          children: [
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: width,
+              child: panel(_first, [...question, const SizedBox(height: 28), buttons],
+                  const EdgeInsets.fromLTRB(40, 36, 32, 24)),
+            ),
+            Positioned(left: width, top: 0, bottom: 0, child: fade(Alignment.centerLeft, width: _fade)),
+          ],
+        );
+      }
+      // Phone and narrow windows: the question on top, the buttons at the bottom, the map
+      // between them.
+      return Stack(
+        children: [
+          Positioned(
+            left: 0,
+            right: 0,
+            top: 0,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: size.height * 0.48),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Flexible(child: panel(_first, question, EdgeInsets.fromLTRB(side, phone ? 14 : 28, side, 6))),
+                  fade(Alignment.topCenter, height: _fade),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                fade(Alignment.bottomCenter, height: _fade),
+                panel(_second, [buttons], EdgeInsets.fromLTRB(side, 2, side, phone ? 8 : 14)),
+              ],
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  /// How big the new thing is: a size by comparison or in m², or drawn round on the map;
+  /// for trees, how tall they are.
+  List<Widget> _newSize(BuildContext context, HomeAnswers a) {
+    final t = context.t;
+    final p = context.palette;
+    final kind = a.newKind!;
+    final typical = HomeAnswers.typicalNewM2(kind);
+    const sizes = [AreaSize.small, AreaSize.medium, AreaSize.large];
+    final drawnArea = a.newOutlineDrawn && a.newOutline.length >= 3 ? a.newAreaM2 : null;
+    return [
+      if (kind == NewThingKind.trees) ...[
+        FieldLabel(t.newTreeQ),
+        ChoiceChips<TreeHeight>(
+          values: TreeHeight.values,
+          label: (h) => switch (h) {
+            TreeHeight.low => t.treeLow,
+            TreeHeight.medium => t.treeMedium,
+            TreeHeight.tall => t.treeTall,
+          },
+          selected: a.newTreeHeight,
+          onSelect: (h) => a.update((x) => x.newTreeHeight = h),
+        ),
+      ] else ...[
+        FieldLabel(t.newSizeQ),
+        ChoiceChips<AreaSize>(
+          values: sizes,
+          label: (v) => switch (v) {
+            AreaSize.small => t.newSizeSmall,
+            AreaSize.medium => t.newSizeMedium,
+            _ => t.newSizeLarge,
+          },
+          sublabel: (v) => t.aboutM2For(typical[sizes.indexOf(v)]),
+          selected: a.newSize,
+          onSelect: (v) => a.update((x) => x.setNewSize(v)),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(t.exactSize, style: TextStyle(fontSize: 13, color: p.muted)),
+            NumberField(
+              // A drawn area shows below, not here.
+              value: drawnArea == null ? a.newAreaM2 : null,
+              suffix: 'm²',
+              width: 130,
+              onChanged: (v) => a.update((x) => x.setNewArea(v)),
+            ),
+          ],
+        ),
+      ],
+      const SizedBox(height: 12),
+      // Or drawn on the map: press and drag from one corner to the opposite one, as often as
+      // needed; "Done" keeps it.
+      Wrap(
+        spacing: 8,
+        runSpacing: 6,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (!a.drawingNew)
+            OutlinedButton.icon(
+              onPressed: () => a.update((x) => x.startDrawing()),
+              icon: const Icon(Icons.crop_square_rounded, size: 18),
+              label: Text(t.newDraw),
+            )
+          else ...[
+            FilledButton.icon(
+              onPressed: a.newOutlineDrawn ? () => a.update((x) => x.endDrawing(keep: true)) : null,
+              icon: const Icon(Icons.check_rounded, size: 18),
+              label: Text(t.newDrawDone),
+            ),
+            TextButton(
+              onPressed: () => a.update((x) => x.endDrawing(keep: false)),
+              style: TextButton.styleFrom(foregroundColor: p.muted),
+              child: Text(t.cancel),
+            ),
+          ],
+        ],
+      ),
+      if (drawnArea != null) ...[
+        const SizedBox(height: 8),
+        Text(t.newDrawAreaFor(drawnArea.round()),
+            style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: p.text)),
+      ],
+      AnimatedSize(
+        duration: const Duration(milliseconds: 200),
+        alignment: Alignment.topCenter,
+        child: !_roadNotice(a)
+            ? const SizedBox(width: double.infinity)
+            : Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(top: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: p.errorBackground,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.add_road_rounded, size: 18, color: p.error),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(t.newRoadPushed, style: TextStyle(fontSize: 13, color: p.text))),
+                  ],
+                ),
+              ),
+      ),
+      // Turning the outline (drawn or the square of the size), for one that stands askew.
+      if (a.newOutline.length >= 3) ...[
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Icon(Icons.rotate_right_rounded, size: 18, color: p.muted),
+            const SizedBox(width: 6),
+            Text('${t.newRotate}: ${a.newRotation.round()}°', style: TextStyle(fontSize: 13.5, color: p.text)),
+          ],
+        ),
+        Slider(
+          value: a.newRotation.clamp(-90, 90),
+          min: -90,
+          max: 90,
+          divisions: 36,
+          label: '${a.newRotation.round()}°',
+          onChanged: (v) => a.update((x) => x.setNewRotation(v)),
+        ),
+      ],
+    ];
+  }
+
+  /// Rough distance between two points, m (fine for a few hundred metres).
+  static double _metres(double lat1, double lon1, double lat2, double lon2) {
+    const r = 6371000.0;
+    final x = (lon2 - lon1) * math.pi / 180 * math.cos((lat1 + lat2) / 2 * math.pi / 180);
+    final y = (lat2 - lat1) * math.pi / 180;
+    return r * math.sqrt(x * x + y * y);
   }
 }
 
@@ -2443,7 +2792,6 @@ class _House3D extends StatefulWidget {
     required this.selected,
     required this.missing,
     required this.onToggle,
-    this.highlight,
     this.yard = true,
   });
 
@@ -2451,9 +2799,6 @@ class _House3D extends StatefulWidget {
   final Set<Zone> selected;
   final Set<Zone> missing;
   final ValueChanged<Zone> onToggle;
-
-  /// The colour of a marked part; red ("keep free") unless given.
-  final Color? highlight;
 
   /// False when the place has no yard: only the house and the street are drawn.
   final bool yard;
@@ -2516,7 +2861,7 @@ class _House3DState extends State<_House3D> {
                             streetFill: p.muted.withValues(alpha: 0.22),
                             wall: Color.alphaBlend(p.text.withValues(alpha: 0.06), p.surface),
                             roof: Color.alphaBlend(p.primary.withValues(alpha: 0.28), p.surface),
-                            mark: (widget.highlight ?? p.error).withValues(alpha: 0.45),
+                            mark: p.error.withValues(alpha: 0.45),
                             line: p.text.withValues(alpha: 0.45),
                             text: p.muted,
                           ),

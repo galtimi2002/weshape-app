@@ -48,9 +48,27 @@ class _NoMap implements MapBridge {
   @override
   void flyTo(double lat, double lon, {double zoom = 11, Offset offset = Offset.zero}) {}
   @override
+  void setPeek(bool on) {}
+  @override
+  void jumpTo(double lat, double lon, {double zoom = 11, Offset offset = Offset.zero}) {}
+  @override
   void setMarker(double lat, double lon, Color color) {}
   @override
   void clearMarker() {}
+  @override
+  void setBuildings(String geoJson, Color color) {}
+  @override
+  void setDrawing(String geoJson, Color color) {}
+  @override
+  void setDrawMode(bool on) {}
+  @override
+  Stream<List<List<double>>> get drawn => const Stream.empty();
+  @override
+  void requestRoads(double lat, double lon, double metres) {}
+  @override
+  Stream<List<(double, List<List<double>>)>> get roads => const Stream.empty();
+  @override
+  void setOverlayVisible(bool visible) {}
   @override
   void zoomIn() {}
   @override

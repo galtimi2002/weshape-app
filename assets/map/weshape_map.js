@@ -9,7 +9,7 @@
   'use strict';
   // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
   // (after a hot restart the page still holds the previous script).
-  var VERSION = 14;
+  var VERSION = 21;
   if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
   if (window.WeShapeMap && window.WeShapeMap.destroy) {
     try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
@@ -216,6 +216,153 @@
     if (map.getLayer('ws-border')) map.setPaintProperty('ws-border', 'line-color', state.dark ? '#9DB8E6' : '#1E3A6E');
     if (map.getLayer('ws-lakes')) map.setPaintProperty('ws-lakes', 'fill-color', lakeColor());
     applyOverlayOpacity();
+    applyBuildingColors();
+  }
+
+  // MapLibre opens the compact credit line expanded; on a phone it then covers the map.
+  function collapseAttribution() {
+    var el = container && container.querySelector('.maplibregl-ctrl-attrib');
+    if (el) el.classList.remove('maplibregl-compact-show');
+  }
+
+  // ---------------------------------------------------------------- drawing
+
+  function applyDrawing() {
+    var d = state.drawing;
+    var data = d ? d.geojson : { type: 'FeatureCollection', features: [] };
+    var color = (d && d.color) || '#2E9D5B';
+    var source = map.getSource('ws-drawing');
+    if (source) {
+      source.setData(data);
+    } else {
+      map.addSource('ws-drawing', { type: 'geojson', data: data });
+      map.addLayer({ id: 'ws-drawing-fill', type: 'fill', source: 'ws-drawing',
+        filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': color, 'fill-opacity': 0.25 } });
+      map.addLayer({ id: 'ws-drawing-line', type: 'line', source: 'ws-drawing',
+        filter: ['in', ['geometry-type'], ['literal', ['Polygon', 'LineString']]],
+        paint: { 'line-color': color, 'line-width': 2.5, 'line-dasharray': [2, 1.5] } });
+      map.addLayer({ id: 'ws-drawing-corner', type: 'circle', source: 'ws-drawing',
+        filter: ['==', ['geometry-type'], 'Point'],
+        paint: { 'circle-radius': 5, 'circle-color': '#FFFFFF', 'circle-stroke-width': 2.5, 'circle-stroke-color': color } });
+    }
+    ['ws-drawing-fill', 'ws-drawing-line', 'ws-drawing-corner'].forEach(function (id) { map.moveLayer(id); });
+    map.setPaintProperty('ws-drawing-fill', 'fill-color', color);
+    map.setPaintProperty('ws-drawing-line', 'line-color', color);
+    map.setPaintProperty('ws-drawing-corner', 'circle-stroke-color', color);
+  }
+
+  // A rectangle drawn by pressing on the map and dragging to the opposite corner. The map
+  // does not move meanwhile; letting go reports the four corners as [[lat, lon], ...].
+  var drag = null;
+
+  function drawRing(a, b) {
+    return [[a[0], a[1]], [b[0], a[1]], [b[0], b[1]], [a[0], b[1]]].map(function (p) {
+      var ll = map.unproject(p);
+      return [ll.lng, ll.lat];
+    });
+  }
+
+  function showRing(ring) {
+    var color = (state.drawing && state.drawing.color) || '#2E9D5B';
+    var features = [{ type: 'Feature', properties: {}, geometry: { type: 'Polygon', coordinates: [ring.concat([ring[0]])] } }]
+      .concat(ring.map(function (c) { return { type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: c } }; }));
+    state.drawing = { geojson: { type: 'FeatureCollection', features: features }, color: color };
+    applyDrawing();
+  }
+
+  // The pointer, in pixels of the map's canvas, from a mouse or touch event anywhere on the
+  // page: once a drag has started, it is followed even over Flutter's panels or outside.
+  function canvasPoint(ev) {
+    var r = map.getCanvas().getBoundingClientRect();
+    var t = (ev.touches && ev.touches[0]) || (ev.changedTouches && ev.changedTouches[0]) || ev;
+    return [t.clientX - r.left, t.clientY - r.top];
+  }
+
+  function drawStart(e) {
+    if (!state.drawMode || !state.interactive || drag) return;
+    var touches = e.originalEvent && e.originalEvent.touches;
+    if (touches && touches.length > 1) return;
+    if (e.preventDefault) e.preventDefault();
+    if (e.originalEvent && e.originalEvent.cancelable) e.originalEvent.preventDefault();
+    var p = canvasPoint(e.originalEvent);
+    drag = { start: p, last: p };
+    window.addEventListener('mousemove', drawMove, true);
+    window.addEventListener('touchmove', drawMove, { capture: true, passive: false });
+    window.addEventListener('mouseup', drawEnd, true);
+    window.addEventListener('touchend', drawEnd, true);
+    window.addEventListener('touchcancel', drawEnd, true);
+  }
+
+  function drawMove(ev) {
+    if (!drag) return;
+    if (ev.cancelable) ev.preventDefault();
+    ev.stopPropagation();
+    drag.last = canvasPoint(ev);
+    showRing(drawRing(drag.start, drag.last));
+  }
+
+  function drawEnd(ev) {
+    window.removeEventListener('mousemove', drawMove, true);
+    window.removeEventListener('touchmove', drawMove, { capture: true });
+    window.removeEventListener('mouseup', drawEnd, true);
+    window.removeEventListener('touchend', drawEnd, true);
+    window.removeEventListener('touchcancel', drawEnd, true);
+    if (!drag) return;
+    var d = drag;
+    drag = null;
+    state.drawnAt = Date.now();
+    if (ev && ev.type === 'mouseup') d.last = canvasPoint(ev);
+    // A press without a drag draws nothing.
+    if (Math.abs(d.last[0] - d.start[0]) < 6 || Math.abs(d.last[1] - d.start[1]) < 6) return;
+    var ring = drawRing(d.start, d.last);
+    if (state.onDraw) state.onDraw(JSON.stringify(ring.map(function (c) { return [c[1], c[0]]; })));
+  }
+
+  // ---------------------------------------------------------------- building outlines
+
+  // The building picked for the assessment (accent) and the ones around it (grey), on top of
+  // everything. state.buildings: {geojson, color} or null.
+  function buildingGrey() { return state.dark ? '#B8C2D1' : '#4A5568'; }
+
+  function applyBuildingColors() {
+    if (!map || !map.getLayer('ws-buildings-fill')) return;
+    var b = state.buildings, accent = (b && b.color) || '#2F6FED';
+    map.setPaintProperty('ws-buildings-fill', 'fill-color', ['case', ['==', ['get', 'main'], 1], accent, buildingGrey()]);
+    map.setPaintProperty('ws-buildings-line', 'line-color', ['case', ['==', ['get', 'main'], 1], accent, buildingGrey()]);
+    map.setPaintProperty('ws-buildings-place', 'circle-stroke-color', accent);
+  }
+
+  function applyBuildings() {
+    var b = state.buildings;
+    var empty = { type: 'FeatureCollection', features: [] };
+    var data = b ? b.geojson : empty;
+    var source = map.getSource('ws-buildings');
+    if (source) {
+      source.setData(data);
+    } else {
+      map.addSource('ws-buildings', { type: 'geojson', data: data });
+      map.addLayer({
+        id: 'ws-buildings-fill', type: 'fill', source: 'ws-buildings',
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        paint: { 'fill-color': buildingGrey(), 'fill-opacity': ['case', ['==', ['get', 'main'], 1], 0.38, 0.10] }
+      });
+      map.addLayer({
+        id: 'ws-buildings-place', type: 'circle', source: 'ws-buildings',
+        filter: ['==', ['geometry-type'], 'Point'],
+        paint: { 'circle-radius': 7, 'circle-color': '#FFFFFF', 'circle-stroke-width': 4, 'circle-stroke-color': '#2F6FED' }
+      });
+      map.addLayer({
+        id: 'ws-buildings-line', type: 'line', source: 'ws-buildings',
+        filter: ['==', ['geometry-type'], 'Polygon'],
+        paint: { 'line-color': buildingGrey(), 'line-width': ['case', ['==', ['get', 'main'], 1], 3, 1.2],
+          'line-opacity': ['case', ['==', ['get', 'main'], 1], 1, 0.55] }
+      });
+    }
+    // Keep them above an overlay added later.
+    if (map.getLayer('ws-buildings-fill')) map.moveLayer('ws-buildings-fill');
+    if (map.getLayer('ws-buildings-line')) map.moveLayer('ws-buildings-line');
+    if (map.getLayer('ws-buildings-place')) map.moveLayer('ws-buildings-place');
+    applyBuildingColors();
   }
 
   // Place names in the app's language where OpenStreetMap has them.
@@ -242,6 +389,7 @@
   // ---------------------------------------------------------------- overlay
 
   function overlayOpacity() {
+    if (state.overlayHidden) return 0;
     var o = state.overlay;
     return o ? (state.dark && o.kind !== 'rivers' ? o.opacity * .88 : o.opacity) : 0;
   }
@@ -499,6 +647,34 @@
     setTimeout(function () { el.remove(); }, 3600);
   }
 
+  // Roads around a place, from the base map's tiles (OpenMapTiles "transportation"), with how
+  // far from their middle line nothing may be: [{w: half width in m, c: [[lat, lon], ...]}].
+  var ROAD_HALF_WIDTH = { motorway: 12, trunk: 10, primary: 8, secondary: 6, tertiary: 5, minor: 4, service: 3,
+    track: 2, raceway: 6, busway: 4, rail: 3, transit: 3 };
+
+  function roadsNear(lon, lat, metres) {
+    var sources = map.getStyle().sources;
+    var vector = Object.keys(sources).filter(function (k) { return sources[k].type === 'vector'; })[0];
+    if (!vector) return [];
+    var dLat = metres / 111195, dLon = dLat / Math.max(0.05, Math.cos(lat * Math.PI / 180));
+    var w = lon - dLon, e = lon + dLon, s = lat - dLat, n = lat + dLat;
+    var out = [], seen = {};
+    map.querySourceFeatures(vector, { sourceLayer: 'transportation' }).forEach(function (f) {
+      var half = ROAD_HALF_WIDTH[f.properties['class']];
+      if (!half || f.properties.brunnel === 'tunnel') return;
+      var g = f.geometry, lines = g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : [];
+      lines.forEach(function (line) {
+        var near = line.some(function (c) { return c[0] >= w && c[0] <= e && c[1] >= s && c[1] <= n; });
+        if (!near) return;
+        var key = JSON.stringify(line);
+        if (seen[key]) return; // the same road from two tiles
+        seen[key] = true;
+        out.push({ w: half, c: line.map(function (c) { return [c[1], c[0]]; }) });
+      });
+    });
+    return out;
+  }
+
   function addCountryBorders() {
     var sources = map.getStyle().sources;
     var vector = Object.keys(sources).filter(function (k) { return sources[k].type === 'vector'; })[0];
@@ -552,12 +728,14 @@
           dragRotate: false,
           pitchWithRotate: false,
           minZoom: 3,
-          maxZoom: 17
+          // Deep enough to tell one house from the next when picking the building.
+          maxZoom: 19
         });
         map.touchZoomRotate.disableRotation();
         state.attribution = opts.attribution || '';
         attributionControl = new maplibregl.AttributionControl({ compact: true, customAttribution: state.attribution });
         map.addControl(attributionControl, 'bottom-left');
+        map.once('load', function () { setTimeout(collapseAttribution, 0); });
         map.on('error', function (e) {
           console.warn('[WeShapeMap] error', e && e.error);
           if (!loaded && state.onError) state.onError(String((e && e.error && e.error.message) || 'map error'));
@@ -573,8 +751,23 @@
           var queued = pending; pending = [];
           queued.forEach(function (fn) { fn(); });
         });
+        // Drawing a rectangle by dragging (see setDrawMode).
+        map.on('mousedown', drawStart);
+        map.on('touchstart', drawStart);
         map.on('click', function (e) {
-          if (state.interactive && state.onClick) state.onClick(e.lngLat.lng, e.lngLat.lat, map.getZoom());
+          if (!state.interactive || !state.onClick) return;
+          // The click that ends a drawn rectangle is not a click.
+          if (state.drawMode || Date.now() - (state.drawnAt || 0) < 500) return;
+          // Two clicks (or taps) close together in time and place make a double click; the
+          // assessment marks with it while the map can still be moved (see setPeek).
+          var now = Date.now(), last = state.lastClick, isDouble = false;
+          if (last && now - last.t < 400 && Math.abs(e.point.x - last.x) < 24 && Math.abs(e.point.y - last.y) < 24) {
+            isDouble = true;
+            state.lastClick = null;
+          } else {
+            state.lastClick = { t: now, x: e.point.x, y: e.point.y };
+          }
+          state.onClick(e.lngLat.lng, e.lngLat.lat, map.getZoom(), isDouble);
         });
         map.getCanvas().style.cursor = 'crosshair';
         map.on('dragstart', function () { map.getCanvas().style.cursor = 'grabbing'; });
@@ -630,6 +823,7 @@
         if (attributionControl) map.removeControl(attributionControl);
         attributionControl = new maplibregl.AttributionControl({ compact: true, customAttribution: state.attribution });
         map.addControl(attributionControl, 'bottom-left');
+        collapseAttribution();
         var corner = container && container.querySelector('.maplibregl-ctrl-bottom-left');
         if (corner) corner.style.bottom = state.attributionBottom + 'px';
       });
@@ -647,6 +841,56 @@
     flyTo: function (lon, lat, zoom, offsetX, offsetY) {
       whenLoaded(function () {
         map.flyTo({ center: [lon, lat], zoom: zoom, offset: [offsetX, offsetY], speed: 1.4, essential: true });
+      });
+    },
+
+    /**
+     * Something drawn by the person (the outline of a new thing): a FeatureCollection string
+     * of its area, its line and its corners, drawn in color. Empty string clears it.
+     */
+    setDrawing: function (geojson, color) {
+      state.drawing = geojson ? { geojson: JSON.parse(geojson), color: color } : null;
+      whenLoaded(applyDrawing);
+    },
+
+    /** On: pressing and dragging on the map draws a rectangle instead of moving the map. */
+    setDrawMode: function (on) {
+      state.drawMode = !!on;
+      if (drag) drawEnd();
+      drag = null;
+      whenLoaded(function () {
+        if (on) map.dragPan.disable(); else map.dragPan.enable();
+        map.getCanvas().style.cursor = 'crosshair';
+      });
+    },
+
+    /** fn(json): a rectangle was drawn; json is its corners [[lat, lon], ...]. */
+    setOnDraw: function (fn) { state.onDraw = fn; },
+
+    /** fn(json): the roads asked for with requestRoads, as [{w, c: [[lat, lon], ...]}]. */
+    setOnRoads: function (fn) { state.onRoads = fn; },
+
+    /** The roads within metres of a place, once the map has drawn its tiles there. */
+    requestRoads: function (lon, lat, metres) {
+      whenLoaded(function () {
+        var send = function () { if (state.onRoads) state.onRoads(JSON.stringify(roadsNear(lon, lat, metres))); };
+        if (map.loaded() && !map.isMoving()) send();
+        map.once('idle', send);
+      });
+    },
+
+    /** On: a double click marks a point instead of zooming in (the assessment's map). */
+    setPeek: function (on) {
+      state.peek = !!on;
+      whenLoaded(function () {
+        if (on) map.doubleClickZoom.disable(); else map.doubleClickZoom.enable();
+      });
+    },
+
+    /** Like flyTo, without the flight: the map is there at once. */
+    jumpTo: function (lon, lat, zoom, offsetX, offsetY) {
+      whenLoaded(function () {
+        map.easeTo({ center: [lon, lat], zoom: zoom, offset: [offsetX, offsetY], duration: 0 });
       });
     },
 
@@ -670,6 +914,21 @@
         node.lastChild.style.borderColor = color;
         marker.setLngLat([lon, lat]).addTo(map);
       });
+    },
+
+    /**
+     * Building outlines: geojson is a FeatureCollection string whose features have
+     * properties.main = 1 for the picked building; color is its accent. Empty string clears.
+     */
+    setBuildings: function (geojson, color) {
+      state.buildings = geojson ? { geojson: JSON.parse(geojson), color: color } : null;
+      whenLoaded(applyBuildings);
+    },
+
+    /** Hides the resource layer (and shows it again), e.g. while the map only shows the buildings. */
+    setOverlayVisible: function (visible) {
+      state.overlayHidden = !visible;
+      whenLoaded(applyOverlayOpacity);
     },
 
     clearMarker: function () {
@@ -715,7 +974,7 @@
       if (resizeObserver) resizeObserver.disconnect();
       if (map) map.remove();
       map = null; loaded = false; container = null; mapDiv = null; shield = null; original = null; labelFields = null; marker = null;
-      resizeObserver = null; pending = []; state.overlay = null; state.overlayKey = null; state.overlayKind = null;
+      resizeObserver = null; pending = []; state.overlay = null; state.buildings = null; state.drawing = null; state.overlayKey = null; state.overlayKind = null;
       attributionControl = null;
     }
   };

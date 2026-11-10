@@ -139,12 +139,34 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: ResourceMap(
-                      countryCode: profile.country,
-                      active: _tab == HomeTab.map,
-                      onAssess: _assess,
-                      picking: _picking,
-                      onCancelPick: () => _go(HomeTab.assessment),
+                    child: ListenableBuilder(
+                      listenable: _answers,
+                      builder: (context, _) => ResourceMap(
+                        countryCode: profile.country,
+                        active: _tab == HomeTab.map,
+                        onAssess: _assess,
+                        picking: _picking,
+                        onCancelPick: () => _go(HomeTab.assessment),
+                        // The question about something new shows the map under its page.
+                        peek: _tab == HomeTab.assessment && _answers.screen == 'newThing' ? _answers.place : null,
+                        peekMark: _answers.newThing == true && _answers.newLat != null && _answers.newLon != null
+                            ? (_answers.newLat!, _answers.newLon!)
+                            : null,
+                        peekShape: _answers.newThing == true ? _answers.newOutlineGeoJson : null,
+                        peekDrawing: _answers.newThing == true && _answers.drawingNew,
+                        // A double click marks where the new thing is, once the answer is "yes".
+                        onPeekMark: (lat, lon) {
+                          if (_answers.newThing != true || _answers.drawingNew) return;
+                          _answers.update((x) {
+                            x.newLat = lat;
+                            x.newLon = lon;
+                            x.squareNew();
+                          });
+                        },
+                        // Its outline, drawn as a rectangle by dragging.
+                        onPeekDrawn: (corners) => _answers.update((x) => x.setNewOutline(corners)),
+                        onPeekRoads: (roads) => _answers.update((x) => x.setRoads(roads)),
+                      ),
                     ),
                   ),
                   Positioned.fill(
