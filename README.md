@@ -122,6 +122,20 @@ Texts live in `tool/translations.py`. After editing:
 python3 tool/gen_strings.py
 ```
 
+Then check the texts:
+
+```bash
+python3 tool/check_translations.py      # or: ... de nl  for some languages
+```
+
+It reports placeholders that differ from English, texts left in English, a
+mixed form of address (each language speaks one way: Sie in German, u in
+Dutch, vous in French, siz in Turkish, tu in Romanian and Italian, te in
+Hungarian ...), answer options written with a possessive ("On the roof", not
+"On my roof"), and labels much longer than English. Hungarian is the reference
+for meaning: where English and Hungarian differ, the other languages follow
+the Hungarian.
+
 The generator refuses to write anything if a language is missing a string. A
 new string also has to be added to `lib/core/i18n/app_strings.dart`; the
 compiler then insists on it in every language.

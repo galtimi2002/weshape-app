@@ -396,7 +396,7 @@ const AppStrings kStringsHu = AppStrings(
   whyReach: 'Karbantartáshoz nehezen elérhető',
   whyLooks: 'Nem tetszene, ahogy kinézne',
   whyRules: 'Szabály tiltja (pl. műemlék épület)',
-  whyPlans: 'Más terveim vannak vele',
+  whyPlans: 'Más tervek vannak vele',
   dirFront: 'Elöl · utca',
   fuelsHint: 'Elég a hozzávetőleges érték. Ha nem tudod, hagyd üresen.',
 );
