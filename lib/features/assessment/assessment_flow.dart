@@ -165,7 +165,6 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
         'windows',
       ],
       'sources',
-      if (a.hasGrid) 'cuts',
       if (mains) ...['electricity', 'paid'],
       if (a.sources.contains(Source.pipedGas)) 'gas',
       if (a.hasFuels) 'fuels',
@@ -210,7 +209,6 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
           'insulation' => _InsulationStep(answers: a, nav: nav),
           'windows' => _WindowsStep(answers: a, nav: nav),
           'sources' => _SourcesStep(answers: a, nav: nav),
-          'cuts' => _CutsStep(answers: a, nav: nav),
           'electricity' => _ElectricityStep(answers: a, nav: nav),
           'paid' => _PaidStep(answers: a, nav: nav, countryCode: widget.countryCode),
           'gas' => _GasStep(answers: a, nav: nav, countryCode: widget.countryCode),
@@ -336,11 +334,23 @@ class _Progress extends StatelessWidget {
 
 /// Title, optional helper line, the screen's content, and Back / Continue at the bottom.
 class _StepPage extends StatelessWidget {
-  const _StepPage({required this.nav, required this.title, required this.children, this.hint, this.canContinue = true, this.wide});
+  const _StepPage({
+    required this.nav,
+    required this.title,
+    required this.children,
+    this.hint,
+    this.note,
+    this.canContinue = true,
+    this.wide,
+  });
 
   final _Nav nav;
   final String title;
   final String? hint;
+
+  /// One line on what we take into account with this answer, so the user sees how carefully we
+  /// calculate (docs/decisions/2026-11-12-question-notes-and-climate-grid.md in the backend).
+  final String? note;
   final List<Widget> children;
   final bool canContinue;
 
@@ -362,6 +372,10 @@ class _StepPage extends StatelessWidget {
           const SizedBox(height: 6),
           Text(hint!, style: TextStyle(fontSize: 14, color: p.muted)),
         ],
+        if (note != null) ...[
+          const SizedBox(height: 10),
+          _NoteLine(note!),
+        ],
         const SizedBox(height: 22),
         if (columns == null)
           ...children
@@ -376,6 +390,29 @@ class _StepPage extends StatelessWidget {
           ),
         const SizedBox(height: 28),
         _StepButtons(nav: nav, canContinue: canContinue),
+      ],
+    );
+  }
+}
+
+/// What we take into account with the answer: a small sparkle and one line.
+class _NoteLine extends StatelessWidget {
+  const _NoteLine(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Icon(Icons.auto_awesome, size: 16, color: p.green),
+        ),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: TextStyle(fontSize: 13.5, height: 1.35, color: p.text))),
       ],
     );
   }
@@ -752,7 +789,9 @@ class _AudienceStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.audTitle,
+      note: t.noteAudience,
       hint: t.assessIntro,
+      canContinue: answers.audience != null,
       children: [
         LayoutBuilder(
           builder: (context, box) {
@@ -936,6 +975,7 @@ class _PlaceStepState extends State<_PlaceStep> {
     return _StepPage(
       nav: widget.nav,
       title: t.placeTitle,
+      note: t.notePlace,
       hint: t.placeHint,
       canContinue: place != null,
       children: [
@@ -1043,6 +1083,7 @@ class _UsesStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.usesTitle,
+      note: t.noteUses,
       canContinue: a.uses.isNotEmpty,
       children: [
         _CheckOptions<Use>(
@@ -1086,7 +1127,9 @@ class _BuildingStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.buildingTitle,
+      note: t.noteBuilding,
       hint: t.buildingHint,
+      canContinue: a.type != null && a.area != null && a.people != null && (a.type == BuildingType.flat || a.floors != null),
       children: [
         FieldLabel(t.typeLabel),
         ChoiceChips<BuildingType>(
@@ -1139,6 +1182,8 @@ class _EraStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: a.type == BuildingType.flat ? t.eraTitleFlat : t.eraTitle,
+      note: t.noteEra,
+      canContinue: a.era != null,
       children: [
         _Options<BuildEra>(
           values: BuildEra.values,
@@ -1152,6 +1197,7 @@ class _EraStep extends StatelessWidget {
           selected: a.era,
           onSelect: (v) => a.update((x) => x.era = v),
         ),
+        if (a.era == BuildEra.unknown) _Unsure('${t.unsureLead} ${t.tipEra}'),
       ],
     );
   }
@@ -1182,9 +1228,11 @@ class _RenovationStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.renoTitle,
-      canContinue: a.renovations.isNotEmpty,
+      note: t.noteReno,
+      canContinue: a.renovations.isNotEmpty && parts.every(a.renovationAge.containsKey),
       children: [
         MultiChips<Renovation>(values: Renovation.values, label: label, selected: a.renovations, onToggle: a.toggleRenovation),
+        if (a.renovations.contains(Renovation.unknown)) _Unsure('${t.unsureLead} ${t.tipReno}'),
         if (parts.isNotEmpty) ...[
           _gap,
           SubQuestion(t.renoWhen),
@@ -1233,6 +1281,8 @@ class _InsulationStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.insTitle,
+      note: t.noteIns,
+      canContinue: a.wallInsulation != null && a.roofInsulation != null && a.floorInsulation != null,
       children: [
         FieldLabel(t.insWalls),
         ChoiceChips<InsulationLevel>(
@@ -1261,6 +1311,10 @@ class _InsulationStep extends StatelessWidget {
           selected: a.floorInsulation,
           onSelect: (v) => a.update((x) => x.floorInsulation = v),
         ),
+        if (a.wallInsulation == InsulationLevel.unknown ||
+            a.roofInsulation == InsulationLevel.unknown ||
+            a.floorInsulation == FloorInsulation.unknown)
+          _Unsure('${t.unsureLead} ${t.tipIns}'),
         const SizedBox(height: 16),
         _HelpCheck(tips: [t.insHelpWalls, t.insHelpRoof, t.insHelpFloor]),
       ],
@@ -1281,6 +1335,8 @@ class _WindowsStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.winTitle,
+      note: t.noteWin,
+      canContinue: a.windows != null,
       children: [
         _Options<WindowKind>(
           values: WindowKind.values,
@@ -1295,6 +1351,7 @@ class _WindowsStep extends StatelessWidget {
           selected: a.windows,
           onSelect: (v) => a.update((x) => x.windows = v),
         ),
+        if (a.windows == WindowKind.unknown) _Unsure('${t.unsureLead} ${t.tipWin}'),
         const SizedBox(height: 12),
         _HelpCheck(tips: [t.winHelpPanes, t.winHelpDate]),
       ],
@@ -1326,39 +1383,10 @@ class _SourcesStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.srcTitle,
+      note: t.noteSrc,
       canContinue: a.sources.isNotEmpty,
       children: [
         MultiChips<Source>(values: Source.values, label: label, selected: a.sources, onToggle: a.toggleSource),
-      ],
-    );
-  }
-}
-
-class _CutsStep extends StatelessWidget {
-  const _CutsStep({required this.answers, required this.nav});
-
-  final HomeAnswers answers;
-  final _Nav nav;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final a = answers;
-    return _StepPage(
-      nav: nav,
-      title: t.cutsTitle,
-      children: [
-        _Options<PowerCuts>(
-          values: PowerCuts.values,
-          title: (v) => switch (v) {
-            PowerCuts.never => t.cutsNever,
-            PowerCuts.hardlyEver => t.cutsHardly,
-            PowerCuts.monthly => t.cutsMonthly,
-            PowerCuts.mostDays => t.cutsDaily,
-          },
-          selected: a.cuts,
-          onSelect: (v) => a.update((x) => x.cuts = v),
-        ),
       ],
     );
   }
@@ -1447,6 +1475,7 @@ class _ElectricityStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.elecUseTitle,
+      note: t.noteElec,
       canContinue: a.useAverage ? a.electricityAverageKwh != null : a.electricityKwh.every((v) => v != null),
       children: [
         if (!a.useAverage) ...[
@@ -1594,6 +1623,7 @@ class _GasStepState extends State<_GasStep> {
     return _StepPage(
       nav: widget.nav,
       title: t.gasTitle,
+      note: t.noteGas,
       children: [
         _CurrencyPicker(answers: a, countryCode: widget.countryCode),
         _gap,
@@ -1639,7 +1669,7 @@ class _GasStepState extends State<_GasStep> {
   }
 }
 
-class _FuelsStep extends StatelessWidget {
+class _FuelsStep extends StatefulWidget {
   const _FuelsStep({required this.answers, required this.nav, required this.countryCode});
 
   final HomeAnswers answers;
@@ -1647,31 +1677,96 @@ class _FuelsStep extends StatelessWidget {
   final String? countryCode;
 
   @override
+  State<_FuelsStep> createState() => _FuelsStepState();
+}
+
+class _FuelsStepState extends State<_FuelsStep> {
+  /// "Continue" was pressed once with firewood data missing: the yellow notes show, and the next
+  /// press goes on (docs/decisions/2026-11-12-firewood-and-missing-data.md in the backend).
+  bool _warned = false;
+
+  bool get _woodMissing {
+    final a = widget.answers;
+    if (!a.sources.contains(Source.wood)) return false;
+    if (a.firewoodM3 == null) return true;
+    return a.firewoodKind == null || a.firewoodPrice == null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.t;
-    final a = answers;
-    final currency = a.currency ?? currencyOf(countryCode);
+    final a = widget.answers;
+    final nav = widget.nav;
+    final currency = a.currency ?? currencyOf(widget.countryCode);
+    final wood = a.sources.contains(Source.wood);
+    final hasWood = wood && (a.firewoodM3 ?? 0) > 0;
+    final next = nav.onNext;
+    final guarded = _Nav(
+      index: nav.index,
+      total: nav.total,
+      onBack: nav.onBack,
+      onFirst: nav.onFirst,
+      onReset: nav.onReset,
+      onNext: next == null
+          ? null
+          : () {
+              if (!_warned && _woodMissing) {
+                setState(() => _warned = true);
+              } else {
+                next();
+              }
+            },
+    );
+    Widget field(double? value, String? suffix, ValueChanged<double?> onChanged, {bool money = false}) =>
+        NumberField(value: value, suffix: suffix, width: 200, money: money, onChanged: onChanged);
     Widget row(String question, double? value, String? suffix, ValueChanged<double?> onChanged, {bool money = false}) => Padding(
           padding: const EdgeInsets.only(bottom: 22),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SubQuestion(question),
-              NumberField(value: value, suffix: suffix, width: 200, money: money, onChanged: onChanged),
+              field(value, suffix, onChanged, money: money),
             ],
           ),
         );
     return _StepPage(
-      nav: nav,
+      nav: guarded,
       title: t.fuelsTitle,
+      note: t.noteFuels,
       hint: t.fuelsHint,
       children: [
-        if (a.sources.contains(Source.district)) ...[
-          _CurrencyPicker(answers: a, countryCode: countryCode),
+        if (a.sources.contains(Source.district) || hasWood) ...[
+          _CurrencyPicker(answers: a, countryCode: widget.countryCode),
           _gap,
         ],
-        if (a.sources.contains(Source.wood)) ...[
-          row(t.fuelFirewood, a.firewoodM3, 'm³', (v) => a.update((x) => x.firewoodM3 = v)),
+        if (wood) ...[
+          SubQuestion(t.fuelFirewood),
+          field(a.firewoodM3, 'm³', (v) => a.update((x) => x.firewoodM3 = v)),
+          const SizedBox(height: 6),
+          Text(t.woodM3Note, style: TextStyle(fontSize: 13, color: context.palette.muted)),
+          if (_warned && a.firewoodM3 == null) _Unsure('${t.unsureLead} ${t.unsureAmount}'),
+          const SizedBox(height: 22),
+          if (hasWood) ...[
+            SubQuestion(t.woodKindQ),
+            ChoiceChips<WoodKind>(
+              values: WoodKind.values,
+              label: (v) => switch (v) {
+                WoodKind.hardwood => t.woodHard,
+                WoodKind.softwood => t.woodSoft,
+                WoodKind.mixed => t.woodMixed,
+                WoodKind.unknown => t.dontKnow,
+              },
+              selected: a.firewoodKind,
+              onSelect: (v) => a.update((x) => x.firewoodKind = v),
+            ),
+            if (a.firewoodKind == WoodKind.unknown || (_warned && a.firewoodKind == null))
+              _Unsure('${t.unsureLead} ${t.unsureWood}'),
+            const SizedBox(height: 22),
+            SubQuestion(t.woodPriceQ),
+            field(a.firewoodPrice, currency, (v) => a.update((x) => x.firewoodPrice = v), money: true),
+            if (_warned && a.firewoodPrice == null) _Unsure('${t.unsureLead} ${t.unsurePrice}'),
+            const SizedBox(height: 22),
+          ],
           row(t.fuelPellets, a.pelletsTonnes, 't', (v) => a.update((x) => x.pelletsTonnes = v)),
         ],
         if (a.sources.contains(Source.gasBottles))
@@ -1679,6 +1774,41 @@ class _FuelsStep extends StatelessWidget {
         if (a.sources.contains(Source.district))
           row(t.fuelDistrict, a.districtPerMonth, currency, (v) => a.update((x) => x.districtPerMonth = v), money: true),
       ],
+    );
+  }
+}
+
+/// The soft yellow note after "Don't know" or an empty field: the result will be less precise.
+class _Unsure extends StatelessWidget {
+  const _Unsure(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5B83D).withValues(alpha: 0.14),
+          border: Border.all(color: const Color(0xFFF5B83D).withValues(alpha: 0.55)),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 1),
+              child: Icon(Icons.info_outline_rounded, size: 17, color: Color(0xFFD99A1E)),
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(text, style: TextStyle(fontSize: 13.5, height: 1.35, color: p.text))),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1698,6 +1828,7 @@ class _SpacesStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.spacesTitle,
+      note: t.noteSpaces,
       hint: t.spacesHint,
       canContinue: a.spaces.isNotEmpty,
       children: [
@@ -1856,10 +1987,12 @@ class _SizesStep extends StatelessWidget {
       if (a.spaces.contains(Space.land)) Space.land,
       if (a.spaces.contains(Space.balcony)) Space.balcony,
     ];
-    final complete = shown.every((s) => a.sizeOf(s).size != null || (a.sizeOf(s).exactM2 ?? 0) > 0);
+    final complete = shown.every((s) => a.sizeOf(s).size != null || (a.sizeOf(s).exactM2 ?? 0) > 0) &&
+        (!shown.contains(Space.roof) || a.facing != null);
     return _StepPage(
       nav: nav,
       title: t.sizesTitle,
+      note: t.noteSizes,
       canContinue: complete,
       // Large screens: the roof on the left, the ground on the right.
       wide: roofPart.isNotEmpty && groundPart.isNotEmpty ? ([...note, ...roofPart], groundPart) : null,
@@ -1883,6 +2016,8 @@ class _OwnershipStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.ownTitle,
+      note: t.noteOwn,
+      canContinue: a.ownership != null,
       hint: t.ownHint,
       children: [
         _Options<Ownership>(
@@ -1935,6 +2070,8 @@ class _UpkeepStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.fixTitle,
+      note: t.noteUpkeep,
+      canContinue: a.fixer != null && a.handsOn != null,
       hint: t.fixHint,
       wide: ([fixer], [SubQuestion(t.handsTitle), hands]),
       children: [
@@ -1960,20 +2097,20 @@ class _PriorityStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.prioTitle,
+      note: t.notePrio,
+      canContinue: a.priority != null,
       children: [
         _Options<Priority>(
           values: Priority.values,
           title: (v) => switch (v) {
             Priority.upfront => t.prioUpfront,
             Priority.running => t.prioRunning,
-            Priority.reliable => t.prioReliable,
             Priority.environment => t.prioEnv,
             Priority.balanced => t.prioBalanced,
           },
           detail: (v) => switch (v) {
             Priority.upfront => t.prioUpfrontDesc,
             Priority.running => t.prioRunningDesc,
-            Priority.reliable => t.prioReliableDesc,
             Priority.environment => t.prioEnvDesc,
             Priority.balanced => t.prioBalancedDesc,
           },
@@ -2024,6 +2161,7 @@ class _FollowUpsStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.followTitle,
+      note: t.noteFollow,
       canContinue: answered,
       children: [
         if (animals) ...[
@@ -2064,6 +2202,7 @@ class _FollowUpsStep extends StatelessWidget {
               selected: a.river,
               onSelect: (v) => a.update((x) => x.river = v),
             ),
+            if (a.river == RiverAccess.notSure) _Unsure('${t.unsureLead} ${t.tipRiver}'),
             _gap,
           ],
           if (brook) ...[
@@ -2146,7 +2285,7 @@ class _ExcludeStepState extends State<_ExcludeStep> {
 
     final marking = a.excludeSomewhere ?? false;
     // Without a yard only the roof can be marked, and nothing can be "not there".
-    final available = [...roofZones[a.roofShape]!, if (yard) ...groundZones];
+    final available = [...roofZones[a.roofDrawn]!, if (yard) ...groundZones];
     final kept = [for (final z in available) if (a.zones.contains(z)) z];
     final gone = [if (yard) for (final z in groundZones) if (a.missing.contains(z)) z];
 
@@ -2184,7 +2323,7 @@ class _ExcludeStepState extends State<_ExcludeStep> {
     final drawing = [
       Text(t.exclTapHint, style: TextStyle(fontSize: 13.5, color: p.muted)),
       const SizedBox(height: 8),
-      _House3D(shape: a.roofShape, selected: a.zones, missing: a.missing, onToggle: tap, yard: yard),
+      _House3D(shape: a.roofDrawn, selected: a.zones, missing: a.missing, onToggle: tap, yard: yard),
       const SizedBox(height: 8),
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2363,6 +2502,8 @@ class _NewThingStepState extends State<_NewThingStep> {
         const SizedBox(height: 6),
         Text(t.newMapNote, style: TextStyle(fontSize: 14, color: p.muted)),
       ],
+      const SizedBox(height: 10),
+      _NoteLine(t.noteNew),
       SizedBox(height: phone ? 12 : 18),
       _Options<bool>(
         values: const [false, true],

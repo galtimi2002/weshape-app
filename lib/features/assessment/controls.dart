@@ -91,7 +91,8 @@ class NumberSlider extends StatelessWidget {
     this.enabled = true,
   });
 
-  final int value;
+  /// Null until a value is picked: the number shows as a dash.
+  final int? value;
   final int min;
   final int max;
   final int step;
@@ -111,7 +112,9 @@ class NumberSlider extends StatelessWidget {
         children: [
           Text.rich(
             TextSpan(children: [
-              TextSpan(text: '$value', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: p.text, letterSpacing: -0.5)),
+              TextSpan(
+                  text: value == null ? '–' : '$value',
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: value == null ? p.muted : p.text, letterSpacing: -0.5)),
               TextSpan(text: '  $unit', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: p.muted)),
               if (note != null) TextSpan(text: '  ·  $note', style: TextStyle(fontSize: 13, color: p.muted)),
             ]),
@@ -120,12 +123,13 @@ class NumberSlider extends StatelessWidget {
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: p.primary,
               inactiveTrackColor: p.border,
-              thumbColor: p.primary,
+              // No value yet: the thumb waits at the start, faint.
+              thumbColor: value == null ? p.border : p.primary,
               overlayColor: p.primary.withValues(alpha: 0.12),
               trackHeight: 3,
             ),
             child: Slider(
-              value: value.clamp(min, max).toDouble(),
+              value: (value ?? min).clamp(min, max).toDouble(),
               min: min.toDouble(),
               max: max.toDouble(),
               divisions: (max - min) ~/ step,

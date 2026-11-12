@@ -255,11 +255,6 @@ class AppStrings {
     required this.srcWood,
     required this.srcGenerator,
     required this.srcNothing,
-    required this.cutsTitle,
-    required this.cutsNever,
-    required this.cutsHardly,
-    required this.cutsMonthly,
-    required this.cutsDaily,
     required this.elecUseTitle,
     required this.monthNames,
     required this.dontKnowExact,
@@ -326,13 +321,45 @@ class AppStrings {
     required this.handsNone,
     required this.handsLittle,
     required this.handsRegular,
+    required this.noteAudience,
+    required this.notePlace,
+    required this.noteUses,
+    required this.noteBuilding,
+    required this.noteEra,
+    required this.noteReno,
+    required this.noteIns,
+    required this.noteWin,
+    required this.noteSrc,
+    required this.noteElec,
+    required this.noteGas,
+    required this.noteFuels,
+    required this.noteSpaces,
+    required this.noteSizes,
+    required this.noteOwn,
+    required this.noteUpkeep,
+    required this.notePrio,
+    required this.noteFollow,
+    required this.noteNew,
+    required this.woodM3Note,
+    required this.woodKindQ,
+    required this.woodHard,
+    required this.woodSoft,
+    required this.woodMixed,
+    required this.woodPriceQ,
+    required this.unsureLead,
+    required this.unsureAmount,
+    required this.unsurePrice,
+    required this.unsureWood,
+    required this.tipEra,
+    required this.tipReno,
+    required this.tipIns,
+    required this.tipWin,
+    required this.tipRiver,
     required this.prioTitle,
     required this.prioUpfront,
     required this.prioUpfrontDesc,
     required this.prioRunning,
     required this.prioRunningDesc,
-    required this.prioReliable,
-    required this.prioReliableDesc,
     required this.prioEnv,
     required this.prioEnvDesc,
     required this.prioBalanced,
@@ -691,11 +718,6 @@ class AppStrings {
   final String srcWood;
   final String srcGenerator;
   final String srcNothing;
-  final String cutsTitle;
-  final String cutsNever;
-  final String cutsHardly;
-  final String cutsMonthly;
-  final String cutsDaily;
   final String elecUseTitle;
   final String monthNames;
   final String dontKnowExact;
@@ -762,13 +784,45 @@ class AppStrings {
   final String handsNone;
   final String handsLittle;
   final String handsRegular;
+  final String noteAudience;
+  final String notePlace;
+  final String noteUses;
+  final String noteBuilding;
+  final String noteEra;
+  final String noteReno;
+  final String noteIns;
+  final String noteWin;
+  final String noteSrc;
+  final String noteElec;
+  final String noteGas;
+  final String noteFuels;
+  final String noteSpaces;
+  final String noteSizes;
+  final String noteOwn;
+  final String noteUpkeep;
+  final String notePrio;
+  final String noteFollow;
+  final String noteNew;
+  final String woodM3Note;
+  final String woodKindQ;
+  final String woodHard;
+  final String woodSoft;
+  final String woodMixed;
+  final String woodPriceQ;
+  final String unsureLead;
+  final String unsureAmount;
+  final String unsurePrice;
+  final String unsureWood;
+  final String tipEra;
+  final String tipReno;
+  final String tipIns;
+  final String tipWin;
+  final String tipRiver;
   final String prioTitle;
   final String prioUpfront;
   final String prioUpfrontDesc;
   final String prioRunning;
   final String prioRunningDesc;
-  final String prioReliable;
-  final String prioReliableDesc;
   final String prioEnv;
   final String prioEnvDesc;
   final String prioBalanced;

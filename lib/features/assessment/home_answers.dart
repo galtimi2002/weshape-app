@@ -31,8 +31,6 @@ enum WindowKind { single, doubleOld, doubleNew, triple, mix, unknown }
 enum Source { mains, pipedGas, district, gasBottles, wood, generator, nothing }
 
 
-enum PowerCuts { never, hardlyEver, monthly, mostDays }
-
 enum GasUnit { m3, kwh }
 
 /// Where there is free space (question 8, pick any; [nowhere] stands alone).
@@ -49,11 +47,14 @@ enum Fixer { self, technician, installer, unknown }
 
 enum HandsOn { none, little, regular }
 
-enum Priority { upfront, running, reliable, environment, balanced }
+enum Priority { upfront, running, environment, balanced }
 
 enum Animals { few, herd, foodWaste, none }
 
 enum RiverAccess { through, others, cannot, notSure }
+
+/// The kind of firewood burnt (backend `Firewood.Kind`).
+enum WoodKind { hardwood, softwood, mixed, unknown }
 
 enum WindExposure { open, some, lots }
 
@@ -160,27 +161,28 @@ class HomeAnswers extends ChangeNotifier {
   /// Where the person is: the id of the current screen.
   String screen = 'audience';
 
-  Audience audience = Audience.home;
+  // Every question starts unanswered: nothing is picked for the person, so an answer is
+  // always theirs (decided with the team). Null or empty means "not answered yet".
+  Audience? audience;
   AssessmentPlace? place;
 
-  Set<Use> uses = {Use.appliances};
+  Set<Use> uses = {};
 
-  BuildingType type = BuildingType.house;
-  int floors = 2;
-  int people = 4;
-  int area = 120;
+  BuildingType? type;
+  int? floors;
+  int? people;
+  int? area;
   bool areaSet = false;
 
-  BuildEra era = BuildEra.from1960;
+  BuildEra? era;
   Set<Renovation> renovations = {};
   Map<Renovation, RenovationAge> renovationAge = {};
-  InsulationLevel wallInsulation = InsulationLevel.none;
-  InsulationLevel roofInsulation = InsulationLevel.none;
-  FloorInsulation floorInsulation = FloorInsulation.none;
-  WindowKind windows = WindowKind.doubleOld;
+  InsulationLevel? wallInsulation;
+  InsulationLevel? roofInsulation;
+  FloorInsulation? floorInsulation;
+  WindowKind? windows;
 
-  Set<Source> sources = {Source.mains};
-  PowerCuts cuts = PowerCuts.hardlyEver;
+  Set<Source> sources = {};
 
   /// Month indexes 0–11 of the three months asked about.
   List<int> months = [0, 1, 2];
@@ -196,19 +198,23 @@ class HomeAnswers extends ChangeNotifier {
   List<double?> gasPaid = [null, null, null];
 
   double? firewoodM3;
+  WoodKind? firewoodKind;
+
+  /// Price of 1 m³ of firewood, in [currency].
+  double? firewoodPrice;
   double? pelletsTonnes;
   double? gasBottlesPerMonth;
   double? districtPerMonth;
 
 
-  Set<Space> spaces = {Space.roof, Space.garden};
+  Set<Space> spaces = {};
   Map<Space, SpaceSize> sizes = {};
-  Facing facing = Facing.south;
+  Facing? facing;
 
-  Ownership ownership = Ownership.own;
-  Fixer fixer = Fixer.technician;
-  HandsOn handsOn = HandsOn.little;
-  Priority priority = Priority.balanced;
+  Ownership? ownership;
+  Fixer? fixer;
+  HandsOn? handsOn;
+  Priority? priority;
 
   Animals? animals;
   RiverAccess? river;
@@ -216,7 +222,9 @@ class HomeAnswers extends ChangeNotifier {
   WindExposure? wind;
 
   bool? excludeSomewhere;
-  RoofShape roofShape = RoofShape.gable;
+  /// Only shapes the drawing of the exclude question; a gable roof is drawn until picked.
+  RoofShape? roofShape;
+  RoofShape get roofDrawn => roofShape ?? RoofShape.gable;
   Set<Zone> zones = {};
   /// Parts of the plot that this place does not have (no front yard, the house on the boundary).
   Set<Zone> missing = {};
@@ -553,7 +561,6 @@ class HomeAnswers extends ChangeNotifier {
 
   bool get heats => uses.contains(Use.heating) || uses.contains(Use.hotWater);
   bool get oldBuilding => era == BuildEra.before1960 || era == BuildEra.from1960 || era == BuildEra.unknown;
-  bool get hasGrid => sources.contains(Source.mains) || sources.contains(Source.generator);
   bool get hasFuels =>
       sources.contains(Source.wood) || sources.contains(Source.gasBottles) || sources.contains(Source.district);
   /// Marks a part as kept free, or (with [isMissing]) as not there; a part is never both.
@@ -580,16 +587,12 @@ class HomeAnswers extends ChangeNotifier {
 
   bool get hasPlaces => spaces.isNotEmpty && !spaces.contains(Space.nowhere);
 
-  void setFloors(int value) => update((a) {
-        final perFloor = a.area / a.floors;
-        a.floors = value;
-        if (!a.areaSet && a.type == BuildingType.house) a.area = (perFloor * value / 5).round() * 5;
-      });
+  void setFloors(int value) => update((a) => a.floors = value);
 
+  /// A house and a flat have different places: the places picked go with the type.
   void setType(BuildingType value) => update((a) {
+        if (a.type != value) a.spaces = {};
         a.type = value;
-        a.spaces = value == BuildingType.flat ? {Space.balcony} : {Space.roof, Space.garden};
-        if (!a.areaSet) a.area = value == BuildingType.flat ? 60 : 120;
       });
 
   /// "Nothing yet" and "Nowhere" exclude every other answer, and the other way round.
@@ -621,10 +624,9 @@ class HomeAnswers extends ChangeNotifier {
             a.renovations.remove(r);
           } else {
             a.renovations.add(r);
-            a.renovationAge.putIfAbsent(r, () => RenovationAge.middle);
-            // A renovated wall or roof starts as insulated: only the thickness is left to ask.
-            if (r == Renovation.walls && a.wallInsulation == InsulationLevel.none) a.wallInsulation = InsulationLevel.thin;
-            if (r == Renovation.roof && a.roofInsulation == InsulationLevel.none) a.roofInsulation = InsulationLevel.thin;
+            // A renovated wall or roof is insulated: an earlier "not insulated" is asked again.
+            if (r == Renovation.walls && a.wallInsulation == InsulationLevel.none) a.wallInsulation = null;
+            if (r == Renovation.roof && a.roofInsulation == InsulationLevel.none) a.roofInsulation = null;
           }
         }
       });
@@ -675,23 +677,22 @@ class HomeAnswers extends ChangeNotifier {
 
   Map<String, Object?> toJson() => {
         'screen': screen,
-        'audience': audience.name,
+        'audience': audience?.name,
         'place': place?.toJson(),
         'uses': [for (final u in uses) u.name],
-        'type': type.name,
+        'type': type?.name,
         'floors': floors,
         'people': people,
         'area': area,
         'areaSet': areaSet,
-        'era': era.name,
+        'era': era?.name,
         'renovations': [for (final r in renovations) r.name],
         'renovationAge': {for (final e in renovationAge.entries) e.key.name: e.value.name},
-        'wallInsulation': wallInsulation.name,
-        'roofInsulation': roofInsulation.name,
-        'floorInsulation': floorInsulation.name,
-        'windows': windows.name,
+        'wallInsulation': wallInsulation?.name,
+        'roofInsulation': roofInsulation?.name,
+        'floorInsulation': floorInsulation?.name,
+        'windows': windows?.name,
         'sources': [for (final s in sources) s.name],
-        'cuts': cuts.name,
         'months': months,
         'useAverage': useAverage,
         'electricityKwh': electricityKwh,
@@ -703,22 +704,24 @@ class HomeAnswers extends ChangeNotifier {
         'gasAmount': gasAmount,
         'gasPaid': gasPaid,
         'firewoodM3': firewoodM3,
+        'firewoodKind': firewoodKind?.name,
+        'firewoodPrice': firewoodPrice,
         'pelletsTonnes': pelletsTonnes,
         'gasBottlesPerMonth': gasBottlesPerMonth,
         'districtPerMonth': districtPerMonth,
         'spaces': [for (final s in spaces) s.name],
         'sizes': {for (final e in sizes.entries) e.key.name: e.value.toJson()},
-        'facing': facing.name,
-        'ownership': ownership.name,
-        'fixer': fixer.name,
-        'handsOn': handsOn.name,
-        'priority': priority.name,
+        'facing': facing?.name,
+        'ownership': ownership?.name,
+        'fixer': fixer?.name,
+        'handsOn': handsOn?.name,
+        'priority': priority?.name,
         'animals': animals?.name,
         'river': river?.name,
         'brook': brook,
         'wind': wind?.name,
         'excludeSomewhere': excludeSomewhere,
-        'roofShape': roofShape.name,
+        'roofShape': roofShape?.name,
         'zones': [for (final z in zones) z.name],
         'missing': [for (final z in missing) z.name],
         'newThing': newThing,
@@ -739,27 +742,26 @@ class HomeAnswers extends ChangeNotifier {
 
   void _fromJson(Map<String, dynamic> j) {
     screen = j['screen'] as String? ?? screen;
-    audience = _enum(Audience.values, j['audience']) ?? audience;
+    audience = _enum(Audience.values, j['audience']);
     place = AssessmentPlace.fromJson(j['place']);
     uses = _enumSet(Use.values, j['uses']);
-    type = _enum(BuildingType.values, j['type']) ?? type;
-    floors = j['floors'] as int? ?? floors;
-    people = j['people'] as int? ?? people;
-    area = j['area'] as int? ?? area;
+    type = _enum(BuildingType.values, j['type']);
+    floors = j['floors'] as int?;
+    people = j['people'] as int?;
+    area = j['area'] as int?;
     areaSet = j['areaSet'] as bool? ?? areaSet;
-    era = _enum(BuildEra.values, j['era']) ?? era;
+    era = _enum(BuildEra.values, j['era']);
     renovations = _enumSet(Renovation.values, j['renovations']);
     renovationAge = {
       if (j['renovationAge'] is Map)
         for (final e in (j['renovationAge'] as Map).entries)
           if ((_enum(Renovation.values, e.key), _enum(RenovationAge.values, e.value)) case (final Renovation r, final RenovationAge a)) r: a,
     };
-    wallInsulation = _enum(InsulationLevel.values, j['wallInsulation']) ?? wallInsulation;
-    roofInsulation = _enum(InsulationLevel.values, j['roofInsulation']) ?? roofInsulation;
-    floorInsulation = _enum(FloorInsulation.values, j['floorInsulation']) ?? floorInsulation;
-    windows = _enum(WindowKind.values, j['windows']) ?? windows;
+    wallInsulation = _enum(InsulationLevel.values, j['wallInsulation']);
+    roofInsulation = _enum(InsulationLevel.values, j['roofInsulation']);
+    floorInsulation = _enum(FloorInsulation.values, j['floorInsulation']);
+    windows = _enum(WindowKind.values, j['windows']);
     sources = _enumSet(Source.values, j['sources']);
-    cuts = _enum(PowerCuts.values, j['cuts']) ?? cuts;
     if (j['months'] is List && (j['months'] as List).length == 3) months = [for (final m in j['months'] as List) (m as num).toInt()];
     useAverage = j['useAverage'] as bool? ?? useAverage;
     electricityKwh = _doubles(j['electricityKwh'], 3);
@@ -771,6 +773,8 @@ class HomeAnswers extends ChangeNotifier {
     gasAmount = _doubles(j['gasAmount'], 3);
     gasPaid = _doubles(j['gasPaid'], 3);
     firewoodM3 = (j['firewoodM3'] as num?)?.toDouble();
+    firewoodKind = _enum(WoodKind.values, j['firewoodKind']);
+    firewoodPrice = (j['firewoodPrice'] as num?)?.toDouble();
     pelletsTonnes = (j['pelletsTonnes'] as num?)?.toDouble();
     gasBottlesPerMonth = (j['gasBottlesPerMonth'] as num?)?.toDouble();
     districtPerMonth = (j['districtPerMonth'] as num?)?.toDouble();
@@ -780,17 +784,17 @@ class HomeAnswers extends ChangeNotifier {
         for (final e in (j['sizes'] as Map).entries)
           if (_enum(Space.values, e.key) case final Space s) s: SpaceSize.fromJson(e.value),
     };
-    facing = _enum(Facing.values, j['facing']) ?? facing;
-    ownership = _enum(Ownership.values, j['ownership']) ?? ownership;
-    fixer = _enum(Fixer.values, j['fixer']) ?? fixer;
-    handsOn = _enum(HandsOn.values, j['handsOn']) ?? handsOn;
-    priority = _enum(Priority.values, j['priority']) ?? priority;
+    facing = _enum(Facing.values, j['facing']);
+    ownership = _enum(Ownership.values, j['ownership']);
+    fixer = _enum(Fixer.values, j['fixer']);
+    handsOn = _enum(HandsOn.values, j['handsOn']);
+    priority = _enum(Priority.values, j['priority']);
     animals = _enum(Animals.values, j['animals']);
     river = _enum(RiverAccess.values, j['river']);
     brook = j['brook'] as bool?;
     wind = _enum(WindExposure.values, j['wind']);
     excludeSomewhere = j['excludeSomewhere'] as bool?;
-    roofShape = _enum(RoofShape.values, j['roofShape']) ?? roofShape;
+    roofShape = _enum(RoofShape.values, j['roofShape']);
     zones = _enumSet(Zone.values, j['zones']);
     missing = _enumSet(Zone.values, j['missing']);
     newThing = j['newThing'] as bool?;

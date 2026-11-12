@@ -46,7 +46,7 @@ ADDRESS = {
 
 # Keys whose text sits in a chip, a button or a short label.
 SHORT = re.compile(
-    r"^(aud(?!.*Desc|Title)|use[A-Z]|src[A-Z](?!.*Title)|cuts(?!Title)|reno(?!Title|When)|age|"
+    r"^(aud(?!.*Desc|Title)|use[A-Z]|src[A-Z](?!.*Title)|reno(?!Title|When)|age|"
     r"ins(?!Title|Help)|win(?!Title|Help)|sp[A-Z]|land|balcony|roof(?!Hidden)|face|own(?!Title|Hint)|"
     r"fix(?!Title|Hint)|hands(?!Title)|prio[A-Z]\w*(?<!Desc)|anim(?!alsQ)|zone|why(?!Label)|mark|"
     r"new(?:Building|Pool|Trees|Other|Yes|No)|noGarden|seeResult|assessContinue|back)$"
