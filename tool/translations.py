@@ -448,6 +448,17 @@ T["en"] = dict(
     tipIns='The guide below helps you decide.',
     tipWin='Just look at how many layers of glass the window has.',
     tipRiver='Then we only mention water power as a possibility.',
+    cutsTitle='How often does your power cut out?',
+    cutsNever='Never',
+    cutsHardly='Hardly ever (once or twice a year)',
+    cutsMonthly='A few times a month',
+    cutsDaily='Most days',
+    cutLengthQ='How long does it usually last?',
+    cutsLenShort='Under an hour',
+    cutsLenHours='A few hours',
+    cutsLenDay='More than a day',
+    indepQ='Would you like to be fully independent of the grid?',
+    noteCuts='This tells us whether you should stay on the grid, and whether you need a battery and how big.',
 )
 
 T["hu"] = dict(
@@ -892,6 +903,17 @@ T["hu"] = dict(
     tipIns='A lenti leírás segít eldönteni.',
     tipWin='Elég megnézni, hány üvegréteg van az ablakban.',
     tipRiver='Így a vízenergiát csak lehetőségként említjük.',
+    cutsTitle='Milyen gyakran megy el az áram?',
+    cutsNever='Soha',
+    cutsHardly='Szinte soha (évente egyszer-kétszer)',
+    cutsMonthly='Havonta néhányszor',
+    cutsDaily='Szinte minden nap',
+    cutLengthQ='Általában meddig tart?',
+    cutsLenShort='Kevesebb mint 1 óra',
+    cutsLenHours='Néhány óra',
+    cutsLenDay='Egy napnál tovább',
+    indepQ='Szeretnél teljesen független lenni a hálózattól?',
+    noteCuts='Ebből látjuk, érdemes-e a hálózaton maradnod, és kell-e akkumulátor, és ha igen, mekkora.',
 )
 
 T["ro"] = dict(
@@ -1336,6 +1358,17 @@ T["ro"] = dict(
     tipIns='Descrierea de mai jos te ajută să decizi.',
     tipWin='E destul să te uiți câte straturi de sticlă are fereastra.',
     tipRiver='Atunci menționăm energia apei doar ca posibilitate.',
+    cutsTitle='Cât de des se întrerupe curentul?',
+    cutsNever='Niciodată',
+    cutsHardly='Aproape niciodată (o dată sau de două ori pe an)',
+    cutsMonthly='De câteva ori pe lună',
+    cutsDaily='Aproape în fiecare zi',
+    cutLengthQ='Cât durează de obicei?',
+    cutsLenShort='Sub o oră',
+    cutsLenHours='Câteva ore',
+    cutsLenDay='Mai mult de o zi',
+    indepQ='Ai vrea să fii complet independent de rețea?',
+    noteCuts='Din asta vedem dacă merită să rămâi conectat la rețea și dacă îți trebuie o baterie și cât de mare.',
 )
 
 T["de"] = dict(
@@ -1780,6 +1813,17 @@ T["de"] = dict(
     tipIns='Die Anleitung unten hilft bei der Entscheidung.',
     tipWin='Schauen Sie einfach, wie viele Glasschichten das Fenster hat.',
     tipRiver='Dann erwähnen wir Wasserkraft nur als Möglichkeit.',
+    cutsTitle='Wie oft fällt bei Ihnen der Strom aus?',
+    cutsNever='Nie',
+    cutsHardly='Kaum (ein- bis zweimal im Jahr)',
+    cutsMonthly='Ein paar Mal im Monat',
+    cutsDaily='An den meisten Tagen',
+    cutLengthQ='Wie lange dauert er meist?',
+    cutsLenShort='Unter einer Stunde',
+    cutsLenHours='Einige Stunden',
+    cutsLenDay='Länger als einen Tag',
+    indepQ='Möchten Sie ganz unabhängig vom Netz sein?',
+    noteCuts='Daran sehen wir, ob Sie am Netz bleiben sollten und ob Sie einen Speicher brauchen und wie groß.',
 )
 
 T["fr"] = dict(
@@ -2224,6 +2268,17 @@ T["fr"] = dict(
     tipIns='Le guide ci-dessous vous aide à décider.',
     tipWin='Regardez simplement combien de couches de verre a la fenêtre.',
     tipRiver="Nous ne mentionnons alors l'énergie de l'eau que comme une possibilité.",
+    cutsTitle='À quelle fréquence avez-vous des coupures de courant ?',
+    cutsNever='Jamais',
+    cutsHardly='Presque jamais (une ou deux fois par an)',
+    cutsMonthly='Quelques fois par mois',
+    cutsDaily='Presque tous les jours',
+    cutLengthQ='Combien de temps dure-t-elle en général ?',
+    cutsLenShort="Moins d'une heure",
+    cutsLenHours='Quelques heures',
+    cutsLenDay="Plus d'une journée",
+    indepQ='Souhaitez-vous être totalement indépendant du réseau ?',
+    noteCuts="Cela nous indique s'il vaut mieux rester raccordé au réseau, et si une batterie est utile et de quelle taille.",
 )
 
 T["es"] = dict(
@@ -2668,6 +2723,17 @@ T["es"] = dict(
     tipIns='La guía de abajo te ayuda a decidir.',
     tipWin='Basta con mirar cuántas capas de vidrio tiene la ventana.',
     tipRiver='Entonces solo mencionamos la energía del agua como posibilidad.',
+    cutsTitle='¿Con qué frecuencia se te va la luz?',
+    cutsNever='Nunca',
+    cutsHardly='Casi nunca (una o dos veces al año)',
+    cutsMonthly='Unas cuantas veces al mes',
+    cutsDaily='Casi todos los días',
+    cutLengthQ='¿Cuánto suele durar?',
+    cutsLenShort='Menos de una hora',
+    cutsLenHours='Unas horas',
+    cutsLenDay='Más de un día',
+    indepQ='¿Te gustaría ser totalmente independiente de la red?',
+    noteCuts='Con esto vemos si te conviene seguir conectado a la red y si necesitas una batería y de qué tamaño.',
 )
 
 T["it"] = dict(
@@ -3112,6 +3178,17 @@ T["it"] = dict(
     tipIns='La guida qui sotto ti aiuta a decidere.',
     tipWin='Basta guardare quanti strati di vetro ha la finestra.',
     tipRiver="Allora citiamo l'energia dell'acqua solo come possibilità.",
+    cutsTitle='Quanto spesso va via la corrente?',
+    cutsNever='Mai',
+    cutsHardly="Quasi mai (una o due volte l'anno)",
+    cutsMonthly='Qualche volta al mese',
+    cutsDaily='Quasi tutti i giorni',
+    cutLengthQ='Quanto dura di solito?',
+    cutsLenShort="Meno di un'ora",
+    cutsLenHours='Qualche ora',
+    cutsLenDay='Più di un giorno',
+    indepQ='Vorresti essere del tutto indipendente dalla rete?',
+    noteCuts='Da questo capiamo se ti conviene restare collegato alla rete e se ti serve una batteria e quanto grande.',
 )
 
 T["pt"] = dict(
@@ -3556,6 +3633,17 @@ T["pt"] = dict(
     tipIns='O guia abaixo ajuda a decidir.',
     tipWin='Basta ver quantas camadas de vidro tem a janela.',
     tipRiver='Então só mencionamos a energia da água como possibilidade.',
+    cutsTitle='Com que frequência falta a luz?',
+    cutsNever='Nunca',
+    cutsHardly='Quase nunca (uma ou duas vezes por ano)',
+    cutsMonthly='Algumas vezes por mês',
+    cutsDaily='Quase todos os dias',
+    cutLengthQ='Quanto tempo costuma durar?',
+    cutsLenShort='Menos de uma hora',
+    cutsLenHours='Algumas horas',
+    cutsLenDay='Mais de um dia',
+    indepQ='Gostaria de ser totalmente independente da rede?',
+    noteCuts='Assim vemos se compensa continuar ligado à rede e se precisa de uma bateria e de que tamanho.',
 )
 
 T["nl"] = dict(
@@ -4000,6 +4088,17 @@ T["nl"] = dict(
     tipIns='De uitleg hieronder helpt u kiezen.',
     tipWin='Kijk gewoon hoeveel glaslagen het raam heeft.',
     tipRiver='Dan noemen we waterkracht alleen als mogelijkheid.',
+    cutsTitle='Hoe vaak valt de stroom uit?',
+    cutsNever='Nooit',
+    cutsHardly='Bijna nooit (een- of tweemaal per jaar)',
+    cutsMonthly='Een paar keer per maand',
+    cutsDaily='De meeste dagen',
+    cutLengthQ='Hoe lang duurt het meestal?',
+    cutsLenShort='Korter dan een uur',
+    cutsLenHours='Een paar uur',
+    cutsLenDay='Langer dan een dag',
+    indepQ='Wilt u helemaal onafhankelijk zijn van het net?',
+    noteCuts='Hieruit zien we of u beter op het net kunt blijven, en of u een batterij nodig hebt en hoe groot.',
 )
 
 T["pl"] = dict(
@@ -4444,6 +4543,17 @@ T["pl"] = dict(
     tipIns='Opis poniżej pomoże ci zdecydować.',
     tipWin='Wystarczy sprawdzić, ile warstw szkła ma okno.',
     tipRiver='Wtedy energię wody podajemy tylko jako możliwość.',
+    cutsTitle='Jak często brakuje u Ciebie prądu?',
+    cutsNever='Nigdy',
+    cutsHardly='Prawie nigdy (raz–dwa razy w roku)',
+    cutsMonthly='Kilka razy w miesiącu',
+    cutsDaily='Prawie codziennie',
+    cutLengthQ='Jak długo zwykle trwa?',
+    cutsLenShort='Krócej niż godzinę',
+    cutsLenHours='Kilka godzin',
+    cutsLenDay='Dłużej niż dobę',
+    indepQ='Chcesz być całkowicie niezależny od sieci?',
+    noteCuts='Z tego widzimy, czy warto zostać przy sieci oraz czy potrzebny jest akumulator i jak duży.',
 )
 
 T["hr"] = dict(
@@ -4888,6 +4998,17 @@ T["hr"] = dict(
     tipIns='Opis ispod pomaže vam odlučiti.',
     tipWin='Dovoljno je pogledati koliko slojeva stakla ima prozor.',
     tipRiver='Tada energiju vode spominjemo samo kao mogućnost.',
+    cutsTitle='Koliko često vam nestane struje?',
+    cutsNever='Nikad',
+    cutsHardly='Gotovo nikad (jednom-dvaput godišnje)',
+    cutsMonthly='Nekoliko puta mjesečno',
+    cutsDaily='Gotovo svaki dan',
+    cutLengthQ='Koliko obično traje?',
+    cutsLenShort='Kraće od sat vremena',
+    cutsLenHours='Nekoliko sati',
+    cutsLenDay='Dulje od jednog dana',
+    indepQ='Želite li biti potpuno neovisni o mreži?',
+    noteCuts='Iz toga vidimo isplati li vam se ostati na mreži te trebate li bateriju i koliku.',
 )
 
 T["fi"] = dict(
@@ -5332,6 +5453,17 @@ T["fi"] = dict(
     tipIns='Alla oleva ohje auttaa päättämään.',
     tipWin='Katso vain, montako lasikerrosta ikkunassa on.',
     tipRiver='Silloin mainitsemme vesivoiman vain mahdollisuutena.',
+    cutsTitle='Kuinka usein sähköt katkeavat?',
+    cutsNever='Ei koskaan',
+    cutsHardly='Tuskin koskaan (kerran tai kahdesti vuodessa)',
+    cutsMonthly='Muutaman kerran kuussa',
+    cutsDaily='Lähes päivittäin',
+    cutLengthQ='Kuinka kauan se yleensä kestää?',
+    cutsLenShort='Alle tunnin',
+    cutsLenHours='Muutaman tunnin',
+    cutsLenDay='Yli vuorokauden',
+    indepQ='Haluaisitko olla täysin riippumaton sähköverkosta?',
+    noteCuts='Tästä näemme, kannattaako sinun pysyä verkossa ja tarvitsetko akun ja kuinka suuren.',
 )
 
 T["ru"] = dict(
@@ -5776,6 +5908,17 @@ T["ru"] = dict(
     tipIns='Описание ниже поможет решить.',
     tipWin='Достаточно посмотреть, сколько слоёв стекла в окне.',
     tipRiver='Тогда мы упоминаем энергию воды только как возможность.',
+    cutsTitle='Как часто у вас отключают электричество?',
+    cutsNever='Никогда',
+    cutsHardly='Почти никогда (раз-два в год)',
+    cutsMonthly='Несколько раз в месяц',
+    cutsDaily='Почти каждый день',
+    cutLengthQ='Сколько он обычно длится?',
+    cutsLenShort='Меньше часа',
+    cutsLenHours='Несколько часов',
+    cutsLenDay='Больше суток',
+    indepQ='Хотите ли вы быть полностью независимыми от сети?',
+    noteCuts='По этому мы видим, стоит ли вам оставаться подключёнными к сети и нужен ли аккумулятор, и какой ёмкости.',
 )
 
 T["tr"] = dict(
@@ -6220,6 +6363,17 @@ T["tr"] = dict(
     tipIns='Aşağıdaki açıklama karar vermenize yardımcı olur.',
     tipWin='Pencerede kaç kat cam olduğuna bakmanız yeterli.',
     tipRiver='O zaman su enerjisinden yalnızca bir olasılık olarak söz ederiz.',
+    cutsTitle='Elektrikler ne sıklıkla kesiliyor?',
+    cutsNever='Hiçbir zaman',
+    cutsHardly='Neredeyse hiç (yılda bir iki kez)',
+    cutsMonthly='Ayda birkaç kez',
+    cutsDaily='Çoğu gün',
+    cutLengthQ='Genellikle ne kadar sürüyor?',
+    cutsLenShort='Bir saatten az',
+    cutsLenHours='Birkaç saat',
+    cutsLenDay='Bir günden fazla',
+    indepQ='Şebekeden tamamen bağımsız olmak ister misiniz?',
+    noteCuts='Buradan şebekede kalmanızın mantıklı olup olmadığını, bataryaya ihtiyacınız olup olmadığını ve ne büyüklükte olacağını görürüz.',
 )
 
 T["zh"] = dict(
@@ -6664,6 +6818,17 @@ T["zh"] = dict(
     tipIns='下面的说明可以帮您判断。',
     tipWin='只要看看窗户有几层玻璃就行。',
     tipRiver='那么我们只把水能作为一种可能提及。',
+    cutsTitle='你那里多久停一次电？',
+    cutsNever='从不',
+    cutsHardly='几乎不停（每年一两次）',
+    cutsMonthly='每月几次',
+    cutsDaily='几乎每天',
+    cutLengthQ='通常持续多久？',
+    cutsLenShort='不到 1 小时',
+    cutsLenHours='几个小时',
+    cutsLenDay='超过一天',
+    indepQ='您希望完全不依赖电网吗？',
+    noteCuts='由此我们判断您是否应继续使用电网，以及是否需要电池、需要多大。',
 )
 
 T["sv"] = dict(
@@ -7108,6 +7273,17 @@ T["sv"] = dict(
     tipIns='Beskrivningen nedan hjälper dig att avgöra.',
     tipWin='Titta bara hur många glaslager fönstret har.',
     tipRiver='Då nämner vi vattenkraft bara som en möjlighet.',
+    cutsTitle='Hur ofta blir det strömavbrott?',
+    cutsNever='Aldrig',
+    cutsHardly='Nästan aldrig (en eller två gånger om året)',
+    cutsMonthly='Några gånger i månaden',
+    cutsDaily='De flesta dagar',
+    cutLengthQ='Hur länge brukar det vara?',
+    cutsLenShort='Under en timme',
+    cutsLenHours='Några timmar',
+    cutsLenDay='Mer än ett dygn',
+    indepQ='Vill du bli helt oberoende av elnätet?',
+    noteCuts='Av detta ser vi om du bör vara kvar på elnätet, och om du behöver ett batteri och hur stort.',
 )
 
 T["da"] = dict(
@@ -7552,6 +7728,17 @@ T["da"] = dict(
     tipIns='Vejledningen nedenfor hjælper dig med at afgøre det.',
     tipWin='Se bare, hvor mange lag glas vinduet har.',
     tipRiver='Så nævner vi kun vandkraft som en mulighed.',
+    cutsTitle='Hvor tit går strømmen?',
+    cutsNever='Aldrig',
+    cutsHardly='Næsten aldrig (en eller to gange om året)',
+    cutsMonthly='Et par gange om måneden',
+    cutsDaily='De fleste dage',
+    cutLengthQ='Hvor længe varer det som regel?',
+    cutsLenShort='Under en time',
+    cutsLenHours='Et par timer',
+    cutsLenDay='Mere end et døgn',
+    indepQ='Vil du gerne være helt uafhængig af elnettet?',
+    noteCuts='Ud fra dette ser vi, om du bør blive på elnettet, og om du har brug for et batteri og hvor stort.',
 )
 
 T["el"] = dict(
@@ -7996,6 +8183,17 @@ T["el"] = dict(
     tipIns='Ο οδηγός παρακάτω σας βοηθά να αποφασίσετε.',
     tipWin='Αρκεί να δείτε πόσες στρώσεις τζάμι έχει το παράθυρο.',
     tipRiver='Τότε αναφέρουμε την ενέργεια του νερού μόνο ως δυνατότητα.',
+    cutsTitle='Πόσο συχνά κόβεται το ρεύμα;',
+    cutsNever='Ποτέ',
+    cutsHardly='Σχεδόν ποτέ (μία ή δύο φορές τον χρόνο)',
+    cutsMonthly='Μερικές φορές τον μήνα',
+    cutsDaily='Σχεδόν κάθε μέρα',
+    cutLengthQ='Πόσο διαρκεί συνήθως;',
+    cutsLenShort='Λιγότερο από μία ώρα',
+    cutsLenHours='Μερικές ώρες',
+    cutsLenDay='Περισσότερο από μία μέρα',
+    indepQ='Θα θέλατε να είστε εντελώς ανεξάρτητοι από το δίκτυο;',
+    noteCuts='Από αυτό βλέπουμε αν αξίζει να μείνετε στο δίκτυο, και αν χρειάζεστε μπαταρία και πόσο μεγάλη.',
 )
 
 T["ja"] = dict(
@@ -8440,6 +8638,17 @@ T["ja"] = dict(
     tipIns='下の説明が判断の助けになります。',
     tipWin='窓のガラスが何層あるかを見るだけで十分です。',
     tipRiver='その場合、水力は可能性としてのみ触れます。',
+    cutsTitle='停電はどのくらいの頻度で起こりますか？',
+    cutsNever='まったくない',
+    cutsHardly='ほとんどない（年に 1〜2 回）',
+    cutsMonthly='月に数回',
+    cutsDaily='ほぼ毎日',
+    cutLengthQ='たいていどのくらい続きますか？',
+    cutsLenShort='1 時間未満',
+    cutsLenHours='数時間',
+    cutsLenDay='1 日以上',
+    indepQ='電力網から完全に自立したいですか？',
+    noteCuts='ここから、電力網につながったままがよいか、蓄電池が必要か、必要ならどの容量かがわかります。',
 )
 
 T["ko"] = dict(
@@ -8884,6 +9093,17 @@ T["ko"] = dict(
     tipIns='아래 설명이 판단에 도움이 됩니다.',
     tipWin='창문에 유리가 몇 겹인지만 보면 됩니다.',
     tipRiver='그렇다면 수력은 가능성으로만 언급합니다.',
+    cutsTitle='정전은 얼마나 자주 일어나나요?',
+    cutsNever='전혀 없음',
+    cutsHardly='거의 없음(1년에 한두 번)',
+    cutsMonthly='한 달에 몇 번',
+    cutsDaily='거의 매일',
+    cutLengthQ='보통 얼마나 오래 가나요?',
+    cutsLenShort='1시간 미만',
+    cutsLenHours='몇 시간',
+    cutsLenDay='하루 이상',
+    indepQ='전력망에서 완전히 독립하고 싶으신가요?',
+    noteCuts='이것으로 전력망에 계속 연결하는 것이 좋은지, 배터리가 필요한지, 필요하다면 얼마나 큰지 알 수 있습니다.',
 )
 
 T["hi"] = dict(
@@ -9328,6 +9548,17 @@ T["hi"] = dict(
     tipIns='नीचे दिया विवरण तय करने में मदद करता है।',
     tipWin='बस देखिए कि खिड़की में कांच की कितनी परतें हैं।',
     tipRiver='तब हम जल ऊर्जा का ज़िक्र केवल एक संभावना के रूप में करते हैं।',
+    cutsTitle='आपके यहाँ बिजली कितनी बार जाती है?',
+    cutsNever='कभी नहीं',
+    cutsHardly='शायद ही कभी (साल में एक-दो बार)',
+    cutsMonthly='महीने में कुछ बार',
+    cutsDaily='लगभग रोज़',
+    cutLengthQ='आमतौर पर कितनी देर रहती है?',
+    cutsLenShort='एक घंटे से कम',
+    cutsLenHours='कुछ घंटे',
+    cutsLenDay='एक दिन से ज़्यादा',
+    indepQ='क्या आप ग्रिड से पूरी तरह स्वतंत्र होना चाहेंगे?',
+    noteCuts='इससे हम देखते हैं कि आपके लिए ग्रिड से जुड़े रहना ठीक है या नहीं, और बैटरी चाहिए या नहीं, और कितनी बड़ी।',
 )
 
 T["ar"] = dict(
@@ -9772,6 +10003,17 @@ T["ar"] = dict(
     tipIns='الشرح أدناه يساعدك على التحديد.',
     tipWin='يكفي أن ترى كم طبقة زجاج في النافذة.',
     tipRiver='عندها نذكر طاقة المياه كاحتمال فقط.',
+    cutsTitle='كم مرة تنقطع الكهرباء عندك؟',
+    cutsNever='أبدًا',
+    cutsHardly='نادرًا جدًا (مرة أو مرتين في السنة)',
+    cutsMonthly='بضع مرات في الشهر',
+    cutsDaily='معظم الأيام',
+    cutLengthQ='كم يدوم عادةً؟',
+    cutsLenShort='أقل من ساعة',
+    cutsLenHours='بضع ساعات',
+    cutsLenDay='أكثر من يوم',
+    indepQ='هل تودّ أن تكون مستقلًا تمامًا عن الشبكة؟',
+    noteCuts='من هذا نعرف هل يستحسن أن تبقى على الشبكة، وهل تحتاج إلى بطارية وبأي حجم.',
 )
 
 T["bn"] = dict(
@@ -10216,6 +10458,17 @@ T["bn"] = dict(
     tipIns='নিচের বিবরণ সিদ্ধান্ত নিতে সাহায্য করে।',
     tipWin='শুধু দেখুন জানালায় কাচের কয়টি স্তর আছে।',
     tipRiver='তাহলে আমরা পানির শক্তিকে শুধু একটি সম্ভাবনা হিসেবে উল্লেখ করি।',
+    cutsTitle='আপনার এখানে কত ঘন ঘন বিদ্যুৎ যায়?',
+    cutsNever='কখনো না',
+    cutsHardly='প্রায় কখনো না (বছরে এক-দুবার)',
+    cutsMonthly='মাসে কয়েকবার',
+    cutsDaily='প্রায় প্রতিদিন',
+    cutLengthQ='সাধারণত কতক্ষণ থাকে?',
+    cutsLenShort='এক ঘণ্টার কম',
+    cutsLenHours='কয়েক ঘণ্টা',
+    cutsLenDay='এক দিনের বেশি',
+    indepQ='আপনি কি গ্রিড থেকে পুরোপুরি স্বাধীন হতে চান?',
+    noteCuts='এ থেকে আমরা দেখি গ্রিডে থাকা আপনার জন্য ভালো কি না, এবং ব্যাটারি লাগবে কি না, লাগলে কত বড়।',
 )
 
 T["id"] = dict(
@@ -10660,6 +10913,17 @@ T["id"] = dict(
     tipIns='Panduan di bawah membantu Anda memutuskan.',
     tipWin='Cukup lihat berapa lapis kaca pada jendela.',
     tipRiver='Maka kami hanya menyebut tenaga air sebagai kemungkinan.',
+    cutsTitle='Seberapa sering listrik padam?',
+    cutsNever='Tidak pernah',
+    cutsHardly='Hampir tidak pernah (sekali-dua kali setahun)',
+    cutsMonthly='Beberapa kali sebulan',
+    cutsDaily='Hampir setiap hari',
+    cutLengthQ='Biasanya berlangsung berapa lama?',
+    cutsLenShort='Kurang dari satu jam',
+    cutsLenHours='Beberapa jam',
+    cutsLenDay='Lebih dari sehari',
+    indepQ='Apakah Anda ingin sepenuhnya mandiri dari jaringan listrik?',
+    noteCuts='Dari sini kami melihat apakah Anda sebaiknya tetap tersambung ke jaringan, dan apakah perlu baterai serta seberapa besar.',
 )
 
 T["vi"] = dict(
@@ -11104,4 +11368,15 @@ T["vi"] = dict(
     tipIns='Phần hướng dẫn bên dưới giúp bạn quyết định.',
     tipWin='Chỉ cần xem cửa sổ có mấy lớp kính.',
     tipRiver='Khi đó chúng tôi chỉ nhắc đến năng lượng nước như một khả năng.',
+    cutsTitle='Nơi bạn mất điện thường xuyên đến mức nào?',
+    cutsNever='Không bao giờ',
+    cutsHardly='Hầu như không (một hai lần một năm)',
+    cutsMonthly='Vài lần một tháng',
+    cutsDaily='Hầu như ngày nào cũng có',
+    cutLengthQ='Thường kéo dài bao lâu?',
+    cutsLenShort='Dưới một giờ',
+    cutsLenHours='Vài giờ',
+    cutsLenDay='Hơn một ngày',
+    indepQ='Bạn có muốn hoàn toàn độc lập với lưới điện không?',
+    noteCuts='Từ đây chúng tôi biết bạn có nên tiếp tục dùng lưới điện không, có cần pin lưu trữ không và cần lớn cỡ nào.',
 )

@@ -51,6 +51,12 @@ enum Priority { upfront, running, environment, balanced }
 
 enum Animals { few, herd, foodWaste, none }
 
+/// How often the power goes out (backend `Battery.Cuts`).
+enum PowerCuts { never, hardlyEver, monthly, mostDays }
+
+/// How long a cut usually lasts (backend `Battery.CutLength`).
+enum CutLength { underHour, hours, overDay }
+
 enum RiverAccess { through, others, cannot, notSure }
 
 /// The kind of firewood burnt (backend `Firewood.Kind`).
@@ -196,6 +202,12 @@ class HomeAnswers extends ChangeNotifier {
   GasUnit gasUnit = GasUnit.kwh;
   List<double?> gasAmount = [null, null, null];
   List<double?> gasPaid = [null, null, null];
+
+  /// Power cuts, their usual length, and whether the person wants to be fully off the grid; asked
+  /// only on the grid (docs/decisions/2026-11-14-power-cuts-back.md in the backend).
+  PowerCuts? cuts;
+  CutLength? cutLength;
+  bool? independent;
 
   double? firewoodM3;
   WoodKind? firewoodKind;
@@ -703,6 +715,9 @@ class HomeAnswers extends ChangeNotifier {
         'gasUnit': gasUnit.name,
         'gasAmount': gasAmount,
         'gasPaid': gasPaid,
+        'cuts': cuts?.name,
+        'cutLength': cutLength?.name,
+        'independent': independent,
         'firewoodM3': firewoodM3,
         'firewoodKind': firewoodKind?.name,
         'firewoodPrice': firewoodPrice,
@@ -772,6 +787,9 @@ class HomeAnswers extends ChangeNotifier {
     gasUnit = _enum(GasUnit.values, j['gasUnit']) ?? gasUnit;
     gasAmount = _doubles(j['gasAmount'], 3);
     gasPaid = _doubles(j['gasPaid'], 3);
+    cuts = _enum(PowerCuts.values, j['cuts']);
+    cutLength = _enum(CutLength.values, j['cutLength']);
+    independent = j['independent'] as bool?;
     firewoodM3 = (j['firewoodM3'] as num?)?.toDouble();
     firewoodKind = _enum(WoodKind.values, j['firewoodKind']);
     firewoodPrice = (j['firewoodPrice'] as num?)?.toDouble();

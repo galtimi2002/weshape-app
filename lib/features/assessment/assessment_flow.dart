@@ -165,7 +165,7 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
         'windows',
       ],
       'sources',
-      if (mains) ...['electricity', 'paid'],
+      if (mains) ...['cuts', 'electricity', 'paid'],
       if (a.sources.contains(Source.pipedGas)) 'gas',
       if (a.hasFuels) 'fuels',
       'spaces',
@@ -209,6 +209,7 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
           'insulation' => _InsulationStep(answers: a, nav: nav),
           'windows' => _WindowsStep(answers: a, nav: nav),
           'sources' => _SourcesStep(answers: a, nav: nav),
+          'cuts' => _CutsStep(answers: a, nav: nav),
           'electricity' => _ElectricityStep(answers: a, nav: nav),
           'paid' => _PaidStep(answers: a, nav: nav, countryCode: widget.countryCode),
           'gas' => _GasStep(answers: a, nav: nav, countryCode: widget.countryCode),
@@ -1456,6 +1457,63 @@ class _BillPhotoSoon extends StatelessWidget {
         padding: const EdgeInsets.only(top: 14),
         child: _SoonAction(icon: Icons.receipt_long_outlined, label: context.t.billPhoto),
       );
+}
+
+class _CutsStep extends StatelessWidget {
+  const _CutsStep({required this.answers, required this.nav});
+
+  final HomeAnswers answers;
+  final _Nav nav;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final a = answers;
+    final cuts = a.cuts != null && a.cuts != PowerCuts.never;
+    return _StepPage(
+      nav: nav,
+      title: t.cutsTitle,
+      note: t.noteCuts,
+      canContinue: a.cuts != null && (!cuts || a.cutLength != null) && a.independent != null,
+      children: [
+        _Options<PowerCuts>(
+          values: PowerCuts.values,
+          title: (v) => switch (v) {
+            PowerCuts.never => t.cutsNever,
+            PowerCuts.hardlyEver => t.cutsHardly,
+            PowerCuts.monthly => t.cutsMonthly,
+            PowerCuts.mostDays => t.cutsDaily,
+          },
+          selected: a.cuts,
+          onSelect: (v) => a.update((x) => x.cuts = v),
+        ),
+        if (cuts) ...[
+          _gap,
+          SubQuestion(t.cutLengthQ),
+          ChoiceChips<CutLength>(
+            values: CutLength.values,
+            label: (v) => switch (v) {
+              CutLength.underHour => t.cutsLenShort,
+              CutLength.hours => t.cutsLenHours,
+              CutLength.overDay => t.cutsLenDay,
+            },
+            selected: a.cutLength,
+            onSelect: (v) => a.update((x) => x.cutLength = v),
+          ),
+        ],
+        if (a.cuts != null) ...[
+          _gap,
+          SubQuestion(t.indepQ),
+          ChoiceChips<bool>(
+            values: const [true, false],
+            label: (v) => v ? t.yes : t.no,
+            selected: a.independent,
+            onSelect: (v) => a.update((x) => x.independent = v),
+          ),
+        ],
+      ],
+    );
+  }
 }
 
 class _ElectricityStep extends StatelessWidget {

@@ -355,6 +355,17 @@ class AppStrings {
     required this.tipIns,
     required this.tipWin,
     required this.tipRiver,
+    required this.cutsTitle,
+    required this.cutsNever,
+    required this.cutsHardly,
+    required this.cutsMonthly,
+    required this.cutsDaily,
+    required this.cutLengthQ,
+    required this.cutsLenShort,
+    required this.cutsLenHours,
+    required this.cutsLenDay,
+    required this.indepQ,
+    required this.noteCuts,
     required this.prioTitle,
     required this.prioUpfront,
     required this.prioUpfrontDesc,
@@ -818,6 +829,17 @@ class AppStrings {
   final String tipIns;
   final String tipWin;
   final String tipRiver;
+  final String cutsTitle;
+  final String cutsNever;
+  final String cutsHardly;
+  final String cutsMonthly;
+  final String cutsDaily;
+  final String cutLengthQ;
+  final String cutsLenShort;
+  final String cutsLenHours;
+  final String cutsLenDay;
+  final String indepQ;
+  final String noteCuts;
   final String prioTitle;
   final String prioUpfront;
   final String prioUpfrontDesc;
