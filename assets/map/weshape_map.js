@@ -9,7 +9,7 @@
   'use strict';
   // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
   // (after a hot restart the page still holds the previous script).
-  var VERSION = 21;
+  var VERSION = 22;
   if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
   if (window.WeShapeMap && window.WeShapeMap.destroy) {
     try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
@@ -402,10 +402,14 @@
   /**
    * Rivers: the reaches follow a ~500 m grid, so from zoom 11 on they fade and the base
    * map's real river bed takes over; they stay clickable and keep their colour.
+   * Pictures and tiles: the data is kilometres coarse, so close in it fades and the streets
+   * and buildings show (the values stay on the card); full strength up to zoom 11, a quarter
+   * from zoom 14.
    */
   function opacityValue(value) {
-    if (state.overlayKind !== 'rivers' || !value) return value;
-    return ['interpolate', ['linear'], ['zoom'], 10, value, 13, value * 0.4];
+    if (!value) return value;
+    if (state.overlayKind === 'rivers') return ['interpolate', ['linear'], ['zoom'], 10, value, 13, value * 0.4];
+    return ['interpolate', ['linear'], ['zoom'], 11, value, 14, value * 0.25];
   }
 
   function applyOverlayOpacity() {
@@ -420,7 +424,9 @@
   function aboveFillsId() {
     var id;
     map.getStyle().layers.some(function (l) {
-      if (l.id !== 'ws-overlay' && l.type !== 'background' && l.type !== 'fill') { id = l.id; return true; }
+      if (l.id === 'ws-overlay' || l.type === 'background') return false;
+      // Buildings stay above our layer, like the roads, so the place can be recognised.
+      if (l.type !== 'fill' || /building/.test(l.id)) { id = l.id; return true; }
       return false;
     });
     return id;
@@ -501,7 +507,7 @@
     map.addLayer({
       id: 'ws-overlay', type: 'raster', source: 'ws-overlay',
       paint: {
-        'raster-opacity': opacity, 'raster-fade-duration': o.kind === 'tiles' ? 200 : 0,
+        'raster-opacity': opacityValue(opacity), 'raster-fade-duration': o.kind === 'tiles' ? 200 : 0,
         'raster-resampling': 'linear', 'raster-opacity-transition': { duration: 300 }
       }
     }, aboveFillsId());
