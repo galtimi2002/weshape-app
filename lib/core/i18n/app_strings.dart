@@ -366,6 +366,10 @@ class AppStrings {
     required this.cutsLenDay,
     required this.indepQ,
     required this.noteCuts,
+    required this.newRoadCrosses,
+    required this.newTooBigPool,
+    required this.newTooBigBuilding,
+    required this.newTooBigOther,
     required this.prioTitle,
     required this.prioUpfront,
     required this.prioUpfrontDesc,
@@ -840,6 +844,10 @@ class AppStrings {
   final String cutsLenDay;
   final String indepQ;
   final String noteCuts;
+  final String newRoadCrosses;
+  final String newTooBigPool;
+  final String newTooBigBuilding;
+  final String newTooBigOther;
   final String prioTitle;
   final String prioUpfront;
   final String prioUpfrontDesc;

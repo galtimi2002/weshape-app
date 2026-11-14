@@ -9,7 +9,7 @@
   'use strict';
   // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
   // (after a hot restart the page still holds the previous script).
-  var VERSION = 22;
+  var VERSION = 23;
   if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
   if (window.WeShapeMap && window.WeShapeMap.destroy) {
     try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
@@ -670,7 +670,11 @@
       if (!half || f.properties.brunnel === 'tunnel') return;
       var g = f.geometry, lines = g.type === 'LineString' ? [g.coordinates] : g.type === 'MultiLineString' ? g.coordinates : [];
       lines.forEach(function (line) {
-        var near = line.some(function (c) { return c[0] >= w && c[0] <= e && c[1] >= s && c[1] <= n; });
+        // Near when a segment's box overlaps ours: a long straight road can cross with no point inside.
+        var near = line.some(function (c, i) {
+          var d = i + 1 < line.length ? line[i + 1] : c;
+          return Math.max(c[0], d[0]) >= w && Math.min(c[0], d[0]) <= e && Math.max(c[1], d[1]) >= s && Math.min(c[1], d[1]) <= n;
+        });
         if (!near) return;
         var key = JSON.stringify(line);
         if (seen[key]) return; // the same road from two tiles

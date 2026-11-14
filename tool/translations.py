@@ -459,6 +459,10 @@ T["en"] = dict(
     cutsLenDay='More than a day',
     indepQ='Would you like to be fully independent of the grid?',
     noteCuts='This tells us whether you should stay on the grid, and whether you need a battery and how big.',
+    newRoadCrosses='The area you drew crosses a road. Draw it smaller, or on one side of the road only.',
+    newTooBigPool='This is very large for a pool. Did you draw it right?',
+    newTooBigBuilding='This is very large for a building. Did you draw it right?',
+    newTooBigOther='This is a very large area. Did you draw it right?',
 )
 
 T["hu"] = dict(
@@ -914,6 +918,10 @@ T["hu"] = dict(
     cutsLenDay='Egy napnál tovább',
     indepQ='Szeretnél teljesen független lenni a hálózattól?',
     noteCuts='Ebből látjuk, érdemes-e a hálózaton maradnod, és kell-e akkumulátor, és ha igen, mekkora.',
+    newRoadCrosses='A berajzolt terület átnyúlik egy úton. Rajzold kisebbre, vagy csak az út egyik oldalára.',
+    newTooBigPool='Ez nagyon nagy egy medencéhez. Biztosan jól rajzoltad be?',
+    newTooBigBuilding='Ez nagyon nagy egy épülethez. Biztosan jól rajzoltad be?',
+    newTooBigOther='Ez nagyon nagy terület. Biztosan jól rajzoltad be?',
 )
 
 T["ro"] = dict(
@@ -1369,6 +1377,10 @@ T["ro"] = dict(
     cutsLenDay='Mai mult de o zi',
     indepQ='Ai vrea să fii complet independent de rețea?',
     noteCuts='Din asta vedem dacă merită să rămâi conectat la rețea și dacă îți trebuie o baterie și cât de mare.',
+    newRoadCrosses='Zona desenată traversează un drum. Deseneaz-o mai mică sau doar pe o parte a drumului.',
+    newTooBigPool='E foarte mare pentru o piscină. Ai desenat-o corect?',
+    newTooBigBuilding='E foarte mare pentru o clădire. Ai desenat-o corect?',
+    newTooBigOther='E o zonă foarte mare. Ai desenat-o corect?',
 )
 
 T["de"] = dict(
@@ -1824,6 +1836,10 @@ T["de"] = dict(
     cutsLenDay='Länger als einen Tag',
     indepQ='Möchten Sie ganz unabhängig vom Netz sein?',
     noteCuts='Daran sehen wir, ob Sie am Netz bleiben sollten und ob Sie einen Speicher brauchen und wie groß.',
+    newRoadCrosses='Die gezeichnete Fläche geht über eine Straße. Zeichnen Sie sie kleiner oder nur auf einer Seite der Straße.',
+    newTooBigPool='Das ist sehr groß für einen Pool. Haben Sie richtig gezeichnet?',
+    newTooBigBuilding='Das ist sehr groß für ein Gebäude. Haben Sie richtig gezeichnet?',
+    newTooBigOther='Das ist eine sehr große Fläche. Haben Sie richtig gezeichnet?',
 )
 
 T["fr"] = dict(
@@ -2279,6 +2295,10 @@ T["fr"] = dict(
     cutsLenDay="Plus d'une journée",
     indepQ='Souhaitez-vous être totalement indépendant du réseau ?',
     noteCuts="Cela nous indique s'il vaut mieux rester raccordé au réseau, et si une batterie est utile et de quelle taille.",
+    newRoadCrosses="La zone dessinée traverse une route. Dessinez-la plus petite, ou d'un seul côté de la route.",
+    newTooBigPool="C'est très grand pour une piscine. L'avez-vous bien dessinée ?",
+    newTooBigBuilding="C'est très grand pour un bâtiment. L'avez-vous bien dessiné ?",
+    newTooBigOther="C'est une très grande zone. L'avez-vous bien dessinée ?",
 )
 
 T["es"] = dict(
@@ -2734,6 +2754,10 @@ T["es"] = dict(
     cutsLenDay='Más de un día',
     indepQ='¿Te gustaría ser totalmente independiente de la red?',
     noteCuts='Con esto vemos si te conviene seguir conectado a la red y si necesitas una batería y de qué tamaño.',
+    newRoadCrosses='La zona que dibujaste cruza una carretera. Dibújala más pequeña o solo a un lado de la carretera.',
+    newTooBigPool='Es muy grande para una piscina. ¿La dibujaste bien?',
+    newTooBigBuilding='Es muy grande para un edificio. ¿Lo dibujaste bien?',
+    newTooBigOther='Es una zona muy grande. ¿La dibujaste bien?',
 )
 
 T["it"] = dict(
@@ -3189,6 +3213,10 @@ T["it"] = dict(
     cutsLenDay='Più di un giorno',
     indepQ='Vorresti essere del tutto indipendente dalla rete?',
     noteCuts='Da questo capiamo se ti conviene restare collegato alla rete e se ti serve una batteria e quanto grande.',
+    newRoadCrosses="L'area disegnata attraversa una strada. Disegnala più piccola o solo da un lato della strada.",
+    newTooBigPool="È molto grande per una piscina. L'hai disegnata bene?",
+    newTooBigBuilding="È molto grande per un edificio. L'hai disegnato bene?",
+    newTooBigOther="È un'area molto grande. L'hai disegnata bene?",
 )
 
 T["pt"] = dict(
@@ -3644,6 +3672,10 @@ T["pt"] = dict(
     cutsLenDay='Mais de um dia',
     indepQ='Gostaria de ser totalmente independente da rede?',
     noteCuts='Assim vemos se compensa continuar ligado à rede e se precisa de uma bateria e de que tamanho.',
+    newRoadCrosses='A área desenhada atravessa uma estrada. Desenhe-a mais pequena ou só de um lado da estrada.',
+    newTooBigPool='É muito grande para uma piscina. Desenhou-a bem?',
+    newTooBigBuilding='É muito grande para um edifício. Desenhou-o bem?',
+    newTooBigOther='É uma área muito grande. Desenhou-a bem?',
 )
 
 T["nl"] = dict(
@@ -4099,6 +4131,10 @@ T["nl"] = dict(
     cutsLenDay='Langer dan een dag',
     indepQ='Wilt u helemaal onafhankelijk zijn van het net?',
     noteCuts='Hieruit zien we of u beter op het net kunt blijven, en of u een batterij nodig hebt en hoe groot.',
+    newRoadCrosses='Het getekende vlak loopt over een weg. Teken het kleiner, of alleen aan één kant van de weg.',
+    newTooBigPool='Dit is erg groot voor een zwembad. Hebt u het goed getekend?',
+    newTooBigBuilding='Dit is erg groot voor een gebouw. Hebt u het goed getekend?',
+    newTooBigOther='Dit is een erg groot vlak. Hebt u het goed getekend?',
 )
 
 T["pl"] = dict(
@@ -4554,6 +4590,10 @@ T["pl"] = dict(
     cutsLenDay='Dłużej niż dobę',
     indepQ='Chcesz być całkowicie niezależny od sieci?',
     noteCuts='Z tego widzimy, czy warto zostać przy sieci oraz czy potrzebny jest akumulator i jak duży.',
+    newRoadCrosses='Narysowany obszar przecina drogę. Narysuj go mniejszy albo tylko po jednej stronie drogi.',
+    newTooBigPool='To bardzo dużo jak na basen. Czy na pewno jest dobrze narysowany?',
+    newTooBigBuilding='To bardzo dużo jak na budynek. Czy na pewno jest dobrze narysowany?',
+    newTooBigOther='To bardzo duży obszar. Czy na pewno jest dobrze narysowany?',
 )
 
 T["hr"] = dict(
@@ -5009,6 +5049,10 @@ T["hr"] = dict(
     cutsLenDay='Dulje od jednog dana',
     indepQ='Želite li biti potpuno neovisni o mreži?',
     noteCuts='Iz toga vidimo isplati li vam se ostati na mreži te trebate li bateriju i koliku.',
+    newRoadCrosses='Nacrtano područje prelazi preko ceste. Nacrtajte ga manjim ili samo s jedne strane ceste.',
+    newTooBigPool='To je jako veliko za bazen. Jeste li ga dobro nacrtali?',
+    newTooBigBuilding='To je jako veliko za zgradu. Jeste li je dobro nacrtali?',
+    newTooBigOther='To je jako veliko područje. Jeste li ga dobro nacrtali?',
 )
 
 T["fi"] = dict(
@@ -5464,6 +5508,10 @@ T["fi"] = dict(
     cutsLenDay='Yli vuorokauden',
     indepQ='Haluaisitko olla täysin riippumaton sähköverkosta?',
     noteCuts='Tästä näemme, kannattaako sinun pysyä verkossa ja tarvitsetko akun ja kuinka suuren.',
+    newRoadCrosses='Piirtämäsi alue ylittää tien. Piirrä se pienemmäksi tai vain tien toiselle puolelle.',
+    newTooBigPool='Tämä on hyvin suuri uima-altaaksi. Piirsitkö sen oikein?',
+    newTooBigBuilding='Tämä on hyvin suuri rakennukseksi. Piirsitkö sen oikein?',
+    newTooBigOther='Tämä on hyvin suuri alue. Piirsitkö sen oikein?',
 )
 
 T["ru"] = dict(
@@ -5919,6 +5967,10 @@ T["ru"] = dict(
     cutsLenDay='Больше суток',
     indepQ='Хотите ли вы быть полностью независимыми от сети?',
     noteCuts='По этому мы видим, стоит ли вам оставаться подключёнными к сети и нужен ли аккумулятор, и какой ёмкости.',
+    newRoadCrosses='Нарисованная область пересекает дорогу. Нарисуйте её меньше или только по одну сторону дороги.',
+    newTooBigPool='Это очень много для бассейна. Вы правильно нарисовали?',
+    newTooBigBuilding='Это очень много для здания. Вы правильно нарисовали?',
+    newTooBigOther='Это очень большая область. Вы правильно нарисовали?',
 )
 
 T["tr"] = dict(
@@ -6374,6 +6426,10 @@ T["tr"] = dict(
     cutsLenDay='Bir günden fazla',
     indepQ='Şebekeden tamamen bağımsız olmak ister misiniz?',
     noteCuts='Buradan şebekede kalmanızın mantıklı olup olmadığını, bataryaya ihtiyacınız olup olmadığını ve ne büyüklükte olacağını görürüz.',
+    newRoadCrosses='Çizdiğiniz alan bir yolun üzerinden geçiyor. Daha küçük ya da yolun yalnızca bir tarafına çizin.',
+    newTooBigPool='Bu bir havuz için çok büyük. Doğru çizdiniz mi?',
+    newTooBigBuilding='Bu bir bina için çok büyük. Doğru çizdiniz mi?',
+    newTooBigOther='Bu çok büyük bir alan. Doğru çizdiniz mi?',
 )
 
 T["zh"] = dict(
@@ -6829,6 +6885,10 @@ T["zh"] = dict(
     cutsLenDay='超过一天',
     indepQ='您希望完全不依赖电网吗？',
     noteCuts='由此我们判断您是否应继续使用电网，以及是否需要电池、需要多大。',
+    newRoadCrosses='您画的区域跨过了一条道路。请画小一些，或只画在道路的一侧。',
+    newTooBigPool='作为泳池这太大了。您画对了吗？',
+    newTooBigBuilding='作为建筑这太大了。您画对了吗？',
+    newTooBigOther='这块区域非常大。您画对了吗？',
 )
 
 T["sv"] = dict(
@@ -7284,6 +7344,10 @@ T["sv"] = dict(
     cutsLenDay='Mer än ett dygn',
     indepQ='Vill du bli helt oberoende av elnätet?',
     noteCuts='Av detta ser vi om du bör vara kvar på elnätet, och om du behöver ett batteri och hur stort.',
+    newRoadCrosses='Området du ritade går över en väg. Rita det mindre, eller bara på ena sidan av vägen.',
+    newTooBigPool='Det är väldigt stort för en pool. Ritade du rätt?',
+    newTooBigBuilding='Det är väldigt stort för en byggnad. Ritade du rätt?',
+    newTooBigOther='Det är ett väldigt stort område. Ritade du rätt?',
 )
 
 T["da"] = dict(
@@ -7739,6 +7803,10 @@ T["da"] = dict(
     cutsLenDay='Mere end et døgn',
     indepQ='Vil du gerne være helt uafhængig af elnettet?',
     noteCuts='Ud fra dette ser vi, om du bør blive på elnettet, og om du har brug for et batteri og hvor stort.',
+    newRoadCrosses='Området, du tegnede, går over en vej. Tegn det mindre, eller kun på den ene side af vejen.',
+    newTooBigPool='Det er meget stort til en pool. Har du tegnet rigtigt?',
+    newTooBigBuilding='Det er meget stort til en bygning. Har du tegnet rigtigt?',
+    newTooBigOther='Det er et meget stort område. Har du tegnet rigtigt?',
 )
 
 T["el"] = dict(
@@ -8194,6 +8262,10 @@ T["el"] = dict(
     cutsLenDay='Περισσότερο από μία μέρα',
     indepQ='Θα θέλατε να είστε εντελώς ανεξάρτητοι από το δίκτυο;',
     noteCuts='Από αυτό βλέπουμε αν αξίζει να μείνετε στο δίκτυο, και αν χρειάζεστε μπαταρία και πόσο μεγάλη.',
+    newRoadCrosses='Η περιοχή που σχεδιάσατε περνά πάνω από δρόμο. Σχεδιάστε τη μικρότερη ή μόνο στη μία πλευρά του δρόμου.',
+    newTooBigPool='Είναι πολύ μεγάλο για πισίνα. Το σχεδιάσατε σωστά;',
+    newTooBigBuilding='Είναι πολύ μεγάλο για κτίριο. Το σχεδιάσατε σωστά;',
+    newTooBigOther='Είναι πολύ μεγάλη περιοχή. Τη σχεδιάσατε σωστά;',
 )
 
 T["ja"] = dict(
@@ -8649,6 +8721,10 @@ T["ja"] = dict(
     cutsLenDay='1 日以上',
     indepQ='電力網から完全に自立したいですか？',
     noteCuts='ここから、電力網につながったままがよいか、蓄電池が必要か、必要ならどの容量かがわかります。',
+    newRoadCrosses='描いた範囲が道路にかかっています。小さくするか、道路の片側だけに描いてください。',
+    newTooBigPool='プールにしてはとても大きいです。正しく描けていますか？',
+    newTooBigBuilding='建物にしてはとても大きいです。正しく描けていますか？',
+    newTooBigOther='とても広い範囲です。正しく描けていますか？',
 )
 
 T["ko"] = dict(
@@ -9104,6 +9180,10 @@ T["ko"] = dict(
     cutsLenDay='하루 이상',
     indepQ='전력망에서 완전히 독립하고 싶으신가요?',
     noteCuts='이것으로 전력망에 계속 연결하는 것이 좋은지, 배터리가 필요한지, 필요하다면 얼마나 큰지 알 수 있습니다.',
+    newRoadCrosses='그린 영역이 도로를 가로지릅니다. 더 작게 그리거나 도로 한쪽에만 그려 주세요.',
+    newTooBigPool='수영장치고는 매우 큽니다. 제대로 그리셨나요?',
+    newTooBigBuilding='건물치고는 매우 큽니다. 제대로 그리셨나요?',
+    newTooBigOther='매우 넓은 영역입니다. 제대로 그리셨나요?',
 )
 
 T["hi"] = dict(
@@ -9559,6 +9639,10 @@ T["hi"] = dict(
     cutsLenDay='एक दिन से ज़्यादा',
     indepQ='क्या आप ग्रिड से पूरी तरह स्वतंत्र होना चाहेंगे?',
     noteCuts='इससे हम देखते हैं कि आपके लिए ग्रिड से जुड़े रहना ठीक है या नहीं, और बैटरी चाहिए या नहीं, और कितनी बड़ी।',
+    newRoadCrosses='आपका बनाया क्षेत्र एक सड़क के पार जाता है। इसे छोटा बनाइए, या सड़क के केवल एक ओर।',
+    newTooBigPool='पूल के लिए यह बहुत बड़ा है। क्या आपने सही बनाया?',
+    newTooBigBuilding='इमारत के लिए यह बहुत बड़ा है। क्या आपने सही बनाया?',
+    newTooBigOther='यह बहुत बड़ा क्षेत्र है। क्या आपने सही बनाया?',
 )
 
 T["ar"] = dict(
@@ -10014,6 +10098,10 @@ T["ar"] = dict(
     cutsLenDay='أكثر من يوم',
     indepQ='هل تودّ أن تكون مستقلًا تمامًا عن الشبكة؟',
     noteCuts='من هذا نعرف هل يستحسن أن تبقى على الشبكة، وهل تحتاج إلى بطارية وبأي حجم.',
+    newRoadCrosses='المنطقة التي رسمتها تعبر طريقًا. ارسمها أصغر، أو على جانب واحد من الطريق فقط.',
+    newTooBigPool='هذا كبير جدًا بالنسبة إلى مسبح. هل رسمته بشكل صحيح؟',
+    newTooBigBuilding='هذا كبير جدًا بالنسبة إلى مبنى. هل رسمته بشكل صحيح؟',
+    newTooBigOther='هذه منطقة كبيرة جدًا. هل رسمتها بشكل صحيح؟',
 )
 
 T["bn"] = dict(
@@ -10469,6 +10557,10 @@ T["bn"] = dict(
     cutsLenDay='এক দিনের বেশি',
     indepQ='আপনি কি গ্রিড থেকে পুরোপুরি স্বাধীন হতে চান?',
     noteCuts='এ থেকে আমরা দেখি গ্রিডে থাকা আপনার জন্য ভালো কি না, এবং ব্যাটারি লাগবে কি না, লাগলে কত বড়।',
+    newRoadCrosses='আপনার আঁকা এলাকা একটি রাস্তা পার হয়েছে। এটি ছোট করে আঁকুন, বা রাস্তার শুধু এক পাশে।',
+    newTooBigPool='সুইমিং পুলের জন্য এটি খুব বড়। আপনি কি ঠিকভাবে এঁকেছেন?',
+    newTooBigBuilding='ভবনের জন্য এটি খুব বড়। আপনি কি ঠিকভাবে এঁকেছেন?',
+    newTooBigOther='এটি খুব বড় এলাকা। আপনি কি ঠিকভাবে এঁকেছেন?',
 )
 
 T["id"] = dict(
@@ -10924,6 +11016,10 @@ T["id"] = dict(
     cutsLenDay='Lebih dari sehari',
     indepQ='Apakah Anda ingin sepenuhnya mandiri dari jaringan listrik?',
     noteCuts='Dari sini kami melihat apakah Anda sebaiknya tetap tersambung ke jaringan, dan apakah perlu baterai serta seberapa besar.',
+    newRoadCrosses='Area yang Anda gambar melintasi jalan. Gambar lebih kecil, atau hanya di satu sisi jalan.',
+    newTooBigPool='Ini sangat besar untuk kolam renang. Apakah Anda menggambarnya dengan benar?',
+    newTooBigBuilding='Ini sangat besar untuk bangunan. Apakah Anda menggambarnya dengan benar?',
+    newTooBigOther='Ini area yang sangat besar. Apakah Anda menggambarnya dengan benar?',
 )
 
 T["vi"] = dict(
@@ -11379,4 +11475,8 @@ T["vi"] = dict(
     cutsLenDay='Hơn một ngày',
     indepQ='Bạn có muốn hoàn toàn độc lập với lưới điện không?',
     noteCuts='Từ đây chúng tôi biết bạn có nên tiếp tục dùng lưới điện không, có cần pin lưu trữ không và cần lớn cỡ nào.',
+    newRoadCrosses='Vùng bạn vẽ cắt qua một con đường. Hãy vẽ nhỏ hơn, hoặc chỉ ở một bên đường.',
+    newTooBigPool='Diện tích này quá lớn cho một bể bơi. Bạn vẽ đúng chưa?',
+    newTooBigBuilding='Diện tích này quá lớn cho một tòa nhà. Bạn vẽ đúng chưa?',
+    newTooBigOther='Đây là một vùng rất lớn. Bạn vẽ đúng chưa?',
 )

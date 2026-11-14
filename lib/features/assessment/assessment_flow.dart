@@ -2810,6 +2810,13 @@ class _NewThingStepState extends State<_NewThingStep> {
         Text(t.newDrawAreaFor(drawnArea.round()),
             style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: p.text)),
       ],
+      if (a.newCrossesRoad) _Unsure(t.newRoadCrosses),
+      if (a.newTooBig)
+        _Unsure(switch (a.newKind) {
+          NewThingKind.pool => t.newTooBigPool,
+          NewThingKind.building => t.newTooBigBuilding,
+          _ => t.newTooBigOther,
+        }),
       AnimatedSize(
         duration: const Duration(milliseconds: 200),
         alignment: Alignment.topCenter,

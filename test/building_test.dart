@@ -116,4 +116,48 @@ void main() {
     expect(HomeAnswers.outlineArea(a.newShape), closeTo(100, 1));
     a.dispose();
   });
+
+  test('a road through the middle of a large outline: it stays, and the person is told', () {
+    const lat = 46.7472, lon = 23.4937;
+    final a = HomeAnswers()
+      ..newLat = lat
+      ..newLon = lon
+      ..newKind = NewThingKind.other;
+    a.setRoads([
+      (
+        4.0,
+        [
+          [lat, lon - 0.02],
+          [lat, lon + 0.02],
+        ],
+      ),
+    ]);
+    a.setNewArea(200 * 200); // 200 m wide, the road right through its middle
+    expect(a.newCrossesRoad, isTrue);
+    expect(a.newShift, [0, 0]);
+    // Smaller again, and only touching the road's edge: pushed as before, no warning.
+    a.newLat = lat + 8 / 111195.0;
+    a.setNewArea(100);
+    expect(a.newCrossesRoad, isFalse);
+    expect(a.newShift[0], greaterThan(0));
+    a.dispose();
+  });
+
+  test('an outline far larger than the thing marked is flagged, per kind', () {
+    final a = HomeAnswers()
+      ..newLat = 46.7472
+      ..newLon = 23.4937
+      ..newKind = NewThingKind.pool;
+    a.setNewArea(1000);
+    expect(a.newTooBig, isFalse);
+    a.setNewArea(1001);
+    expect(a.newTooBig, isTrue);
+    a.newKind = NewThingKind.building;
+    expect(a.newTooBig, isFalse); // 1001 m² is fine for a building (up to 2000)
+    a.setNewArea(2500);
+    expect(a.newTooBig, isTrue);
+    a.newKind = NewThingKind.trees;
+    expect(a.newTooBig, isFalse); // trees have a height, not an area
+    a.dispose();
+  });
 }

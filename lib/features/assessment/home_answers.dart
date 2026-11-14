@@ -275,6 +275,24 @@ class HomeAnswers extends ChangeNotifier {
   /// The change ([changes]) in which the outline was last moved off a road; 0: never.
   int roadPushAt = 0;
 
+  /// A road runs through the middle of the outline: it cannot be moved off it, so it stays and
+  /// the person is asked to draw it smaller or on one side.
+  bool newCrossesRoad = false;
+
+  /// Above this the outline is almost surely drawn by mistake (m²; none for trees).
+  static double? tooBigNewM2(NewThingKind? kind) => switch (kind) {
+        NewThingKind.building => 2000,
+        NewThingKind.pool => 1000,
+        NewThingKind.trees || null => null,
+        NewThingKind.other => 10000,
+      };
+
+  /// The outline is far larger than the thing marked.
+  bool get newTooBig {
+    final limit = tooBigNewM2(newKind), area = newAreaShown;
+    return limit != null && area != null && area > limit;
+  }
+
   /// The outline is being drawn on the map right now (press and drag, as often as needed,
   /// until "Done"). Not saved: a refresh ends the drawing.
   bool drawingNew = false;
@@ -312,6 +330,7 @@ class HomeAnswers extends ChangeNotifier {
     final area = newAreaShown, lat = newLat, lon = newLon;
     if (area == null || area <= 0 || lat == null || lon == null || newKind == NewThingKind.trees) {
       newOutline = [];
+      newCrossesRoad = false;
       return;
     }
     final half = math.sqrt(area) / 2;
@@ -400,6 +419,7 @@ class HomeAnswers extends ChangeNotifier {
   void fitNewToRoads() {
     final before = newShift;
     final shape = _turned();
+    newCrossesRoad = false;
     if (shape.length < 3 || roads.isEmpty) {
       newShift = const [0, 0];
       return;
@@ -449,6 +469,25 @@ class HomeAnswers extends ChangeNotifier {
         }
       }
       if (!moved) break;
+    }
+    // A road through the middle: pushing would carry the outline far away (more than 15 m and
+    // more than a third of its width) or leave it still on a road. Then it stays where it is.
+    // A small outline is still pushed a few metres, even when its middle is on the road.
+    var minX = double.infinity, maxX = -double.infinity, minY = double.infinity, maxY = -double.infinity;
+    for (final p in pts) {
+      minX = math.min(minX, p.$1);
+      maxX = math.max(maxX, p.$1);
+      minY = math.min(minY, p.$2);
+      maxY = math.max(maxY, p.$2);
+    }
+    final width = math.min(maxX - minX, maxY - minY);
+    final shifted = [for (final p in pts) (p.$1 + sx, p.$2 + sy)];
+    final stillOn = segments.any((s) => _distance(shifted, s.$1, s.$2) < s.$3);
+    final push = math.sqrt(sx * sx + sy * sy);
+    if (stillOn || (push > 15 && push > width / 3)) {
+      newShift = const [0, 0];
+      newCrossesRoad = true;
+      return;
     }
     newShift = [sy / r * 180 / math.pi, sx / (r * k) * 180 / math.pi];
     // A new push (not the same one again, e.g. when the roads arrive for a saved outline).

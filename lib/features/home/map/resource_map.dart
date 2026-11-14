@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -358,6 +359,7 @@ class _ResourceMapState extends State<ResourceMap> {
     _map.flyTo(place.lat, place.lon, zoom: MapPeek.zoom, offset: MapPeek.offsetFor(size));
     // The roads, so nothing drawn reaches onto them (read once the tiles are there).
     _map.requestRoads(place.lat, place.lon, 250);
+    _roadsAsked = (place.lat, place.lon, 250);
     _api.buildingsAt(place.lat, place.lon).then((found) {
       if (!mounted || request != _peekRequest || widget.peek == null) return;
       _map.setBuildings(found.toGeoJson(pointLat: place.lat, pointLon: place.lon), context.palette.primary);
@@ -368,7 +370,56 @@ class _ResourceMapState extends State<ResourceMap> {
   }
 
   /// The outline being drawn on the assessment's map, if any.
-  void _showPeekShape() => _map.setDrawing(widget.peekShape ?? '', context.palette.green);
+  void _showPeekShape() {
+    _map.setDrawing(widget.peekShape ?? '', context.palette.green);
+    _roadsAroundShape();
+  }
+
+  /// Centre and radius (m) the roads were last asked for.
+  (double, double, double)? _roadsAsked;
+
+  /// The roads around the whole outline, not only near the point: a large outline reaches
+  /// roads far from it. Asked again only when the outline grows or moves a lot.
+  void _roadsAroundShape() {
+    final shape = widget.peekShape;
+    if (widget.peek == null || shape == null || shape.isEmpty) return;
+    final numbers = <double>[];
+    void walk(Object? v) {
+      if (v is List) {
+        if (v.length == 2 && v[0] is num && v[1] is num) {
+          numbers..add((v[0] as num).toDouble())..add((v[1] as num).toDouble());
+        } else {
+          v.forEach(walk);
+        }
+      } else if (v is Map) {
+        v.values.forEach(walk);
+      }
+    }
+    try {
+      walk(jsonDecode(shape));
+    } catch (_) {
+      return;
+    }
+    if (numbers.length < 6) return;
+    var w = double.infinity, e = -double.infinity, s = double.infinity, n = -double.infinity;
+    for (var i = 0; i + 1 < numbers.length; i += 2) {
+      w = math.min(w, numbers[i]);
+      e = math.max(e, numbers[i]);
+      s = math.min(s, numbers[i + 1]);
+      n = math.max(n, numbers[i + 1]);
+    }
+    final lat = (s + n) / 2, lon = (w + e) / 2;
+    final dy = (n - s) / 2 * 111195, dx = (e - w) / 2 * 111195 * math.cos(lat * math.pi / 180);
+    final radius = math.max(250.0, math.sqrt(dx * dx + dy * dy) + 60);
+    final asked = _roadsAsked;
+    if (asked != null) {
+      final moved = math.sqrt(math.pow((lat - asked.$1) * 111195, 2) +
+          math.pow((lon - asked.$2) * 111195 * math.cos(lat * math.pi / 180), 2));
+      if (radius <= asked.$3 && moved + radius <= asked.$3 + 20) return;
+    }
+    _roadsAsked = (lat, lon, radius);
+    _map.requestRoads(lat, lon, radius);
+  }
 
   /// The pin of what was marked on the assessment's map, if anything.
   void _showPeekMark() {
