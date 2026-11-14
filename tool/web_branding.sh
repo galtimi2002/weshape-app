@@ -75,6 +75,44 @@ html = re.sub(r'<meta name="apple-mobile-web-app-title" content="[^"]*">',
 if 'name="theme-color"' not in html:
     html = html.replace("</head>", '  <meta name="theme-color" content="#1E3A6E">\n</head>', 1)
 
+# No service worker: it kept a copy of the app in the browser, so after each release people
+# saw the old version until they reloaded twice. The loader below starts the app without one;
+# where an old one is still installed, it is removed with its stored files and the page reloads
+# once (index.html itself always came from the network, so this reaches those browsers too).
+pathlib.Path("web/flutter_bootstrap.js").write_text(
+    "{{flutter_js}}\n{{flutter_build_config}}\n\n_flutter.loader.load();\n", encoding="utf-8")
+loader = """<script>
+    (function () {
+      var sw = navigator.serviceWorker, guard = 'ws-old-copy-removed', removed = false;
+      try { removed = sessionStorage.getItem(guard) === '1'; } catch (e) { /* storage blocked */ }
+      if (sw && sw.controller && !removed) {
+        try { sessionStorage.setItem(guard, '1'); } catch (e) { /* storage blocked */ }
+        var jobs = [sw.getRegistrations().then(function (rs) {
+          return Promise.all(rs.map(function (r) { return r.unregister(); }));
+        })];
+        if (window.caches) {
+          jobs.push(caches.keys().then(function (keys) {
+            return Promise.all(keys.filter(function (k) { return k.indexOf('flutter') === 0; })
+              .map(function (k) { return caches.delete(k); }));
+          }));
+        }
+        Promise.all(jobs).catch(function () {}).then(function () { location.reload(); });
+        return;
+      }
+      if (sw) {
+        sw.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }).catch(function () {});
+      }
+      var script = document.createElement('script');
+      script.src = 'flutter_bootstrap.js';
+      script.async = true;
+      document.body.appendChild(script);
+    })();
+  </script>"""
+if "ws-old-copy-removed" not in html:
+    html, n = re.subn(r'<script src="flutter_bootstrap\.js"[^>]*></script>', lambda m: loader, html)
+    if n != 1:
+        raise SystemExit("web/index.html: the flutter_bootstrap.js script tag was not found")
+
 index_path.write_text(html, encoding="utf-8")
 PY
 
