@@ -248,6 +248,7 @@ class AppStrings {
     required this.winHelpPanes,
     required this.winHelpDate,
     required this.srcTitle,
+    required this.srcHint,
     required this.srcMains,
     required this.srcPipedGas,
     required this.srcDistrict,
@@ -377,6 +378,8 @@ class AppStrings {
     required this.prioRunningDesc,
     required this.prioEnv,
     required this.prioEnvDesc,
+    required this.prioReliable,
+    required this.prioReliableDesc,
     required this.prioBalanced,
     required this.prioBalancedDesc,
     required this.followTitle,
@@ -726,6 +729,7 @@ class AppStrings {
   final String winHelpPanes;
   final String winHelpDate;
   final String srcTitle;
+  final String srcHint;
   final String srcMains;
   final String srcPipedGas;
   final String srcDistrict;
@@ -855,6 +859,8 @@ class AppStrings {
   final String prioRunningDesc;
   final String prioEnv;
   final String prioEnvDesc;
+  final String prioReliable;
+  final String prioReliableDesc;
   final String prioBalanced;
   final String prioBalancedDesc;
   final String followTitle;

@@ -1090,14 +1090,7 @@ class _UsesStep extends StatelessWidget {
         _CheckOptions<Use>(
           values: Use.values,
           selected: a.uses,
-          title: (v) => switch (v) {
-            Use.appliances => t.useAppliances,
-            Use.cooking => t.useCooking,
-            Use.heating => t.useHeating,
-            Use.hotWater => t.useHotWater,
-            Use.car => t.useCar,
-            Use.pumping => t.usePumping,
-          },
+          title: (v) => _useLabel(t, v),
           icon: (v) => switch (v) {
             Use.appliances => Icons.lightbulb_outline_rounded,
             Use.cooking => Icons.soup_kitchen_outlined,
@@ -1384,14 +1377,32 @@ class _SourcesStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.srcTitle,
+      hint: t.srcHint,
       note: t.noteSrc,
       canContinue: a.sources.isNotEmpty,
       children: [
+        // What "these" in the title means: the uses chosen a few screens earlier.
+        if (a.uses.isNotEmpty) ...[
+          Text(
+            Use.values.where(a.uses.contains).map((u) => _useLabel(t, u)).join('  ·  '),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: context.palette.green),
+          ),
+          const SizedBox(height: 14),
+        ],
         MultiChips<Source>(values: Source.values, label: label, selected: a.sources, onToggle: a.toggleSource),
       ],
     );
   }
 }
+
+String _useLabel(AppStrings t, Use v) => switch (v) {
+      Use.appliances => t.useAppliances,
+      Use.cooking => t.useCooking,
+      Use.heating => t.useHeating,
+      Use.hotWater => t.useHotWater,
+      Use.car => t.useCar,
+      Use.pumping => t.usePumping,
+    };
 
 // ---------------------------------------------------------------- 7: use and cost
 
@@ -2164,12 +2175,14 @@ class _PriorityStep extends StatelessWidget {
             Priority.upfront => t.prioUpfront,
             Priority.running => t.prioRunning,
             Priority.environment => t.prioEnv,
+            Priority.reliable => t.prioReliable,
             Priority.balanced => t.prioBalanced,
           },
           detail: (v) => switch (v) {
             Priority.upfront => t.prioUpfrontDesc,
             Priority.running => t.prioRunningDesc,
             Priority.environment => t.prioEnvDesc,
+            Priority.reliable => t.prioReliableDesc,
             Priority.balanced => t.prioBalancedDesc,
           },
           selected: a.priority,

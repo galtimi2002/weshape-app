@@ -47,7 +47,7 @@ enum Fixer { self, technician, installer, unknown }
 
 enum HandsOn { none, little, regular }
 
-enum Priority { upfront, running, environment, balanced }
+enum Priority { upfront, running, environment, reliable, balanced }
 
 enum Animals { few, herd, foodWaste, none }
 
