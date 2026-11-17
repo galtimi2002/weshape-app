@@ -1,6 +1,8 @@
 import '../i18n/app_strings.dart';
 
-enum AuthFailureKind { invalidCredentials, emailInUse, weakPassword, invalidEmail, tooManyRequests, network, cancelled, unknown }
+/// [accountExists]: Google sign-in for an address that already has a password account, where
+/// Firebase does not link the two by itself (addresses outside gmail.com).
+enum AuthFailureKind { invalidCredentials, accountExists, emailInUse, weakPassword, invalidEmail, tooManyRequests, network, cancelled, unknown }
 
 class AuthFailure implements Exception {
   const AuthFailure(this.kind, [this.detail]);
@@ -12,8 +14,9 @@ class AuthFailure implements Exception {
 
   String message(AppStrings t) => switch (kind) {
         AuthFailureKind.invalidCredentials => t.errorInvalidCredentials,
+        AuthFailureKind.accountExists => t.errorAccountExists,
         AuthFailureKind.emailInUse => t.errorEmailInUse,
-        AuthFailureKind.weakPassword => t.passwordTooShort,
+        AuthFailureKind.weakPassword => t.passwordWeak,
         AuthFailureKind.invalidEmail => t.invalidEmail,
         AuthFailureKind.tooManyRequests => t.errorTooManyRequests,
         AuthFailureKind.network => t.errorNetwork,

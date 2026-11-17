@@ -9,7 +9,7 @@
   'use strict';
   // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
   // (after a hot restart the page still holds the previous script).
-  var VERSION = 23;
+  var VERSION = 24;
   if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
   if (window.WeShapeMap && window.WeShapeMap.destroy) {
     try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
@@ -219,10 +219,27 @@
     applyBuildingColors();
   }
 
-  // MapLibre opens the compact credit line expanded; on a phone it then covers the map.
-  function collapseAttribution() {
-    var el = container && container.querySelector('.maplibregl-ctrl-attrib');
-    if (el) el.classList.remove('maplibregl-compact-show');
+  // The data credits are always shown in full: no "i" button to open them (and so no
+  // "Toggle attribution" tooltip). In the dark look they turn dark too.
+  function newAttribution() {
+    return new maplibregl.AttributionControl({ compact: false, customAttribution: state.attribution });
+  }
+
+  function addAttributionStyle() {
+    if (document.getElementById('ws-attrib-style')) return;
+    var st = document.createElement('style');
+    st.id = 'ws-attrib-style';
+    st.textContent =
+      '.ws-map .maplibregl-ctrl-attrib{font-size:11px;line-height:1.4;max-width:min(560px,calc(100vw - 24px));}' +
+      '.ws-map.ws-dark .maplibregl-ctrl-attrib{background:rgba(22,27,38,.82);color:#D5DBE6;}' +
+      '.ws-map.ws-dark .maplibregl-ctrl-attrib a{color:#9DB8E6;}';
+    document.head.appendChild(st);
+  }
+
+  function applyAttributionLook() {
+    if (!container) return;
+    container.classList.add('ws-map');
+    container.classList.toggle('ws-dark', !!state.dark);
   }
 
   // ---------------------------------------------------------------- drawing
@@ -743,9 +760,10 @@
         });
         map.touchZoomRotate.disableRotation();
         state.attribution = opts.attribution || '';
-        attributionControl = new maplibregl.AttributionControl({ compact: true, customAttribution: state.attribution });
+        addAttributionStyle();
+        applyAttributionLook();
+        attributionControl = newAttribution();
         map.addControl(attributionControl, 'bottom-left');
-        map.once('load', function () { setTimeout(collapseAttribution, 0); });
         map.on('error', function (e) {
           console.warn('[WeShapeMap] error', e && e.error);
           if (!loaded && state.onError) state.onError(String((e && e.error && e.error.message) || 'map error'));
@@ -792,6 +810,7 @@
 
     setDark: function (dark) {
       state.dark = !!dark;
+      applyAttributionLook();
       whenLoaded(applyColors);
     },
 
@@ -831,9 +850,8 @@
       state.attribution = html;
       whenLoaded(function () {
         if (attributionControl) map.removeControl(attributionControl);
-        attributionControl = new maplibregl.AttributionControl({ compact: true, customAttribution: state.attribution });
+        attributionControl = newAttribution();
         map.addControl(attributionControl, 'bottom-left');
-        collapseAttribution();
         var corner = container && container.querySelector('.maplibregl-ctrl-bottom-left');
         if (corner) corner.style.bottom = state.attributionBottom + 'px';
       });

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../core/theme/weshape_palette.dart';
@@ -5,10 +7,14 @@ import '../../core/widgets/stage_background.dart';
 
 /// A full page inside the app: the stage gradient and a centred, scrolling column.
 class PageFrame extends StatelessWidget {
-  const PageFrame({super.key, required this.maxWidth, required this.children});
+  const PageFrame({super.key, required this.maxWidth, required this.children, this.topTaken = 0});
 
   final double maxWidth;
   final List<Widget> children;
+
+  /// Height of a row put above the usual content (a back button) that should sit in the top margin
+  /// instead of pushing the page down.
+  final double topTaken;
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +29,8 @@ class PageFrame extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: BoxConstraints(maxWidth: maxWidth),
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(phone ? 18 : 28, phone ? 22 : 40, phone ? 18 : 28, 32),
+                  padding: EdgeInsets.fromLTRB(
+                      phone ? 18 : 28, math.max(0, (phone ? 22 : 40) - topTaken), phone ? 18 : 28, 32),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children),
                 ),
               ),

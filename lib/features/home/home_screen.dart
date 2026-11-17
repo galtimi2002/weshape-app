@@ -114,6 +114,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _tab = HomeTab.map;
             _picking = true;
           }),
+          onBackToMap: () => _go(HomeTab.map),
         ),
       HomeTab.saved => SavedAssessmentsPage(key: const ValueKey('saved'), onNew: () => _go(HomeTab.assessment)),
     };
@@ -255,8 +256,10 @@ class _AccountButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Tooltip(
-      message: profile.displayName,
+    // No tooltip on hover; the name is still read out to screen readers.
+    return Semantics(
+      label: profile.displayName,
+      button: true,
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: () => showDialog<void>(context: context, builder: (_) => _AccountDialog(profile: profile)),

@@ -30,7 +30,11 @@ class AppStrings {
     required this.noResults,
     required this.languageHint,
     required this.confirmPassword,
-    required this.passwordHint,
+    required this.pwRuleLength,
+    required this.pwRuleUpper,
+    required this.pwRuleLower,
+    required this.pwRuleDigit,
+    required this.pwRuleSpecial,
     required this.haveAccount,
     required this.completeProfileTitle,
     required this.completeProfileSubtitle,
@@ -46,9 +50,11 @@ class AppStrings {
     required this.resetPasswordSent,
     required this.fieldRequired,
     required this.invalidEmail,
-    required this.passwordTooShort,
+    required this.passwordWeak,
     required this.passwordsDoNotMatch,
     required this.errorInvalidCredentials,
+    required this.errorAccountExists,
+    required this.backToSignIn,
     required this.errorEmailInUse,
     required this.errorTooManyRequests,
     required this.errorNetwork,
@@ -153,6 +159,7 @@ class AppStrings {
     required this.savedCompare,
     required this.savedCompareHint,
     required this.back,
+    required this.backToMap,
     required this.seeResult,
     required this.resultSoon,
     required this.placeTitle,
@@ -491,7 +498,11 @@ class AppStrings {
   final String noResults;
   final String languageHint;
   final String confirmPassword;
-  final String passwordHint;
+  final String pwRuleLength;
+  final String pwRuleUpper;
+  final String pwRuleLower;
+  final String pwRuleDigit;
+  final String pwRuleSpecial;
   final String haveAccount;
   final String completeProfileTitle;
   final String completeProfileSubtitle;
@@ -508,9 +519,11 @@ class AppStrings {
   final String resetPasswordSent;
   final String fieldRequired;
   final String invalidEmail;
-  final String passwordTooShort;
+  final String passwordWeak;
   final String passwordsDoNotMatch;
   final String errorInvalidCredentials;
+  final String errorAccountExists;
+  final String backToSignIn;
   final String errorEmailInUse;
   final String errorTooManyRequests;
   final String errorNetwork;
@@ -632,6 +645,7 @@ class AppStrings {
 
   /// The home assessment's six steps.
   final String back;
+  final String backToMap;
   final String seeResult;
   final String resultSoon;
   final String placeTitle;

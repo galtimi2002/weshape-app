@@ -119,6 +119,7 @@ class FirebaseAuthService implements AuthService {
   AuthFailure _translate(fb.FirebaseAuthException e) => switch (e.code) {
         'invalid-credential' || 'wrong-password' || 'user-not-found' || 'invalid-login-credentials' =>
           const AuthFailure(AuthFailureKind.invalidCredentials),
+        'account-exists-with-different-credential' => const AuthFailure(AuthFailureKind.accountExists),
         'email-already-in-use' => const AuthFailure(AuthFailureKind.emailInUse),
         'weak-password' => const AuthFailure(AuthFailureKind.weakPassword),
         'invalid-email' => const AuthFailure(AuthFailureKind.invalidEmail),

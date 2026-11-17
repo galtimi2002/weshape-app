@@ -25,13 +25,22 @@ import 'page_frame.dart';
 /// appear depends on the answers (no gas questions without piped gas, and so on), so the
 /// order is worked out again after every answer. The result comes next: its button is "Soon".
 class AssessmentFlow extends StatefulWidget {
-  const AssessmentFlow({super.key, required this.answers, required this.countryCode, required this.onPickOnMap});
+  const AssessmentFlow({
+    super.key,
+    required this.answers,
+    required this.countryCode,
+    required this.onPickOnMap,
+    required this.onBackToMap,
+  });
 
   final HomeAnswers answers;
   final String? countryCode;
 
   /// Switches to the map, where the person clicks a point and confirms it.
   final VoidCallback onPickOnMap;
+
+  /// "Back to the map" on the first question: the home page with the map.
+  final VoidCallback onBackToMap;
 
   @override
   State<AssessmentFlow> createState() => _AssessmentFlowState();
@@ -197,6 +206,7 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
           onNext: index == steps.length - 1 ? null : () => _next(steps, index),
           onFirst: index == 0 ? null : () => _a.update((a) => a.screen = steps.first),
           onReset: _confirmReset,
+          onToMap: index == 0 ? widget.onBackToMap : null,
         );
         final a = _a;
         final Widget page = _oneMore ? const _OneMoreStep() : switch (id) {
@@ -259,6 +269,7 @@ class _Nav {
     required this.onNext,
     required this.onFirst,
     required this.onReset,
+    this.onToMap,
   });
 
   final int index;
@@ -273,6 +284,9 @@ class _Nav {
 
   /// Null on the last screen: the result comes next.
   final VoidCallback? onNext;
+
+  /// On the first question only: back to the map on the home page.
+  final VoidCallback? onToMap;
 
   bool get last => onNext == null;
 }
@@ -333,6 +347,9 @@ class _Progress extends StatelessWidget {
   }
 }
 
+/// Height of the "Back to the map" row on the first question.
+const double _toMapHeight = 32;
+
 /// Title, optional helper line, the screen's content, and Back / Continue at the bottom.
 class _StepPage extends StatelessWidget {
   const _StepPage({
@@ -363,9 +380,30 @@ class _StepPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final columns = MediaQuery.sizeOf(context).width >= 1000 ? wide : null;
+    final toMap = nav.onToMap;
     return PageFrame(
       maxWidth: columns == null ? 680 : 1160,
+      // "Back to the map" sits in the top margin, so the question stays where it is.
+      topTaken: toMap == null ? 0 : _toMapHeight,
       children: [
+        if (toMap != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              height: _toMapHeight,
+              child: TextButton.icon(
+                onPressed: toMap,
+                icon: const Icon(Icons.arrow_back_rounded, size: 18),
+                label: Text(context.t.backToMap),
+                style: TextButton.styleFrom(
+                  foregroundColor: p.muted,
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
+                  minimumSize: const Size(0, _toMapHeight),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+              ),
+            ),
+          ),
         _Progress(nav: nav),
         const SizedBox(height: 18),
         PageTitle(title),

@@ -98,6 +98,17 @@ class ApiClient {
   Future<HydroLayers> hydroLayers() async =>
       HydroLayers.fromJson(await _send('GET', '/api/v1/hydro/layers') as Map<String, dynamic>);
 
+  /// After a failed email sign-in: whether this address signs in with Google only. Any failure
+  /// (no network, limit reached) counts as "no", so the usual message shows.
+  Future<bool> signInHint(String email) async {
+    try {
+      final r = await _send('POST', '/api/v1/auth/sign-in-hint', body: {'email': email.trim()});
+      return r is Map && r['google'] == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Full address of a backend path, for things the map loads by itself (layer pictures).
   String urlOf(String path) => '$_baseUrl$path';
 

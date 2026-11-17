@@ -39,6 +39,9 @@ class WeShapeApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      // No hover tooltips anywhere (language, theme, buttons): the icons speak for themselves.
+      // Screen readers still read the labels.
+      builder: (context, child) => TooltipVisibility(visible: false, child: child!),
       home: const RootGate(),
     );
   }

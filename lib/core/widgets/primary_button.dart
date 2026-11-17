@@ -64,20 +64,30 @@ class PrimaryButton extends StatelessWidget {
 
 /// "Continue with Google", outlined, with the four-colour G.
 class GoogleButton extends StatelessWidget {
-  const GoogleButton({super.key, required this.label, required this.onPressed});
+  const GoogleButton({super.key, required this.label, required this.onPressed, this.large = false});
 
   final String label;
   final VoidCallback? onPressed;
 
+  /// Taller, with bigger text: when it is the only way in (an account that signs in with Google).
+  final bool large;
+
   @override
   Widget build(BuildContext context) {
+    final icon = large ? 22.0 : 18.0;
     return OutlinedButton(
       onPressed: onPressed,
+      style: large
+          ? OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(54),
+              textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            )
+          : null,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(width: 18, height: 18, child: CustomPaint(painter: _GoogleGPainter())),
-          const SizedBox(width: 10),
+          SizedBox(width: icon, height: icon, child: const CustomPaint(painter: _GoogleGPainter())),
+          SizedBox(width: large ? 12 : 10),
           Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
         ],
       ),
