@@ -161,6 +161,33 @@ if 'id="ws-loading"' not in html:
     if n != 1:
         raise SystemExit("web/index.html: <body> was not found")
 
+# iPhone browsers (Safari, and Chrome on iOS, which runs on Safari's engine): Flutter measures the
+# page from document.documentElement.clientHeight and measures again only on a "resize" event. While
+# the browser still animates its toolbars at load, that height can be too small, and no event may
+# follow, so the app stayed in the top half of the screen. This asks Flutter to measure again a few
+# times after load and whenever the height changes; when nothing changed, it changes nothing.
+if "ws-remeasure" not in html:
+    remeasure = """<script id="ws-remeasure">
+    (function () {
+      var vv = window.visualViewport;
+      if (!vv) return;
+      function nudge() {
+        try { vv.dispatchEvent(new Event('resize')); } catch (e) { /* old browser */ }
+      }
+      [300, 1000, 2000, 4000].forEach(function (ms) { setTimeout(nudge, ms); });
+      window.addEventListener('pageshow', nudge);
+      window.addEventListener('focus', nudge);
+      window.addEventListener('orientationchange', function () { setTimeout(nudge, 400); });
+      var last = document.documentElement.clientHeight;
+      setInterval(function () {
+        var h = document.documentElement.clientHeight;
+        if (h !== last) { last = h; nudge(); }
+      }, 1000);
+    })();
+  </script>
+"""
+    html = html.replace("</body>", "  " + remeasure + "</body>", 1)
+
 index_path.write_text(html, encoding="utf-8")
 PY
 
