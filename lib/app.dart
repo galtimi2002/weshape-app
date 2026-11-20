@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import 'core/auth/auth_controller.dart';
 import 'core/i18n/app_localizations.dart';
+import 'core/i18n/fallback_localizations.dart';
 import 'core/settings/settings_controller.dart';
 import 'core/theme/weshape_palette.dart';
 import 'core/theme/weshape_theme.dart';
@@ -38,6 +39,9 @@ class WeShapeApp extends StatelessWidget {
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
+        // Flutter's own texts in English for the few app languages Flutter has none for.
+        FallbackMaterialLocalizationsDelegate(),
+        FallbackCupertinoLocalizationsDelegate(),
       ],
       // No hover tooltips anywhere (language, theme, buttons): the icons speak for themselves.
       // Screen readers still read the labels.

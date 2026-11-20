@@ -13,7 +13,7 @@ import pathlib
 from babel import Locale
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-LANGS = ["en", "hu", "ro", "de", "fr", "es", "it", "pt", "nl", "pl", "hr", "fi", "sv", "da", "el", "ru", "tr", "zh", "ja", "ko", "hi", "ar", "bn", "id", "vi"]
+LANGS = ["en", "id", "ms", "bs", "ca", "cs", "cy", "da", "de", "et", "es", "eu", "tl", "fr", "ga", "gl", "ha", "hr", "is", "it", "sw", "lv", "lb", "lt", "hu", "mt", "nl", "nb", "pl", "pt", "ro", "sq", "sk", "sl", "fi", "sv", "vi", "tr", "yo", "el", "be", "bg", "mk", "ru", "sr", "uk", "ur", "ar", "fa", "ne", "hi", "bn", "pa", "th", "my", "am", "zh", "ja", "ko"]
 ISO = (ROOT / "tool" / "iso_countries.txt").read_text().strip().split(",")
 
 
@@ -39,7 +39,8 @@ out = [
     "const Map<String, Map<String, String>> kCountryNames = <String, Map<String, String>>{",
 ]
 for lang in LANGS:
-    names = Locale.parse(lang).territories
+    # CLDR knows Filipino as "fil"; the app uses the two-letter "tl".
+    names = Locale.parse("fil" if lang == "tl" else lang).territories
     out.append(f"  '{lang}': <String, String>{{")
     out += [f"    '{c}': '{esc(names.get(c) or english.get(c) or c)}'," for c in ISO]
     out.append("  },")

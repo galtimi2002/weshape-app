@@ -63,6 +63,9 @@ void main() {
 
     await tester.tap(find.text('English'));
     await tester.pumpAndSettle();
+    // With 59 languages the menu scrolls, so bring Magyar into view first.
+    await tester.ensureVisible(find.text('Magyar').last);
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Magyar').last);
     await tester.pumpAndSettle();
 
