@@ -113,6 +113,54 @@ if "ws-old-copy-removed" not in html:
     if n != 1:
         raise SystemExit("web/index.html: the flutter_bootstrap.js script tag was not found")
 
+# A loading screen in plain HTML: the logo and a spinner show at once, while the app (several
+# megabytes the first time, which on a phone can take half a minute) downloads. Flutter announces
+# its first frame with the "flutter-first-frame" event; then the screen fades out and is removed.
+if 'id="ws-loading"' not in html:
+    style = f"""  <style>
+    #ws-loading {{ position: fixed; inset: 0; z-index: 9999; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 28px; background: #F5F7FA;
+      transition: opacity .35s ease; }}
+    #ws-loading img {{ width: 96px; height: 96px; }}
+    #ws-loading .ws-spin {{ width: 26px; height: 26px; border-radius: 50%;
+      border: 3px solid rgba(30, 58, 110, .18); border-top-color: #1E3A6E;
+      animation: ws-spin .9s linear infinite; }}
+    @keyframes ws-spin {{ to {{ transform: rotate(360deg); }} }}
+    @media (prefers-color-scheme: dark) {{
+      #ws-loading {{ background: #0F141C; }}
+      #ws-loading .ws-spin {{ border-color: rgba(157, 184, 230, .2); border-top-color: #9DB8E6; }}
+    }}
+  </style>
+"""
+    html = html.replace("</head>", style + "</head>", 1)
+    screen = f"""<div id="ws-loading" aria-label="WeShape Energy">
+    <img src="icons/Icon-192.png?v={version}" alt="WeShape Energy">
+    <div class="ws-spin"></div>
+  </div>
+  <script>
+    (function () {{
+      function hide() {{
+        var el = document.getElementById('ws-loading');
+        if (!el) return;
+        el.style.opacity = '0';
+        setTimeout(function () {{ el.remove(); }}, 400);
+      }}
+      window.addEventListener('flutter-first-frame', hide);
+      // Fallback, should the event not come: 3 s after the app's view appears, it goes anyway.
+      var check = setInterval(function () {{
+        if (!document.getElementById('ws-loading')) return clearInterval(check);
+        if (document.querySelector('flutter-view, flt-glass-pane')) {{
+          clearInterval(check);
+          setTimeout(hide, 3000);
+        }}
+      }}, 250);
+    }})();
+  </script>
+  """
+    html, n = re.subn(r"(<body[^>]*>\s*)", lambda m: m.group(1) + screen, html, count=1)
+    if n != 1:
+        raise SystemExit("web/index.html: <body> was not found")
+
 index_path.write_text(html, encoding="utf-8")
 PY
 

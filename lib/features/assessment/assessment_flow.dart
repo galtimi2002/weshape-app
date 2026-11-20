@@ -153,10 +153,9 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
 
   bool get _askAnimals => _land;
   bool get _askRiver => (_facts?.riverKm ?? 99) <= _riverNearKm;
-  bool get _askBrook => !_askRiver && _land;
   bool get _askWind =>
       (_facts?.wind20 ?? 0) >= _windUseful && _a.type == BuildingType.house && (_land || _a.spaces.contains(Space.roof));
-  bool get _askFollowUps => (_facts?.loading ?? false) || _askAnimals || _askRiver || _askBrook || _askWind;
+  bool get _askFollowUps => (_facts?.loading ?? false) || _askAnimals || _askRiver || _askWind;
 
   /// The screens to show, in order, for the answers so far.
   List<String> _steps() {
@@ -173,6 +172,9 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
         'insulation',
         'windows',
       ],
+      // Hot water without heating: the building questions are not asked, but the number of people
+      // is what hot water is worked out from.
+      if (a.asksPeople && !a.uses.contains(Use.heating)) 'people',
       'sources',
       if (mains) ...['cuts', 'electricity', 'paid'],
       if (a.sources.contains(Source.pipedGas)) 'gas',
@@ -214,6 +216,7 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
           'place' => _PlaceStep(answers: a, nav: nav, countryCode: widget.countryCode, onPickOnMap: widget.onPickOnMap),
           'uses' => _UsesStep(answers: a, nav: nav),
           'building' => _BuildingStep(answers: a, nav: nav),
+          'people' => _PeopleStep(answers: a, nav: nav),
           'era' => _EraStep(answers: a, nav: nav),
           'renovation' => _RenovationStep(answers: a, nav: nav),
           'insulation' => _InsulationStep(answers: a, nav: nav),
@@ -235,7 +238,6 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
               facts: _facts,
               animals: _askAnimals,
               river: _askRiver,
-              brook: _askBrook,
               wind: _askWind,
             ),
           'exclude' => _ExcludeStep(answers: a, nav: nav),
@@ -1161,7 +1163,10 @@ class _BuildingStep extends StatelessWidget {
       title: t.buildingTitle,
       note: t.noteBuilding,
       hint: t.buildingHint,
-      canContinue: a.type != null && a.area != null && a.people != null && (a.type == BuildingType.flat || a.floors != null),
+      canContinue: a.type != null &&
+          a.area != null &&
+          (!a.asksPeople || a.people != null) &&
+          (a.type == BuildingType.flat || a.floors != null),
       children: [
         FieldLabel(t.typeLabel),
         ChoiceChips<BuildingType>(
@@ -1188,15 +1193,47 @@ class _BuildingStep extends StatelessWidget {
           FieldLabel(t.floorsLabel),
           ChoiceChips<int>(values: const [1, 2, 3], label: (v) => v == 3 ? '3+' : '$v', selected: a.floors, onSelect: a.setFloors),
         ],
-        _gap,
-        FieldLabel(t.peopleLabel),
-        ChoiceChips<int>(
-          values: const [1, 2, 3, 4, 5],
-          label: (v) => v == 5 ? '5+' : '$v',
-          selected: a.people,
-          onSelect: (v) => a.update((x) => x.people = v),
-        ),
+        // The number of people is what hot water is worked out from: asked only with hot water.
+        if (a.asksPeople) ...[
+          _gap,
+          FieldLabel(t.peopleLabel),
+          _PeopleChips(answers: a),
+        ],
       ],
+    );
+  }
+}
+
+class _PeopleChips extends StatelessWidget {
+  const _PeopleChips({required this.answers});
+
+  final HomeAnswers answers;
+
+  @override
+  Widget build(BuildContext context) => ChoiceChips<int>(
+        values: const [1, 2, 3, 4, 5],
+        label: (v) => v == 5 ? '5+' : '$v',
+        selected: answers.people,
+        onSelect: (v) => answers.update((x) => x.people = v),
+      );
+}
+
+/// Hot water without heating: only the number of people of the building questions.
+class _PeopleStep extends StatelessWidget {
+  const _PeopleStep({required this.answers, required this.nav});
+
+  final HomeAnswers answers;
+  final _Nav nav;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    return _StepPage(
+      nav: nav,
+      title: t.peopleTitle,
+      note: t.notePeople,
+      canContinue: answers.people != null,
+      children: [_PeopleChips(answers: answers)],
     );
   }
 }
@@ -1215,7 +1252,7 @@ class _EraStep extends StatelessWidget {
       nav: nav,
       title: a.type == BuildingType.flat ? t.eraTitleFlat : t.eraTitle,
       note: t.noteEra,
-      canContinue: a.era != null,
+      canContinue: a.era != null && a.material != null,
       children: [
         _Options<BuildEra>(
           values: BuildEra.values,
@@ -1230,6 +1267,32 @@ class _EraStep extends StatelessWidget {
           onSelect: (v) => a.update((x) => x.era = v),
         ),
         if (a.era == BuildEra.unknown) _Unsure('${t.unsureLead} ${t.tipEra}'),
+        _gap,
+        // With the age and a renovated roof it says whether the roof can carry panels (backend
+        // RoofSafety, docs/decisions/2026-11-19-question-changes.md).
+        FieldLabel(t.matLabel),
+        DropdownMenu<BuildMaterial>(
+          key: ValueKey(a.material),
+          initialSelection: a.material,
+          hintText: t.matHint,
+          width: 260,
+          dropdownMenuEntries: [
+            for (final m in BuildMaterial.values)
+              DropdownMenuEntry(
+                value: m,
+                label: switch (m) {
+                  BuildMaterial.brick => t.matBrick,
+                  BuildMaterial.concrete => t.matConcrete,
+                  BuildMaterial.wood => t.matWood,
+                  BuildMaterial.stoneAdobe => t.matStone,
+                  BuildMaterial.unknown => t.dontKnow,
+                },
+              ),
+          ],
+          onSelected: (m) {
+            if (m != null) a.update((x) => x.material = m);
+          },
+        ),
       ],
     );
   }
@@ -1523,7 +1586,7 @@ class _CutsStep extends StatelessWidget {
       nav: nav,
       title: t.cutsTitle,
       note: t.noteCuts,
-      canContinue: a.cuts != null && (!cuts || a.cutLength != null) && a.independent != null,
+      canContinue: a.cuts != null && (!cuts || a.cutLength != null) && (!a.asksIndependence || a.independent != null),
       children: [
         _Options<PowerCuts>(
           values: PowerCuts.values,
@@ -1550,7 +1613,9 @@ class _CutsStep extends StatelessWidget {
             onSelect: (v) => a.update((x) => x.cutLength = v),
           ),
         ],
-        if (a.cuts != null) ...[
+        // Not asked when the power goes out most days for hours or longer: full independence is not
+        // possible then.
+        if (a.asksIndependence) ...[
           _gap,
           SubQuestion(t.indepQ),
           ChoiceChips<bool>(
@@ -1876,8 +1941,37 @@ class _FuelsStepState extends State<_FuelsStep> {
           ],
           row(t.fuelPellets, a.pelletsTonnes, 't', (v) => a.update((x) => x.pelletsTonnes = v)),
         ],
-        if (a.sources.contains(Source.gasBottles))
+        if (a.sources.contains(Source.gasBottles)) ...[
           row(t.fuelBottles, a.gasBottlesPerMonth, null, (v) => a.update((x) => x.gasBottlesPerMonth = v)),
+          // The size in the unit the person picks: litres (as European bottles are labelled), kg, or
+          // US gallons (backend GasBottle).
+          SubQuestion(t.bottleSizeQ),
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              NumberField(
+                value: a.bottleSize,
+                width: 140,
+                onChanged: (v) => a.update((x) => x.bottleSize = v),
+              ),
+              ChoiceChips<BottleUnit>(
+                values: BottleUnit.values,
+                label: (v) => switch (v) {
+                  BottleUnit.litre => 'L',
+                  BottleUnit.kg => 'kg',
+                  BottleUnit.gallon => 'gal',
+                },
+                selected: a.bottleUnit,
+                onSelect: (v) => a.update((x) => x.bottleUnit = v),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(t.bottleSizeNote, style: TextStyle(fontSize: 13, color: context.palette.muted)),
+          const SizedBox(height: 22),
+        ],
         if (a.sources.contains(Source.district))
           row(t.fuelDistrict, a.districtPerMonth, currency, (v) => a.update((x) => x.districtPerMonth = v), money: true),
       ],
@@ -2153,17 +2247,6 @@ class _UpkeepStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final a = answers;
-    final fixer = _Options<Fixer>(
-      values: Fixer.values,
-      title: (v) => switch (v) {
-        Fixer.self => t.fixSelf,
-        Fixer.technician => t.fixTech,
-        Fixer.installer => t.fixInstaller,
-        Fixer.unknown => t.fixUnknown,
-      },
-      selected: a.fixer,
-      onSelect: (v) => a.update((x) => x.fixer = v),
-    );
     final hands = _Options<HandsOn>(
       values: HandsOn.values,
       title: (v) => switch (v) {
@@ -2176,17 +2259,11 @@ class _UpkeepStep extends StatelessWidget {
     );
     return _StepPage(
       nav: nav,
-      title: t.fixTitle,
+      title: t.handsTitle,
       note: t.noteUpkeep,
-      canContinue: a.fixer != null && a.handsOn != null,
+      canContinue: a.handsOn != null,
       hint: t.fixHint,
-      wide: ([fixer], [SubQuestion(t.handsTitle), hands]),
-      children: [
-        fixer,
-        const SizedBox(height: 30),
-        SubQuestion(t.handsTitle),
-        hands,
-      ],
+      children: [hands],
     );
   }
 }
@@ -2240,7 +2317,6 @@ class _FollowUpsStep extends StatelessWidget {
     required this.facts,
     required this.animals,
     required this.river,
-    required this.brook,
     required this.wind,
   });
 
@@ -2249,7 +2325,6 @@ class _FollowUpsStep extends StatelessWidget {
   final _PlaceFacts? facts;
   final bool animals;
   final bool river;
-  final bool brook;
   final bool wind;
 
   @override
@@ -2263,9 +2338,8 @@ class _FollowUpsStep extends StatelessWidget {
     // Every question shown here needs an answer ("None", "No" count), and the map
     // check has to finish first.
     final answered = !loading &&
-        (!animals || a.animals != null) &&
+        (!animals || a.animalsComplete) &&
         (!river || a.river != null) &&
-        (!brook || a.brook != null) &&
         (!(wind && facts?.wind20 != null) || a.wind != null);
     return _StepPage(
       nav: nav,
@@ -2275,17 +2349,7 @@ class _FollowUpsStep extends StatelessWidget {
       children: [
         if (animals) ...[
           SubQuestion(t.animalsQ),
-          _Options<Animals>(
-            values: Animals.values,
-            title: (v) => switch (v) {
-              Animals.few => t.animFew,
-              Animals.herd => t.animHerd,
-              Animals.foodWaste => t.animWaste,
-              Animals.none => t.animNone,
-            },
-            selected: a.animals,
-            onSelect: (v) => a.update((x) => x.animals = v),
-          ),
+          _AnimalsAnswer(answers: a),
           _gap,
         ],
         if (loading)
@@ -2314,16 +2378,6 @@ class _FollowUpsStep extends StatelessWidget {
             if (a.river == RiverAccess.notSure) _Unsure('${t.unsureLead} ${t.tipRiver}'),
             _gap,
           ],
-          if (brook) ...[
-            SubQuestion(t.brookQ),
-            ChoiceChips<bool>(
-              values: const [true, false],
-              label: (v) => v ? t.yes : t.no,
-              selected: a.brook,
-              onSelect: (v) => a.update((x) => x.brook = v),
-            ),
-            _gap,
-          ],
           if (wind && facts?.wind20 != null) ...[
             _MapFound(text: t.windFoundFor(_decimal(facts!.wind20!, language))),
             const SizedBox(height: 8),
@@ -2338,7 +2392,137 @@ class _FollowUpsStep extends StatelessWidget {
               onSelect: (v) => a.update((x) => x.wind = v),
             ),
           ],
-          if (!animals && !river && !brook && !wind) Text(t.nothingMore, style: TextStyle(fontSize: 13.5, color: p.muted)),
+          if (!animals && !river && !wind) Text(t.nothingMore, style: TextStyle(fontSize: 13.5, color: p.muted)),
+        ],
+      ],
+    );
+  }
+}
+
+/// Animals, food waste and crop residue: pick any ("None" alone), then the numbers each needs.
+/// Only the kind and number of animals are asked; the manure is worked out (backend Biogas,
+/// CropResidue; docs/decisions/2026-11-19-question-changes.md).
+class _AnimalsAnswer extends StatelessWidget {
+  const _AnimalsAnswer({required this.answers});
+
+  final HomeAnswers answers;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final p = context.palette;
+    final a = answers;
+    Widget note(String text) => Padding(
+          padding: const EdgeInsets.only(top: 6),
+          child: Text(text, style: TextStyle(fontSize: 13, color: p.muted)),
+        );
+    Widget countRow(String label, Widget field) => Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Row(
+            children: [
+              SizedBox(width: 190, child: Text(label, style: TextStyle(fontSize: 14.5, color: p.text))),
+              field,
+            ],
+          ),
+        );
+    String animal(AnimalKind k) => switch (k) {
+          AnimalKind.cattle => t.animCattle,
+          AnimalKind.pigs => t.animPigs,
+          AnimalKind.poultry => t.animPoultry,
+          AnimalKind.horses => t.animHorses,
+          AnimalKind.sheepGoats => t.animSheep,
+        };
+    String crop(CropKind k) => switch (k) {
+          CropKind.maize => t.cropMaize,
+          CropKind.wheatBarley => t.cropWheat,
+          CropKind.sunflower => t.cropSunflower,
+          CropKind.rapeseed => t.cropRapeseed,
+          CropKind.vineyardOrchard => t.cropVineyard,
+        };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        MultiChips<Animals>(
+          values: Animals.values,
+          selected: a.animals,
+          label: (v) => switch (v) {
+            Animals.few => t.animFew,
+            Animals.foodWaste => t.animWaste,
+            Animals.crops => t.animCrops,
+            Animals.none => t.animNone,
+          },
+          onToggle: a.toggleAnimals,
+        ),
+        if (a.animals.contains(Animals.few)) ...[
+          _gap,
+          SubQuestion(t.animKindsQ),
+          for (final k in AnimalKind.values)
+            countRow(
+              animal(k),
+              NumberField(
+                value: a.animalCounts[k]?.toDouble(),
+                width: 120,
+                onChanged: (v) => a.update((x) {
+                  final n = v?.round() ?? 0;
+                  n > 0 ? x.animalCounts[k] = n : x.animalCounts.remove(k);
+                }),
+              ),
+            ),
+          note(t.animalsNote),
+        ],
+        if (a.animals.contains(Animals.foodWaste)) ...[
+          _gap,
+          SubQuestion(t.foodWasteQ),
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              NumberField(
+                value: a.foodWastePerWeek,
+                width: 140,
+                onChanged: (v) => a.update((x) => x.foodWastePerWeek = v),
+              ),
+              ChoiceChips<MassUnit>(
+                values: MassUnit.values,
+                label: (v) => v == MassUnit.kg ? 'kg' : 'lb',
+                selected: a.foodWasteUnit,
+                onSelect: (v) => a.update((x) => x.foodWasteUnit = v),
+              ),
+            ],
+          ),
+        ],
+        if (a.animals.contains(Animals.crops)) ...[
+          _gap,
+          SubQuestion(t.cropsQ),
+          MultiChips<CropKind>(
+            values: CropKind.values,
+            selected: a.cropArea.keys.toSet(),
+            label: crop,
+            onToggle: (k) => a.update((x) => x.cropArea.containsKey(k) ? x.cropArea.remove(k) : x.cropArea[k] = null),
+          ),
+          if (a.cropArea.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            ChoiceChips<LandUnit>(
+              values: LandUnit.values,
+              label: (v) => v == LandUnit.hectare ? 'ha' : 'acre',
+              selected: a.cropUnit,
+              onSelect: (v) => a.update((x) => x.cropUnit = v),
+            ),
+            const SizedBox(height: 12),
+            for (final k in CropKind.values)
+              if (a.cropArea.containsKey(k))
+                countRow(
+                  crop(k),
+                  NumberField(
+                    value: a.cropArea[k],
+                    width: 120,
+                    suffix: a.cropUnit == null ? null : (a.cropUnit == LandUnit.hectare ? 'ha' : 'acre'),
+                    onChanged: (v) => a.update((x) => x.cropArea[k] = v),
+                  ),
+                ),
+          ],
+          note(t.cropsNote),
         ],
       ],
     );
@@ -2464,28 +2648,17 @@ class _ExcludeStepState extends State<_ExcludeStep> {
       if (gone.isNotEmpty) summary(t.missingList, gone, p.muted),
       const SizedBox(height: 10),
       _SoonAction(icon: Icons.edit_location_alt_outlined, label: t.markOnMap),
-      // "Why?" is about the parts kept free; a part that is not there needs no reason.
+      // "Why?" for each part kept free; a part that is not there needs no reason.
       if (kept.isNotEmpty) ...[
         _gap,
         SubQuestion(t.whyLabel),
-        MultiChips<ExcludeReason>(
-          values: ExcludeReason.values,
-          selected: a.reasons,
-          label: (r) => switch (r) {
-            ExcludeReason.unsafe => t.whyUnsafe,
-            ExcludeReason.reach => t.whyReach,
-            ExcludeReason.looks => t.whyLooks,
-            ExcludeReason.rules => t.whyRules,
-            ExcludeReason.plans => t.whyPlans,
-          },
-          onToggle: (r) => a.update((x) => x.reasons.contains(r) ? x.reasons.remove(r) : x.reasons.add(r)),
-        ),
+        for (final z in kept) _KeepWhy(answers: a, zone: z),
       ],
     ];
     return _StepPage(
       nav: widget.nav,
       title: t.exclTitle,
-      canContinue: a.excludeSomewhere != null,
+      canContinue: a.excludeSomewhere != null && (!marking || kept.every((z) => a.keeps[z]?.complete ?? false)),
       // Large screens: the house on the left, the choices on the right.
       wide: marking ? ([...mode, ...drawing], [choice, _gap, ...roof, _gap, ...parts]) : null,
       children: [
@@ -2500,6 +2673,91 @@ class _ExcludeStepState extends State<_ExcludeStep> {
           ...parts,
         ],
       ],
+    );
+  }
+}
+
+/// Why one part is kept free (backend KeptFree). With something there, what it is and roughly how big
+/// (a chimney needs no size), and a note that the rest of the part can still be used; otherwise nothing
+/// goes on the part.
+class _KeepWhy extends StatelessWidget {
+  const _KeepWhy({required this.answers, required this.zone});
+
+  final HomeAnswers answers;
+  final Zone zone;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.t;
+    final p = context.palette;
+    final a = answers;
+    final keep = a.keeps[zone] ?? ZoneKeep();
+    void change(void Function(ZoneKeep k) f) => a.update((x) => f(x.keepOf(zone)));
+    Widget size(String label, double? w, double? h, ValueChanged<double?> onW, ValueChanged<double?> onH) => Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              SizedBox(width: 150, child: Text(label, style: TextStyle(fontSize: 14, color: p.text))),
+              NumberField(value: w, width: 110, hint: t.widthLabel, suffix: 'm', onChanged: onW),
+              Text('×', style: TextStyle(fontSize: 15, color: p.muted)),
+              NumberField(value: h, width: 110, hint: t.heightLabel, suffix: 'm', onChanged: onH),
+            ],
+          ),
+        );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FieldLabel(_zoneLabel(t, zone)),
+          ChoiceChips<KeepReason>(
+            values: KeepReason.values,
+            label: (r) => switch (r) {
+              KeepReason.somethingThere => t.keepSomething,
+              KeepReason.notWanted => t.keepNotWanted,
+              KeepReason.hardToReach => t.whyReach,
+              KeepReason.rules => t.whyRules,
+            },
+            selected: keep.reason,
+            onSelect: (r) => change((k) => k.reason = r),
+          ),
+          if (keep.reason == KeepReason.somethingThere) ...[
+            const SizedBox(height: 12),
+            MultiChips<KeepThing>(
+              values: KeepThing.values,
+              selected: keep.things,
+              label: (v) => switch (v) {
+                KeepThing.chimney => t.thingChimney,
+                KeepThing.window => t.thingWindow,
+                KeepThing.other => t.thingOther,
+              },
+              onToggle: (v) => change((k) => k.things.contains(v) ? k.things.remove(v) : k.things.add(v)),
+            ),
+            if (keep.things.contains(KeepThing.window) || keep.things.contains(KeepThing.other)) ...[
+              const SizedBox(height: 10),
+              Text(t.keepSizeQ, style: TextStyle(fontSize: 13.5, color: p.muted)),
+              if (keep.things.contains(KeepThing.window))
+                size(t.thingWindow, keep.windowW, keep.windowH, (v) => change((k) => k.windowW = v),
+                    (v) => change((k) => k.windowH = v)),
+              if (keep.things.contains(KeepThing.other))
+                size(t.thingOther, keep.otherW, keep.otherH, (v) => change((k) => k.otherW = v),
+                    (v) => change((k) => k.otherH = v)),
+            ],
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(padding: const EdgeInsets.only(top: 1), child: Icon(Icons.check_circle_outline_rounded, size: 17, color: p.green)),
+                const SizedBox(width: 6),
+                Expanded(child: Text(t.keepRestNote, style: TextStyle(fontSize: 13.5, color: p.text))),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

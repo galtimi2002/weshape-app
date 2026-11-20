@@ -8,7 +8,8 @@ import '../../core/theme/weshape_palette.dart';
 import '../../core/widgets/weshape_logo.dart';
 
 /// Startup screen. A normal start is a blink. When the free-tier backend is
-/// asleep the wait can reach a minute, so after a few seconds the screen says
+/// asleep the wait can reach 3 minutes (the profile is asked for again every few seconds meanwhile),
+/// so after a few seconds the screen says
 /// what it is waiting for instead of looking frozen.
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

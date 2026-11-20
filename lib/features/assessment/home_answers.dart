@@ -15,6 +15,10 @@ enum BuildingType { house, flat }
 
 enum BuildEra { before1960, from1960, from1990, from2010, unknown }
 
+/// What the building is made of (backend `RoofSafety.Material`): with the age and a renovated roof
+/// it says whether the roof can carry panels.
+enum BuildMaterial { brick, concrete, wood, stoneAdobe, unknown }
+
 enum Renovation { walls, roof, windows, heating, none, unknown }
 
 enum RenovationAge { recent, middle, old }
@@ -33,6 +37,9 @@ enum Source { mains, pipedGas, district, gasBottles, wood, generator, nothing }
 
 enum GasUnit { m3, kwh }
 
+/// Unit of a gas bottle's size (backend `GasBottle.Unit`): litres of the bottle, kg of gas, US gallons.
+enum BottleUnit { litre, kg, gallon }
+
 /// Where there is free space (question 8, pick any; [nowhere] stands alone).
 enum Space { roof, garden, land, balcony, notSure, nowhere }
 
@@ -43,13 +50,22 @@ enum Facing { south, eastWest, north, flat }
 
 enum Ownership { own, building, rent, shared }
 
-enum Fixer { self, technician, installer, unknown }
-
 enum HandsOn { none, little, regular }
 
 enum Priority { upfront, running, environment, reliable, balanced }
 
-enum Animals { few, herd, foodWaste, none }
+/// Animals, food waste and crop residue (pick any; [none] stands alone).
+enum Animals { few, foodWaste, crops, none }
+
+/// Which animals (backend `Biogas.Animal`): only kind and number are asked, the manure is worked out.
+enum AnimalKind { cattle, pigs, poultry, horses, sheepGoats }
+
+/// What stays on the fields after the harvest (backend `CropResidue.Crop`).
+enum CropKind { maize, wheatBarley, sunflower, rapeseed, vineyardOrchard }
+
+enum MassUnit { kg, lb }
+
+enum LandUnit { hectare, acre }
 
 /// How often the power goes out (backend `Battery.Cuts`).
 enum PowerCuts { never, hardlyEver, monthly, mostDays }
@@ -91,7 +107,54 @@ const roofZones = {
   RoofShape.flat: [Zone.roofWhole],
 };
 
-enum ExcludeReason { unsafe, reach, looks, rules, plans }
+/// Why a part is kept free (backend `KeptFree.Reason`): with something there, only that thing is left
+/// out; otherwise nothing goes on the part.
+enum KeepReason { somethingThere, notWanted, hardToReach, rules }
+
+/// What is on a part kept free.
+enum KeepThing { chimney, window, other }
+
+/// Why one part is kept free, and what is there with its rough size (m).
+class ZoneKeep {
+  KeepReason? reason;
+  Set<KeepThing> things = {};
+  double? windowW;
+  double? windowH;
+  double? otherW;
+  double? otherH;
+
+  /// Answered: a reason, and with "something there" what it is, with the sizes asked.
+  bool get complete {
+    if (reason == null) return false;
+    if (reason != KeepReason.somethingThere) return true;
+    if (things.isEmpty) return false;
+    if (things.contains(KeepThing.window) && (windowW == null || windowH == null)) return false;
+    if (things.contains(KeepThing.other) && (otherW == null || otherH == null)) return false;
+    return true;
+  }
+
+  Map<String, Object?> toJson() => {
+        'reason': reason?.name,
+        'things': [for (final t in things) t.name],
+        'windowW': windowW,
+        'windowH': windowH,
+        'otherW': otherW,
+        'otherH': otherH,
+      };
+
+  static ZoneKeep fromJson(Object? json) {
+    final k = ZoneKeep();
+    if (json is Map) {
+      k.reason = _enum(KeepReason.values, json['reason']);
+      k.things = _enumSet(KeepThing.values, json['things']);
+      k.windowW = (json['windowW'] as num?)?.toDouble();
+      k.windowH = (json['windowH'] as num?)?.toDouble();
+      k.otherW = (json['otherW'] as num?)?.toDouble();
+      k.otherH = (json['otherH'] as num?)?.toDouble();
+    }
+    return k;
+  }
+}
 
 /// The place being assessed.
 @immutable
@@ -181,6 +244,7 @@ class HomeAnswers extends ChangeNotifier {
   bool areaSet = false;
 
   BuildEra? era;
+  BuildMaterial? material;
   Set<Renovation> renovations = {};
   Map<Renovation, RenovationAge> renovationAge = {};
   InsulationLevel? wallInsulation;
@@ -216,6 +280,10 @@ class HomeAnswers extends ChangeNotifier {
   double? firewoodPrice;
   double? pelletsTonnes;
   double? gasBottlesPerMonth;
+
+  /// One bottle's size in [bottleUnit]: as written on it (26 L, 11 kg).
+  double? bottleSize;
+  BottleUnit? bottleUnit;
   double? districtPerMonth;
 
 
@@ -224,13 +292,20 @@ class HomeAnswers extends ChangeNotifier {
   Facing? facing;
 
   Ownership? ownership;
-  Fixer? fixer;
   HandsOn? handsOn;
   Priority? priority;
 
-  Animals? animals;
+  Set<Animals> animals = {};
+  Map<AnimalKind, int> animalCounts = {};
+
+  /// Food waste a week, in [foodWasteUnit].
+  double? foodWastePerWeek;
+  MassUnit? foodWasteUnit;
+
+  /// Area of each crop, in [cropUnit].
+  Map<CropKind, double?> cropArea = {};
+  LandUnit? cropUnit;
   RiverAccess? river;
-  bool? brook;
   WindExposure? wind;
 
   bool? excludeSomewhere;
@@ -304,7 +379,9 @@ class HomeAnswers extends ChangeNotifier {
 
   /// Only for a building or something else: nothing goes on a pool or on trees.
   bool get asksNewUse => newKind == NewThingKind.building || newKind == NewThingKind.other;
-  Set<ExcludeReason> reasons = {};
+  /// Why each part kept free is kept free, and what is there.
+  Map<Zone, ZoneKeep> keeps = {};
+  ZoneKeep keepOf(Zone z) => keeps.putIfAbsent(z, ZoneKeep.new);
 
   SpaceSize sizeOf(Space s) => sizes.putIfAbsent(s, SpaceSize.new);
 
@@ -611,6 +688,41 @@ class HomeAnswers extends ChangeNotifier {
   // ------------------------------------------------------------- rules
 
   bool get heats => uses.contains(Use.heating) || uses.contains(Use.hotWater);
+
+  /// The number of people is what hot water is worked out from: asked only with hot water.
+  bool get asksPeople => uses.contains(Use.hotWater);
+
+  /// The animals question is answered: something picked, and the numbers each answer needs.
+  bool get animalsComplete {
+    if (animals.isEmpty) return false;
+    if (animals.contains(Animals.few) && !animalCounts.values.any((n) => n > 0)) return false;
+    if (animals.contains(Animals.foodWaste) && (foodWastePerWeek == null || foodWasteUnit == null)) return false;
+    if (animals.contains(Animals.crops) &&
+        (cropArea.isEmpty || cropArea.values.any((v) => v == null) || cropUnit == null)) {
+      return false;
+    }
+    return true;
+  }
+
+  /// "None" stands alone, and the other way round.
+  void toggleAnimals(Animals v) => update((a) {
+        if (v == Animals.none) {
+          a.animals = a.animals.contains(v) ? {} : {v};
+        } else {
+          a.animals.remove(Animals.none);
+          a.animals.contains(v) ? a.animals.remove(v) : a.animals.add(v);
+        }
+      });
+
+  /// Full independence of the grid can be offered unless the power goes out most days for hours or
+  /// longer (backend `Battery.offGridPossible`, docs/decisions/2026-11-19-question-changes.md).
+  bool get offGridPossible =>
+      !(cuts == PowerCuts.mostDays && (cutLength == CutLength.hours || cutLength == CutLength.overDay));
+
+  /// "Fully independent of the grid?" is asked once the cuts (and their length) are answered, and only
+  /// where it is possible.
+  bool get asksIndependence =>
+      cuts != null && (cuts == PowerCuts.never || cutLength != null) && offGridPossible;
   bool get oldBuilding => era == BuildEra.before1960 || era == BuildEra.from1960 || era == BuildEra.unknown;
   bool get hasFuels =>
       sources.contains(Source.wood) || sources.contains(Source.gasBottles) || sources.contains(Source.district);
@@ -737,6 +849,7 @@ class HomeAnswers extends ChangeNotifier {
         'area': area,
         'areaSet': areaSet,
         'era': era?.name,
+        'material': material?.name,
         'renovations': [for (final r in renovations) r.name],
         'renovationAge': {for (final e in renovationAge.entries) e.key.name: e.value.name},
         'wallInsulation': wallInsulation?.name,
@@ -762,17 +875,22 @@ class HomeAnswers extends ChangeNotifier {
         'firewoodPrice': firewoodPrice,
         'pelletsTonnes': pelletsTonnes,
         'gasBottlesPerMonth': gasBottlesPerMonth,
+        'bottleSize': bottleSize,
+        'bottleUnit': bottleUnit?.name,
         'districtPerMonth': districtPerMonth,
         'spaces': [for (final s in spaces) s.name],
         'sizes': {for (final e in sizes.entries) e.key.name: e.value.toJson()},
         'facing': facing?.name,
         'ownership': ownership?.name,
-        'fixer': fixer?.name,
         'handsOn': handsOn?.name,
         'priority': priority?.name,
-        'animals': animals?.name,
+        'animals': [for (final v in animals) v.name],
+        'animalCounts': {for (final e in animalCounts.entries) e.key.name: e.value},
+        'foodWastePerWeek': foodWastePerWeek,
+        'foodWasteUnit': foodWasteUnit?.name,
+        'cropArea': {for (final e in cropArea.entries) e.key.name: e.value},
+        'cropUnit': cropUnit?.name,
         'river': river?.name,
-        'brook': brook,
         'wind': wind?.name,
         'excludeSomewhere': excludeSomewhere,
         'roofShape': roofShape?.name,
@@ -791,7 +909,7 @@ class HomeAnswers extends ChangeNotifier {
         'newRotation': _beforeDrawing?.rotation ?? newRotation,
         'newShift': _beforeDrawing?.shift ?? newShift,
         'newTreeHeight': newTreeHeight?.name,
-        'reasons': [for (final r in reasons) r.name],
+        'keeps': {for (final e in keeps.entries) e.key.name: e.value.toJson()},
       };
 
   void _fromJson(Map<String, dynamic> j) {
@@ -805,6 +923,7 @@ class HomeAnswers extends ChangeNotifier {
     area = j['area'] as int?;
     areaSet = j['areaSet'] as bool? ?? areaSet;
     era = _enum(BuildEra.values, j['era']);
+    material = _enum(BuildMaterial.values, j['material']);
     renovations = _enumSet(Renovation.values, j['renovations']);
     renovationAge = {
       if (j['renovationAge'] is Map)
@@ -834,6 +953,8 @@ class HomeAnswers extends ChangeNotifier {
     firewoodPrice = (j['firewoodPrice'] as num?)?.toDouble();
     pelletsTonnes = (j['pelletsTonnes'] as num?)?.toDouble();
     gasBottlesPerMonth = (j['gasBottlesPerMonth'] as num?)?.toDouble();
+    bottleSize = (j['bottleSize'] as num?)?.toDouble();
+    bottleUnit = _enum(BottleUnit.values, j['bottleUnit']);
     districtPerMonth = (j['districtPerMonth'] as num?)?.toDouble();
     spaces = _enumSet(Space.values, j['spaces']);
     sizes = {
@@ -843,12 +964,24 @@ class HomeAnswers extends ChangeNotifier {
     };
     facing = _enum(Facing.values, j['facing']);
     ownership = _enum(Ownership.values, j['ownership']);
-    fixer = _enum(Fixer.values, j['fixer']);
     handsOn = _enum(HandsOn.values, j['handsOn']);
     priority = _enum(Priority.values, j['priority']);
-    animals = _enum(Animals.values, j['animals']);
+    // An older save kept one answer as a string.
+    animals = j['animals'] is String ? _enumSet(Animals.values, [j['animals']]) : _enumSet(Animals.values, j['animals']);
+    animalCounts = {
+      if (j['animalCounts'] is Map)
+        for (final e in (j['animalCounts'] as Map).entries)
+          if ((_enum(AnimalKind.values, e.key), e.value) case (final AnimalKind k, final num n)) k: n.toInt(),
+    };
+    foodWastePerWeek = (j['foodWastePerWeek'] as num?)?.toDouble();
+    foodWasteUnit = _enum(MassUnit.values, j['foodWasteUnit']);
+    cropArea = {
+      if (j['cropArea'] is Map)
+        for (final e in (j['cropArea'] as Map).entries)
+          if (_enum(CropKind.values, e.key) case final CropKind k) k: (e.value as num?)?.toDouble(),
+    };
+    cropUnit = _enum(LandUnit.values, j['cropUnit']);
     river = _enum(RiverAccess.values, j['river']);
-    brook = j['brook'] as bool?;
     wind = _enum(WindExposure.values, j['wind']);
     excludeSomewhere = j['excludeSomewhere'] as bool?;
     roofShape = _enum(RoofShape.values, j['roofShape']);
@@ -878,6 +1011,10 @@ class HomeAnswers extends ChangeNotifier {
         : const [0, 0];
     drawingNew = false;
     _beforeDrawing = null;
-    reasons = _enumSet(ExcludeReason.values, j['reasons']);
+    keeps = {
+      if (j['keeps'] is Map)
+        for (final e in (j['keeps'] as Map).entries)
+          if (_enum(Zone.values, e.key) case final Zone z) z: ZoneKeep.fromJson(e.value),
+    };
   }
 }

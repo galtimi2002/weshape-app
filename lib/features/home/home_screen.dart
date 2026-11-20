@@ -33,9 +33,9 @@ class _HomeScreenState extends State<HomeScreen> {
   /// The home assessment's answers live here, so they survive switching tabs.
   final _answers = HomeAnswers();
 
-  /// The open tab is kept on the device, so a page refresh stays on the assessment (at the
-  /// same question) or on the saved assessments, instead of jumping back to the map.
-  static const _tabKey = 'home.tab';
+  /// The app always opens on the map. The assessment still remembers its own place: opening it
+  /// goes on at the question where the person stopped.
+  static const _oldTabKey = 'home.tab';
 
   @override
   void initState() {
@@ -44,24 +44,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _restore() async {
-    // Someone who left to find a bill continues where they stopped.
+    // Someone who left to find a bill continues where they stopped, once they open the assessment.
     await _answers.restore();
     try {
+      // The tab used to be kept; it no longer is.
       final prefs = await SharedPreferences.getInstance();
-      final name = prefs.getString(_tabKey);
-      final tab = HomeTab.values.where((t) => t.name == name).firstOrNull;
-      if (tab != null && mounted) setState(() => _tab = tab);
+      await prefs.remove(_oldTabKey);
     } catch (_) {
-      // Storage can be off (private window): start on the map.
-    }
-  }
-
-  Future<void> _saveTab(HomeTab tab) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_tabKey, tab.name);
-    } catch (_) {
-      // Not kept: a refresh opens the map.
+      // Storage can be off (private window).
     }
   }
 
@@ -80,7 +70,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _tab = tab;
         _picking = false;
       });
-      _saveTab(tab);
     }
   }
 
@@ -109,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
           key: const ValueKey('assessment'),
           answers: _answers,
           countryCode: profile.country,
-          // While picking on the map, a refresh still comes back to the assessment.
+          // Picking a point on the map: the map shows, and confirming the point goes back to the assessment.
           onPickOnMap: () => setState(() {
             _tab = HomeTab.map;
             _picking = true;

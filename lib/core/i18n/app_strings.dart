@@ -319,12 +319,7 @@ class AppStrings {
     required this.ownBuilding,
     required this.ownRent,
     required this.ownShared,
-    required this.fixTitle,
     required this.fixHint,
-    required this.fixSelf,
-    required this.fixTech,
-    required this.fixInstaller,
-    required this.fixUnknown,
     required this.handsTitle,
     required this.handsNone,
     required this.handsLittle,
@@ -392,7 +387,6 @@ class AppStrings {
     required this.followTitle,
     required this.animalsQ,
     required this.animFew,
-    required this.animHerd,
     required this.animWaste,
     required this.animNone,
     required this.riverFound,
@@ -400,7 +394,6 @@ class AppStrings {
     required this.riverOthers,
     required this.riverCannot,
     required this.riverNotSure,
-    required this.brookQ,
     required this.windFound,
     required this.windOpen,
     required this.windSome,
@@ -464,11 +457,43 @@ class AppStrings {
     required this.zoneBackYard,
     required this.markOnMap,
     required this.whyLabel,
-    required this.whyUnsafe,
+    required this.peopleTitle,
+    required this.notePeople,
+    required this.matLabel,
+    required this.matHint,
+    required this.matBrick,
+    required this.matConcrete,
+    required this.matWood,
+    required this.matStone,
+    required this.bottleSizeQ,
+    required this.bottleSizeNote,
+    required this.animCrops,
+    required this.animKindsQ,
+    required this.animCattle,
+    required this.animPigs,
+    required this.animPoultry,
+    required this.animHorses,
+    required this.animSheep,
+    required this.animalsNote,
+    required this.foodWasteQ,
+    required this.cropsQ,
+    required this.cropMaize,
+    required this.cropWheat,
+    required this.cropSunflower,
+    required this.cropRapeseed,
+    required this.cropVineyard,
+    required this.cropsNote,
+    required this.keepSomething,
+    required this.keepNotWanted,
+    required this.thingChimney,
+    required this.thingWindow,
+    required this.thingOther,
+    required this.keepSizeQ,
+    required this.keepRestNote,
+    required this.widthLabel,
+    required this.heightLabel,
     required this.whyReach,
-    required this.whyLooks,
     required this.whyRules,
-    required this.whyPlans,
     required this.dirFront,
     required this.fuelsHint,
   });
@@ -807,12 +832,7 @@ class AppStrings {
   final String ownBuilding;
   final String ownRent;
   final String ownShared;
-  final String fixTitle;
   final String fixHint;
-  final String fixSelf;
-  final String fixTech;
-  final String fixInstaller;
-  final String fixUnknown;
   final String handsTitle;
   final String handsNone;
   final String handsLittle;
@@ -880,7 +900,6 @@ class AppStrings {
   final String followTitle;
   final String animalsQ;
   final String animFew;
-  final String animHerd;
   final String animWaste;
   final String animNone;
   final String riverFound;
@@ -888,7 +907,6 @@ class AppStrings {
   final String riverOthers;
   final String riverCannot;
   final String riverNotSure;
-  final String brookQ;
   final String windFound;
   final String windOpen;
   final String windSome;
@@ -952,11 +970,43 @@ class AppStrings {
   final String zoneBackYard;
   final String markOnMap;
   final String whyLabel;
-  final String whyUnsafe;
+  final String peopleTitle;
+  final String notePeople;
+  final String matLabel;
+  final String matHint;
+  final String matBrick;
+  final String matConcrete;
+  final String matWood;
+  final String matStone;
+  final String bottleSizeQ;
+  final String bottleSizeNote;
+  final String animCrops;
+  final String animKindsQ;
+  final String animCattle;
+  final String animPigs;
+  final String animPoultry;
+  final String animHorses;
+  final String animSheep;
+  final String animalsNote;
+  final String foodWasteQ;
+  final String cropsQ;
+  final String cropMaize;
+  final String cropWheat;
+  final String cropSunflower;
+  final String cropRapeseed;
+  final String cropVineyard;
+  final String cropsNote;
+  final String keepSomething;
+  final String keepNotWanted;
+  final String thingChimney;
+  final String thingWindow;
+  final String thingOther;
+  final String keepSizeQ;
+  final String keepRestNote;
+  final String widthLabel;
+  final String heightLabel;
   final String whyReach;
-  final String whyLooks;
   final String whyRules;
-  final String whyPlans;
   final String dirFront;
   final String fuelsHint;
 

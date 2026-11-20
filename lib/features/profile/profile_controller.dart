@@ -37,21 +37,53 @@ class ProfileController extends ChangeNotifier {
   /// whichever account signs in next.
   void clearPendingRegistration() => _pendingDraft = null;
 
+  /// How long a sleeping server is waited for: the free hosting tier puts it to sleep after a quiet
+  /// spell, and starting it again can take a few minutes.
+  static const wakeBudget = Duration(minutes: 3);
+
+  /// How often it is asked again while it starts.
+  static const wakeRetryEvery = Duration(seconds: 5);
+
+  /// Bumped by [clear]: a load still waiting for the server stops when the person signs out.
+  int _generation = 0;
+
+  /// No answer, or the host's "starting" answers: the server is waking up, so ask again.
+  static bool _waking(ApiException e) =>
+      e.isNetwork || e.statusCode == 502 || e.statusCode == 503 || e.statusCode == 504;
+
+  /// Loads the profile. While the server is waking up it asks again every [wakeRetryEvery], for up to
+  /// [wakeBudget], with the start screen ("Starting the server …") showing; only then does the error
+  /// with "Try again" show.
   Future<void> load() async {
     if (_loading) return;
+    final generation = _generation;
     _loading = true;
     _error = null;
     notifyListeners();
+    final deadline = DateTime.now().add(wakeBudget);
     try {
-      var profile = await _api.me();
-      final draft = _pendingDraft;
-      if (!profile.profileComplete && draft != null) {
-        profile = await _api.completeProfile(draft);
+      while (true) {
+        try {
+          var profile = await _api.me();
+          final draft = _pendingDraft;
+          if (!profile.profileComplete && draft != null) {
+            profile = await _api.completeProfile(draft);
+          }
+          if (generation != _generation) return;
+          _pendingDraft = null;
+          await _adopt(profile);
+          return;
+        } on ApiException catch (e) {
+          if (generation != _generation) return;
+          if (_waking(e) && DateTime.now().isBefore(deadline)) {
+            await Future<void>.delayed(wakeRetryEvery);
+            if (generation != _generation) return;
+            continue;
+          }
+          _error = e;
+          return;
+        }
       }
-      _pendingDraft = null;
-      await _adopt(profile);
-    } on ApiException catch (e) {
-      _error = e;
     } finally {
       _loading = false;
       notifyListeners();
@@ -85,6 +117,7 @@ class ProfileController extends ChangeNotifier {
   }
 
   void clear() {
+    _generation++;
     _profile = null;
     _error = null;
     _pendingDraft = null;
