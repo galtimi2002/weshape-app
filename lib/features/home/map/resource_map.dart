@@ -200,6 +200,10 @@ class _ResourceMapState extends State<ResourceMap> {
   Timer? _blockerTimer;
   List<Rect> _blockers = const [];
   double _attributionLift = 0;
+  double _attributionWidth = 0;
+
+  /// Narrowest the attribution line may get beside the dock before it goes above it instead.
+  static const _attributionMinWidth = 220.0;
 
   /// How far the dock reaches up from the bottom of the map; on phones the card sits above it.
   double _dockTop = 140;
@@ -251,11 +255,19 @@ class _ResourceMapState extends State<ResourceMap> {
         rects.add(topLeft & box.size);
       }
     }
-    // Keep the attribution line readable: above the dock when the dock reaches the left edge.
+    // Keep the attribution line readable and at the bottom: beside the dock, as wide as the room
+    // left of it allows (wrapping if need be); above the dock only when there is no such room (phones).
     final dock = _dockKey.currentContext?.findRenderObject();
     if (dock is RenderBox && dock.hasSize && dock.attached) {
       final dockRect = dock.localToGlobal(Offset.zero, ancestor: stack) & dock.size;
-      final lift = dockRect.left < 460 ? stack.size.height - dockRect.top + 6 : 0.0;
+      final room = dockRect.left - 10 - 12;
+      final beside = room >= _attributionMinWidth;
+      final lift = beside ? 0.0 : stack.size.height - dockRect.top + 6;
+      final width = beside ? room : 0.0;
+      if ((width - _attributionWidth).abs() > 0.5) {
+        _attributionWidth = width;
+        _map.setAttributionWidth(width);
+      }
       // The dock grows when a row of heights or depths opens: keep the card above it.
       final dockTop = stack.size.height - dockRect.top;
       if ((dockTop - _dockTop).abs() > 0.5) setState(() => _dockTop = dockTop);

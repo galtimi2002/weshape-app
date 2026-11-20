@@ -43,11 +43,12 @@ extension type _WeShapeMapJs._(JSObject _) implements JSObject {
   external void setInteractive(bool on);
   external void setBlockers(JSArray<JSNumber> flat);
   external void setAttributionBottom(double px);
+  external void setAttributionWidth(double px);
   external void destroy();
 }
 
 /// Raise together with VERSION in assets/map/weshape_map.js whenever that file changes.
-const _bridgeVersion = 24;
+const _bridgeVersion = 25;
 
 Future<void>? _scriptLoading;
 
@@ -232,6 +233,9 @@ class _WebMapBridge implements MapBridge {
 
   @override
   void setAttributionBottom(double pixels) => _run((m) => m.setAttributionBottom(pixels));
+
+  @override
+  void setAttributionWidth(double pixels) => _run((m) => m.setAttributionWidth(pixels));
 
   @override
   void setInteractive(bool interactive) => _run((m) => m.setInteractive(interactive));

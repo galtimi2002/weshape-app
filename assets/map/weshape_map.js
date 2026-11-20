@@ -9,7 +9,7 @@
   'use strict';
   // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
   // (after a hot restart the page still holds the previous script).
-  var VERSION = 24;
+  var VERSION = 25;
   if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
   if (window.WeShapeMap && window.WeShapeMap.destroy) {
     try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
@@ -97,7 +97,7 @@
   log('bridge script loaded');
 
   var state = { dark: false, language: 'en', overlay: null, overlayKey: null, overlayKind: null, overlayToken: 0,
-    attribution: '', attributionBottom: 0, interactive: true, onClick: null, onError: null };
+    attribution: '', attributionBottom: 0, attributionWidth: 0, interactive: true, onClick: null, onError: null };
   var attributionControl = null;
 
   // ---------------------------------------------------------------- loading
@@ -234,6 +234,15 @@
       '.ws-map.ws-dark .maplibregl-ctrl-attrib{background:rgba(22,27,38,.82);color:#D5DBE6;}' +
       '.ws-map.ws-dark .maplibregl-ctrl-attrib a{color:#9DB8E6;}';
     document.head.appendChild(st);
+  }
+
+  /** Where the credits sit: lifted by attributionBottom, at most attributionWidth wide (0: no limit). */
+  function placeAttribution() {
+    if (!container) return;
+    var corner = container.querySelector('.maplibregl-ctrl-bottom-left');
+    if (corner) corner.style.bottom = state.attributionBottom + 'px';
+    var attrib = container.querySelector('.maplibregl-ctrl-attrib');
+    if (attrib) attrib.style.maxWidth = state.attributionWidth > 0 ? state.attributionWidth + 'px' : '';
   }
 
   function applyAttributionLook() {
@@ -764,6 +773,7 @@
         applyAttributionLook();
         attributionControl = newAttribution();
         map.addControl(attributionControl, 'bottom-left');
+        placeAttribution();
         map.on('error', function (e) {
           console.warn('[WeShapeMap] error', e && e.error);
           if (!loaded && state.onError) state.onError(String((e && e.error && e.error.message) || 'map error'));
@@ -853,7 +863,7 @@
         attributionControl = newAttribution();
         map.addControl(attributionControl, 'bottom-left');
         var corner = container && container.querySelector('.maplibregl-ctrl-bottom-left');
-        if (corner) corner.style.bottom = state.attributionBottom + 'px';
+        placeAttribution();
       });
     },
 
@@ -975,8 +985,13 @@
     /** Lifts the attribution line above Flutter's bottom dock when they would overlap. */
     setAttributionBottom: function (px) {
       state.attributionBottom = px;
-      var corner = container && container.querySelector('.maplibregl-ctrl-bottom-left');
-      if (corner) corner.style.bottom = px + 'px';
+      placeAttribution();
+    },
+
+    /** Keeps the credits narrower than this, so they fit beside Flutter's bottom dock (0: no limit). */
+    setAttributionWidth: function (px) {
+      state.attributionWidth = px;
+      placeAttribution();
     },
 
     /** Rectangles [x, y, width, height, x, y, ...] in pixels where Flutter draws controls. */

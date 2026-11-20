@@ -109,6 +109,9 @@ abstract class MapBridge {
   /// Moves the map's attribution line up by [pixels] so nothing covers it.
   void setAttributionBottom(double pixels);
 
+  /// Keeps the attribution line at most [pixels] wide (0: no limit), so it fits beside the dock.
+  void setAttributionWidth(double pixels);
+
   /// False while a menu or dialog covers the map.
   void setInteractive(bool interactive);
 

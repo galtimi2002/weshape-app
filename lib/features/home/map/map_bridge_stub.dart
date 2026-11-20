@@ -78,6 +78,8 @@ class _NoMap implements MapBridge {
   @override
   void setAttributionBottom(double pixels) {}
   @override
+  void setAttributionWidth(double pixels) {}
+  @override
   void setInteractive(bool interactive) {}
 
   @override
