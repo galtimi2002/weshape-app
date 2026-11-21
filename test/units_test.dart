@@ -145,10 +145,11 @@ void main() {
       expect(fieldAreaUnits(null), [AreaUnit.hectare, AreaUnit.acre]);
     });
 
-    test('fields start on acres in US units, mu in China, hectares elsewhere', () {
-      expect(defaultFieldAreaUnit(UnitSystem.us, 'RO'), AreaUnit.acre);
-      expect(defaultFieldAreaUnit(UnitSystem.metric, 'CN'), AreaUnit.mu);
-      expect(defaultFieldAreaUnit(UnitSystem.metric, 'HU'), AreaUnit.hectare);
+    test("fields start on acres in US units, hectares in metric: the person's units decide, not the country", () {
+      expect(defaultFieldAreaUnit(UnitSystem.us), AreaUnit.acre);
+      expect(defaultFieldAreaUnit(UnitSystem.metric), AreaUnit.hectare);
+      // The country's own units are still offered beside them.
+      expect(fieldAreaUnits('CN'), contains(AreaUnit.mu));
     });
   });
 

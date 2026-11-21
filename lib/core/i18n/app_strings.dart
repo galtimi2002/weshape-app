@@ -261,6 +261,7 @@ class AppStrings {
     required this.srcDistrict,
     required this.srcBottles,
     required this.srcWood,
+    required this.srcPellets,
     required this.srcGenerator,
     required this.srcNothing,
     required this.elecUseTitle,
@@ -350,6 +351,13 @@ class AppStrings {
     required this.unitsLabel,
     required this.unitsMetric,
     required this.unitsUs,
+    required this.unitsChangeTitle,
+    required this.unitsChangeBody,
+    required this.unitsChangeConfirm,
+    required this.assessBusyTitle,
+    required this.assessBusyBody,
+    required this.assessBusyContinue,
+    required this.assessBusyNew,
     required this.woodKindQ,
     required this.woodHard,
     required this.woodSoft,
@@ -791,6 +799,7 @@ class AppStrings {
   final String srcDistrict;
   final String srcBottles;
   final String srcWood;
+  final String srcPellets;
   final String srcGenerator;
   final String srcNothing;
   final String elecUseTitle;
@@ -886,6 +895,17 @@ class AppStrings {
   final String unitsLabel;
   final String unitsMetric;
   final String unitsUs;
+
+  /// Switching units with an assessment under way: it must start again.
+  final String unitsChangeTitle;
+  final String unitsChangeBody;
+  final String unitsChangeConfirm;
+
+  /// "Assess this place" with an assessment of another place under way.
+  final String assessBusyTitle;
+  final String assessBusyBody;
+  final String assessBusyContinue;
+  final String assessBusyNew;
   final String woodKindQ;
   final String woodHard;
   final String woodSoft;
@@ -1095,6 +1115,9 @@ class AppStrings {
 
   /// "As written on it, e.g. 26 L or 11 kg."
   String bottleSizeNoteFor(String a, String b) => bottleSizeNote.replaceAll('{a}', a).replaceAll('{b}', b);
+
+  /// "Your assessment was started in Metric (m, km, °C). …"
+  String unitsChangeBodyFor(String units) => unitsChangeBody.replaceAll('{units}', units);
 
   /// "bag (15 kg)"
   String pelletUnitBagFor(String size) => pelletUnitBag.replaceAll('{size}', size);

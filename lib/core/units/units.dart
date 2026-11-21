@@ -347,7 +347,6 @@ List<AreaUnit> fieldAreaUnits(String? country) => [
       ...?_fieldAreaUnits[country?.toUpperCase()],
     ];
 
-/// The unit fields of crops start in: acres in US units, mu in China, hectares elsewhere.
-AreaUnit defaultFieldAreaUnit(UnitSystem system, String? country) => system == UnitSystem.us
-    ? AreaUnit.acre
-    : (country?.toUpperCase() == 'CN' ? AreaUnit.mu : AreaUnit.hectare);
+/// The unit fields of crops start in: acres in US units, hectares otherwise. The person's units decide,
+/// not the country; the country's own units are offered beside them ([fieldAreaUnits]).
+AreaUnit defaultFieldAreaUnit(UnitSystem system) => system == UnitSystem.us ? AreaUnit.acre : AreaUnit.hectare;

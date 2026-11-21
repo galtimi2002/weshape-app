@@ -7,6 +7,7 @@ import '../../core/i18n/app_localizations.dart';
 import '../../core/i18n/countries.dart';
 import '../../core/models/user_profile.dart';
 import '../../core/theme/weshape_palette.dart';
+import '../../core/units/units.dart';
 import '../../core/widgets/auth_layout.dart';
 import '../../core/widgets/language_menu.dart';
 import '../../core/widgets/theme_switch.dart';
@@ -77,12 +78,50 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// "Assess this place" on the map card: the place becomes the assessment's, and the
   /// assessment opens at the place step so the person sees it and continues from there.
-  void _assess(AssessmentPlace place) {
-    _answers.update((a) {
-      a.place = place;
-      if (a.screen == 'audience') a.screen = 'place';
+  ///
+  /// With an assessment of another place under way, it asks first (Timi, 2026-11-21): finish that
+  /// one (back to where it stopped, this place left out), or start a new one here (the old one is
+  /// deleted). Closing the question stays on the map. Picking a point for the assessment's own
+  /// place step is not a new assessment, so it does not ask.
+  Future<void> _assess(AssessmentPlace place) async {
+    final a = _answers;
+    final old = a.place;
+    final samePlace = old != null && (old.lat - place.lat).abs() < 1e-6 && (old.lon - place.lon).abs() < 1e-6;
+    if (!_picking && a.started && !samePlace && (old != null || a.screen != 'place')) {
+      final choice = await _askBusy();
+      if (!mounted || choice == null) return;
+      if (choice == _Busy.finish) {
+        _go(HomeTab.assessment);
+        return;
+      }
+      a.reset();
+    }
+    a.update((x) {
+      x.place = place;
+      if (x.screen == 'audience') x.screen = 'place';
     });
     _go(HomeTab.assessment);
+  }
+
+  Future<_Busy?> _askBusy() {
+    final t = context.t;
+    final p = context.palette;
+    return showDialog<_Busy>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(Icons.warning_amber_rounded, color: p.error, size: 32),
+        title: Text(t.assessBusyTitle),
+        content: Text(t.assessBusyBody, style: TextStyle(color: p.error, fontSize: 14, height: 1.4)),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(_Busy.finish), child: Text(t.assessBusyContinue)),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: p.error, foregroundColor: Colors.white),
+            onPressed: () => Navigator.of(context).pop(_Busy.startNew),
+            child: Text(t.assessBusyNew),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -117,6 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _Header(
               profile: profile,
+              answers: _answers,
               phone: phone,
               tabs: inHeader ? HeaderTabs(current: _tab, onSelect: _go) : null,
             ),
@@ -191,10 +231,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+/// The answer to "you have an assessment in progress".
+enum _Busy { finish, startNew }
+
 class _Header extends StatelessWidget {
-  const _Header({required this.profile, required this.phone, this.tabs});
+  const _Header({required this.profile, required this.answers, required this.phone, this.tabs});
 
   final UserProfile profile;
+  final HomeAnswers answers;
   final bool phone;
 
   /// The tabs, when they fit in the header (left of the language menu).
@@ -231,7 +275,7 @@ class _Header extends StatelessWidget {
               label: Text(t.signOut, style: const TextStyle(fontSize: 13)),
             ),
           const SizedBox(width: 10),
-          _AccountButton(profile: profile),
+          _AccountButton(profile: profile, answers: answers),
         ],
       ),
     );
@@ -240,9 +284,10 @@ class _Header extends StatelessWidget {
 
 /// Initials with a green "online" dot; opens a card with the person's details.
 class _AccountButton extends StatelessWidget {
-  const _AccountButton({required this.profile});
+  const _AccountButton({required this.profile, required this.answers});
 
   final UserProfile profile;
+  final HomeAnswers answers;
 
   @override
   Widget build(BuildContext context) {
@@ -253,7 +298,7 @@ class _AccountButton extends StatelessWidget {
       button: true,
       child: InkWell(
         customBorder: const CircleBorder(),
-        onTap: () => showDialog<void>(context: context, builder: (_) => _AccountDialog(profile: profile)),
+        onTap: () => showDialog<void>(context: context, builder: (_) => _AccountDialog(profile: profile, answers: answers)),
         child: SizedBox(
           width: 38,
           height: 38,
@@ -289,9 +334,40 @@ class _AccountButton extends StatelessWidget {
 }
 
 class _AccountDialog extends StatelessWidget {
-  const _AccountDialog({required this.profile});
+  const _AccountDialog({required this.profile, required this.answers});
 
   final UserProfile profile;
+  final HomeAnswers answers;
+
+  /// An assessment under way keeps its units: switching asks first, in red, and starts it again.
+  Future<bool> _confirmSwitch(BuildContext context, UnitSystem to) async {
+    final from = answers.unitSystem;
+    if (!answers.started || from == null || from == to) return true;
+    final t = context.t;
+    final p = context.palette;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: Icon(Icons.warning_amber_rounded, color: p.error, size: 32),
+        title: Text(t.unitsChangeTitle, style: TextStyle(color: p.error, fontWeight: FontWeight.w700)),
+        content: Text(
+          t.unitsChangeBodyFor(from == UnitSystem.us ? t.unitsUs : t.unitsMetric),
+          style: TextStyle(color: p.error, fontSize: 14, height: 1.4),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(false), child: Text(t.cancel)),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: p.error, foregroundColor: Colors.white),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(t.unitsChangeConfirm),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return false;
+    answers.reset();
+    return true;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -320,7 +396,7 @@ class _AccountDialog extends StatelessWidget {
               ],
               const SizedBox(height: 18),
               // Metric or US units: shown in full, so it is clear what they change.
-              LabeledField(label: t.unitsLabel, child: const UnitsField()),
+              LabeledField(label: t.unitsLabel, child: UnitsField(beforeChange: (to) => _confirmSwitch(context, to))),
               const SizedBox(height: 18),
               OutlinedButton.icon(
                 onPressed: () {

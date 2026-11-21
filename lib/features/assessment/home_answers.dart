@@ -34,7 +34,9 @@ enum WindowKind { single, doubleOld, doubleNew, triple, mix, unknown }
 /// How the home gets energy today (question 5, pick any; [nothing] stands alone).
 /// How the home gets its energy today. Equipment of its own is not asked: the bills are
 /// what renewable energy would replace.
-enum Source { mains, pipedGas, district, gasBottles, wood, generator, nothing }
+/// What the home uses for energy. [wood] is firewood or charcoal; [pellets] apart, so nobody has to
+/// type 0 for the one they do not use (decided with Timi, 2026-11-21).
+enum Source { mains, pipedGas, district, gasBottles, wood, pellets, generator, nothing }
 
 
 /// Unit of the gas bill (backend `GasBill.Unit`): cubic metres, kWh, MJ (Hungarian bills), or the US
@@ -246,6 +248,13 @@ class HomeAnswers extends ChangeNotifier {
   /// Where the person is: the id of the current screen.
   String screen = 'audience';
 
+  /// The units the assessment is filled in, set when it starts; the report uses them. Switching
+  /// units means starting again (decided with Timi, 2026-11-21).
+  UnitSystem? unitSystem;
+
+  /// Something has been answered: switching units would clear it.
+  bool get started => screen != 'audience' || audience != null;
+
   // Every question starts unanswered: nothing is picked for the person, so an answer is
   // always theirs (decided with the team). Null or empty means "not answered yet".
   Audience? audience;
@@ -279,7 +288,9 @@ class HomeAnswers extends ChangeNotifier {
   double? paidAverage;
   String? currency;
 
-  GasUnit gasUnit = GasUnit.kwh;
+  /// The unit on the gas bill: m³ to start with, the person switches to what their bill says (kWh, MJ,
+  /// therm, CCF). Not a question of metric or US units (decided with Timi, 2026-11-21).
+  GasUnit gasUnit = GasUnit.m3;
   List<double?> gasAmount = [null, null, null];
   List<double?> gasPaid = [null, null, null];
 
@@ -751,7 +762,10 @@ class HomeAnswers extends ChangeNotifier {
       cuts != null && (cuts == PowerCuts.never || cutLength != null) && offGridPossible;
   bool get oldBuilding => era == BuildEra.before1960 || era == BuildEra.from1960 || era == BuildEra.unknown;
   bool get hasFuels =>
-      sources.contains(Source.wood) || sources.contains(Source.gasBottles) || sources.contains(Source.district);
+      sources.contains(Source.wood) ||
+      sources.contains(Source.pellets) ||
+      sources.contains(Source.gasBottles) ||
+      sources.contains(Source.district);
   /// Marks a part as kept free, or (with [isMissing]) as not there; a part is never both.
   void markZone(Zone z, {required bool isMissing}) => update((a) {
         final target = isMissing ? a.missing : a.zones;
@@ -866,6 +880,7 @@ class HomeAnswers extends ChangeNotifier {
 
   Map<String, Object?> toJson() => {
         'screen': screen,
+        'unitSystem': unitSystem?.name,
         'audience': audience?.name,
         'place': place?.toJson(),
         'uses': [for (final u in uses) u.name],
@@ -944,6 +959,7 @@ class HomeAnswers extends ChangeNotifier {
 
   void _fromJson(Map<String, dynamic> j) {
     screen = j['screen'] as String? ?? screen;
+    unitSystem = _enum(UnitSystem.values, j['unitSystem']);
     audience = _enum(Audience.values, j['audience']);
     place = AssessmentPlace.fromJson(j['place']);
     uses = _enumSet(Use.values, j['uses']);
@@ -972,7 +988,7 @@ class HomeAnswers extends ChangeNotifier {
     paid = _doubles(j['paid'], 3);
     paidAverage = (j['paidAverage'] as num?)?.toDouble();
     currency = j['currency'] as String?;
-    gasUnit = _enum(GasUnit.values, j['gasUnit']) ?? gasUnit;
+    gasUnit = _enum(GasUnit.values, j['gasUnit']) ?? GasUnit.m3;
     gasAmount = _doubles(j['gasAmount'], 3);
     gasPaid = _doubles(j['gasPaid'], 3);
     cuts = _enum(PowerCuts.values, j['cuts']);
@@ -987,6 +1003,8 @@ class HomeAnswers extends ChangeNotifier {
     pelletsAmount = (j['pelletsAmount'] as num?)?.toDouble() ?? (j['pelletsTonnes'] as num?)?.toDouble();
     pelletsUnit = _enum(PelletUnit.values, j['pelletsUnit']) ?? (j['pelletsTonnes'] == null ? null : PelletUnit.tonne);
     pelletBagKg = (j['pelletBagKg'] as num?)?.toDouble();
+    // Saved when pellets were part of "firewood, pellets or charcoal": pellets typed mean pellets used.
+    if (sources.contains(Source.wood) && (pelletsAmount ?? 0) > 0) sources = {...sources, Source.pellets};
     gasBottlesPerMonth = (j['gasBottlesPerMonth'] as num?)?.toDouble();
     bottleSize = (j['bottleSize'] as num?)?.toDouble();
     bottleUnit = _enum(BottleUnit.values, j['bottleUnit']);

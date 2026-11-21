@@ -304,6 +304,7 @@ class MeasureField extends StatelessWidget {
       suffix: u.symbol(measure),
       width: width,
       hint: hint,
+      wholeExpected: measure == Measure.area,
       onChanged: (typed) => onChanged(typed == null ? null : u.fromDisplay(typed, measure)),
     );
   }
@@ -351,6 +352,7 @@ class _AreaFieldState extends State<AreaField> {
       value: shown,
       suffix: widget.units.length == 1 ? _unit.label : null,
       width: widget.width,
+      wholeExpected: true,
       onChanged: (typed) => widget.onChanged(typed == null ? null : _unit.toM2(typed)),
     );
     if (widget.units.length == 1) return field;
@@ -380,7 +382,12 @@ class NumberField extends StatefulWidget {
     this.width = 140,
     this.hint,
     this.money = false,
+    this.wholeExpected = false,
   });
+
+  /// Amounts that are normally large (kWh or m³ a month, m² of a home): a dot or comma followed by
+  /// three digits ("1,200") then gets a note asking whether 1200 was meant.
+  final bool wholeExpected;
 
   /// An amount of money: a dot or a comma both start the cents (bani, fillér),
   /// at most two digits after it.
@@ -404,7 +411,12 @@ class NumberField extends StatefulWidget {
 class _NumberFieldState extends State<NumberField> {
   late final TextEditingController _controller = TextEditingController(text: _format(widget.value));
 
-  static String _format(double? v) => v == null ? '' : (v == v.roundToDouble() ? v.toInt().toString() : v.toString());
+  /// The decimal mark of the language on screen: a comma (4,5) or a dot (4.5). Whichever of the two
+  /// is typed, the field shows this one; the app reads both as the decimal mark.
+  String _mark = '.';
+
+  String _format(double? v) =>
+      v == null ? '' : (v == v.roundToDouble() ? v.toInt().toString() : v.toString()).replaceAll('.', _mark);
 
   @override
   void didUpdateWidget(NumberField oldWidget) {
@@ -422,7 +434,13 @@ class _NumberFieldState extends State<NumberField> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    final whole = widget.money ? null : looksLikeThousands(_controller.text);
+    _mark = usesDecimalComma(context.units.language) ? ',' : '.';
+    final other = _mark == ',' ? '.' : ',';
+    // A value shown before the language was known, or after it changed, takes this language's mark.
+    if (_controller.text.contains(other)) {
+      _controller.value = _controller.value.copyWith(text: _controller.text.replaceAll(other, _mark));
+    }
+    final whole = widget.wholeExpected && !widget.money ? looksLikeThousands(_controller.text) : null;
     final field = SizedBox(
       width: widget.width,
       child: TextField(
@@ -431,6 +449,8 @@ class _NumberFieldState extends State<NumberField> {
         // Digits and one decimal mark (dot or comma) only; nothing else can be typed or pasted.
         inputFormatters: [
           FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+          // A dot or a comma typed becomes the language's decimal mark (same length: the cursor stays).
+          TextInputFormatter.withFunction((old, value) => value.copyWith(text: value.text.replaceAll(other, _mark))),
           TextInputFormatter.withFunction(
             (old, value) {
               final shape = RegExp(widget.money ? r'^\d*([.,]\d{0,2})?$' : r'^\d*[.,]?\d*$').hasMatch(value.text);

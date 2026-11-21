@@ -198,6 +198,8 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
     return ListenableBuilder(
       listenable: _a,
       builder: (context, _) {
+        // The assessment keeps the units it was started in (the report uses them too).
+        _a.unitSystem ??= context.units.system;
         final steps = _steps();
         var index = steps.indexOf(_a.screen);
         if (index < 0) index = _a.screen == 'followUps' ? steps.length - 2 : 0;
@@ -209,7 +211,8 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
           onNext: index == steps.length - 1 ? null : () => _next(steps, index),
           onFirst: index == 0 ? null : () => _a.update((a) => a.screen = steps.first),
           onReset: _confirmReset,
-          onToMap: index == 0 ? widget.onBackToMap : null,
+          // On every step (Timi, 2026-11-21): the answers are kept, and coming back goes on where it stopped.
+          onToMap: widget.onBackToMap,
         );
         final a = _a;
         final Widget page = _oneMore ? const _OneMoreStep() : switch (id) {
@@ -288,7 +291,7 @@ class _Nav {
   /// Null on the last screen: the result comes next.
   final VoidCallback? onNext;
 
-  /// On the first question only: back to the map on the home page.
+  /// Back to the map on the home page, on every question; the answers stay.
   final VoidCallback? onToMap;
 
   bool get last => onNext == null;
@@ -1480,6 +1483,7 @@ class _SourcesStep extends StatelessWidget {
           Source.district => t.srcDistrict,
           Source.gasBottles => t.srcBottles,
           Source.wood => t.srcWood,
+          Source.pellets => t.srcPellets,
           Source.generator => t.srcGenerator,
           Source.nothing => t.srcNothing,
         };
@@ -1666,6 +1670,7 @@ class _ElectricityStep extends StatelessWidget {
                 value: a.electricityKwh[i],
                 suffix: unit,
                 width: 190,
+                wholeExpected: true,
                 onChanged: (v) => a.update((x) => x.electricityKwh[i] = v),
               ),
             ],
@@ -1680,6 +1685,7 @@ class _ElectricityStep extends StatelessWidget {
             value: a.electricityAverageKwh,
             suffix: unit,
             width: 190,
+            wholeExpected: true,
             onChanged: (v) => a.update((x) => x.electricityAverageKwh = v),
           ),
           if (high) FieldWarning(t.tooHigh),
@@ -1771,8 +1777,6 @@ String _gasUnitLabel(GasUnit v) => switch (v) {
       GasUnit.ccf => 'CCF',
     };
 
-/// Countries whose gas bills count cubic metres; elsewhere kWh (therms in the US).
-const _gasInM3 = {'HU', 'UA', 'MD', 'RS', 'BA', 'MK', 'ME', 'RU', 'BY', 'GE', 'AM', 'AZ', 'KZ', 'UZ', 'KG', 'TR'};
 
 class _GasStep extends StatefulWidget {
   const _GasStep({required this.answers, required this.nav, required this.countryCode});
@@ -1787,34 +1791,19 @@ class _GasStep extends StatefulWidget {
 
 class _GasStepState extends State<_GasStep> {
   @override
-  void initState() {
-    super.initState();
-    // Nothing typed yet: start with the unit the country's bills use.
-    final a = widget.answers;
-    if (a.gasAmount.every((v) => v == null)) {
-      final settings = context.read<SettingsController>();
-      final country = (widget.countryCode ?? settings.country)?.toUpperCase();
-      final unit = settings.unitSystem == UnitSystem.us
-          ? GasUnit.therm
-          : (_gasInM3.contains(country) ? GasUnit.m3 : GasUnit.kwh);
-      if (unit != a.gasUnit) WidgetsBinding.instance.addPostFrameCallback((_) => a.update((x) => x.gasUnit = unit));
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final t = context.t;
     final a = widget.answers;
     final currency = a.currency ?? currencyOf(widget.countryCode);
-    final unit = _gasUnitLabel(a.gasUnit);
-    // Every unit can be picked; the usual one is chosen at the start.
+    final gasUnit = a.gasUnit;
+    // m³ to start with; the person switches to what their bill says (kWh, MJ, therm, CCF).
     const gasUnits = GasUnit.values;
     // About 10.5 kWh in a cubic metre: a number in the wrong unit is off about tenfold.
     final amounts = a.gasAmount.whereType<double>();
     final looksKwh = a.gasUnit == GasUnit.m3 && amounts.any((v) => v > 1200);
     final looksM3 = a.gasUnit == GasUnit.kwh && amounts.isNotEmpty && amounts.every((v) => v > 0 && v < 40);
     // A month above about 120,000 kWh (12,000 m³, 4,100 therms, 4,200 CCF) is not a home.
-    final high = amounts.any((v) => v > switch (a.gasUnit) {
+    final high = amounts.any((v) => v > switch (gasUnit) {
           GasUnit.m3 => 12000,
           GasUnit.kwh => 120000,
           GasUnit.mj => 430000,
@@ -1825,6 +1814,8 @@ class _GasStepState extends State<_GasStep> {
       nav: widget.nav,
       title: t.gasTitle,
       note: t.noteGas,
+      // Every month's amount and payment.
+      canContinue: a.gasAmount.every((v) => v != null) && a.gasPaid.every((v) => v != null),
       children: [
         _CurrencyPicker(answers: a, countryCode: widget.countryCode),
         _gap,
@@ -1843,8 +1834,9 @@ class _GasStepState extends State<_GasStep> {
           fields: (i) => [
             NumberField(
               value: a.gasAmount[i],
-              suffix: unit,
+              suffix: _gasUnitLabel(gasUnit),
               width: 150,
+              wholeExpected: true,
               hint: t.gasUsed,
               onChanged: (v) => a.update((x) => x.gasAmount[i] = v),
             ),
@@ -1870,11 +1862,8 @@ class _GasStepState extends State<_GasStep> {
   }
 }
 
-/// Bottles are labelled in kg almost everywhere; in Romania and Moldova by the bottle's litres (26 L);
-/// in the US in pounds (20 lb).
-BottleUnit _defaultBottleUnit(UnitSystem system, String? country) => system == UnitSystem.us
-    ? BottleUnit.lb
-    : (const {'RO', 'MD'}.contains(country?.toUpperCase()) ? BottleUnit.litre : BottleUnit.kg);
+/// The units the person chose decide, not the country (decided with Timi): kg, or lb in US units.
+BottleUnit _defaultBottleUnit(UnitSystem system) => system == UnitSystem.us ? BottleUnit.lb : BottleUnit.kg;
 
 String _woodUnitLabel(AppStrings t, WoodUnit v) => switch (v) {
       WoodUnit.stacked => t.woodUnitStacked,
@@ -1902,16 +1891,6 @@ String _woodOne(AppStrings t, WoodUnit v) => switch (v) {
       WoodUnit.cord => '1 cord',
     };
 
-/// A usual winter's amount, for the "a rough number helps" note.
-String _woodExample(AppStrings t, WoodUnit v) => switch (v) {
-      WoodUnit.stacked => '8 m³',
-      WoodUnit.loose => '11 m³',
-      WoodUnit.solid => '6 m³',
-      WoodUnit.quintal => '50 × 100 kg',
-      WoodUnit.tonne => '5 t',
-      WoodUnit.cord => '2 cords',
-    };
-
 class _FuelsStep extends StatefulWidget {
   const _FuelsStep({required this.answers, required this.nav, required this.countryCode});
 
@@ -1924,27 +1903,15 @@ class _FuelsStep extends StatefulWidget {
 }
 
 class _FuelsStepState extends State<_FuelsStep> {
-  /// "Continue" was pressed once with firewood data missing: the yellow notes show, and the next
-  /// press goes on (docs/decisions/2026-11-12-firewood-and-missing-data.md in the backend).
-  bool _warned = false;
-
-  bool get _woodMissing {
-    final a = widget.answers;
-    if (!a.sources.contains(Source.wood)) return false;
-    if (a.firewoodAmount == null) return true;
-    return a.firewoodKind == null || a.firewoodPrice == null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final u = context.units;
     final a = widget.answers;
     final nav = widget.nav;
-    final country = widget.countryCode ?? context.read<SettingsController>().country;
     // Not picked yet: the units chosen in the profile first, then what is usual in the country.
     final woodUnit = a.firewoodUnit ?? (u.isUs ? WoodUnit.cord : WoodUnit.stacked);
-    final bottleUnit = a.bottleUnit ?? _defaultBottleUnit(u.system, country);
+    final bottleUnit = a.bottleUnit ?? _defaultBottleUnit(u.system);
     // Pellets: bags unless picked otherwise; a US ton only in US units, a tonne otherwise.
     var pelletUnit = a.pelletsUnit ?? PelletUnit.bag;
     if (u.isUs && pelletUnit == PelletUnit.tonne) pelletUnit = PelletUnit.shortTon;
@@ -1955,24 +1922,17 @@ class _FuelsStepState extends State<_FuelsStep> {
         : (u.isUs ? '${formatNumber(bagKg / kgPerLb, u.language)} lb' : '${formatNumber(bagKg, u.language)} kg');
     final currency = a.currency ?? currencyOf(widget.countryCode);
     final wood = a.sources.contains(Source.wood);
+    final pellets = a.sources.contains(Source.pellets);
     final hasWood = wood && (a.firewoodAmount ?? 0) > 0;
-    final next = nav.onNext;
-    final guarded = _Nav(
-      index: nav.index,
-      total: nav.total,
-      onBack: nav.onBack,
-      onFirst: nav.onFirst,
-      onReset: nav.onReset,
-      onNext: next == null
-          ? null
-          : () {
-              if (!_warned && _woodMissing) {
-                setState(() => _warned = true);
-              } else {
-                next();
-              }
-            },
-    );
+    // "Next" only once everything on the page is answered (Timi, 2026-11-21; it used to let people
+    // go on after a warning). "I don't know" for the kind of wood counts as an answer.
+    final complete = (!a.sources.contains(Source.district) || a.districtPerMonth != null) &&
+        (!wood || (a.firewoodAmount != null && (!hasWood || (a.firewoodKind != null && a.firewoodPrice != null)))) &&
+        (!pellets || a.pelletsAmount != null) &&
+        (!a.sources.contains(Source.gasBottles) ||
+            (a.gasBottlesPerMonth != null &&
+                a.bottleSize != null &&
+                (bottleUnit != BottleUnit.litre || a.bottleLitres != null)));
     Widget field(double? value, String? suffix, ValueChanged<double?> onChanged, {bool money = false}) =>
         NumberField(value: value, suffix: suffix, width: 200, money: money, onChanged: onChanged);
     Widget row(String question, double? value, String? suffix, ValueChanged<double?> onChanged, {bool money = false}) => Padding(
@@ -1986,7 +1946,8 @@ class _FuelsStepState extends State<_FuelsStep> {
           ),
         );
     return _StepPage(
-      nav: guarded,
+      nav: nav,
+      canContinue: complete,
       title: t.fuelsTitle,
       note: t.noteFuels,
       hint: t.fuelsHint,
@@ -2024,7 +1985,6 @@ class _FuelsStepState extends State<_FuelsStep> {
             const SizedBox(height: 6),
             Text(note, style: TextStyle(fontSize: 13, color: context.palette.muted)),
           ],
-          if (_warned && a.firewoodAmount == null) _Unsure('${t.unsureLead} ${t.unsureAmountFor(_woodExample(t, woodUnit))}'),
           const SizedBox(height: 22),
           if (hasWood) ...[
             SubQuestion(t.woodKindQ),
@@ -2039,15 +1999,16 @@ class _FuelsStepState extends State<_FuelsStep> {
               selected: a.firewoodKind,
               onSelect: (v) => a.update((x) => x.firewoodKind = v),
             ),
-            if (a.firewoodKind == WoodKind.unknown || (_warned && a.firewoodKind == null))
+            if (a.firewoodKind == WoodKind.unknown)
               _Unsure('${t.unsureLead} ${t.unsureWood}'),
             const SizedBox(height: 22),
             // The price of one of the unit the amount is in.
             SubQuestion(t.woodPriceQFor(_woodOne(t, woodUnit))),
             field(a.firewoodPrice, currency, (v) => a.update((x) => x.firewoodPrice = v), money: true),
-            if (_warned && a.firewoodPrice == null) _Unsure('${t.unsureLead} ${t.unsurePrice}'),
             const SizedBox(height: 22),
           ],
+        ],
+        if (pellets) ...[
           // Pellets as they are bought: bags (15 kg, 40 lb in US units, or the size typed), kg, tonnes,
           // or US tons (backend Pellets).
           SubQuestion(t.fuelPellets),
@@ -2583,7 +2544,7 @@ class _AnimalsAnswer extends StatelessWidget {
     final t = context.t;
     final p = context.palette;
     final a = answers;
-    final cropUnit = a.cropUnit ?? defaultFieldAreaUnit(context.units.system, context.read<SettingsController>().country);
+    final cropUnit = a.cropUnit ?? defaultFieldAreaUnit(context.units.system);
     Widget note(String text) => Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Text(text, style: TextStyle(fontSize: 13, color: p.muted)),

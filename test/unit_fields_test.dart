@@ -12,6 +12,7 @@ import 'package:weshape_app/core/i18n/app_localizations.dart';
 import 'package:weshape_app/core/settings/settings_controller.dart';
 import 'package:weshape_app/core/theme/weshape_theme.dart';
 import 'package:weshape_app/core/units/units.dart';
+import 'package:weshape_app/core/widgets/units_field.dart';
 import 'package:weshape_app/features/assessment/controls.dart';
 import 'package:weshape_app/features/profile/profile_controller.dart';
 
@@ -97,7 +98,7 @@ void main() {
       // Back to m²: the same area, now in m².
       await tester.tap(find.text('m²'));
       await tester.pumpAndSettle();
-      expect(find.text('719.33'), findsOneWidget);
+      expect(find.text('719,33'), findsOneWidget); // Hungarian: decimal comma
     });
 
     testWidgets('a saved m² area shows in kat. hold when that is picked', (tester) async {
@@ -106,7 +107,7 @@ void main() {
         AreaField(value: 5754.642, units: const [AreaUnit.hectare, AreaUnit.acre, AreaUnit.hold], onChanged: (_) {}),
         language: 'hu',
       );
-      expect(find.text('0.58'), findsOneWidget); // hectares, two decimals
+      expect(find.text('0,58'), findsOneWidget); // hectares, two decimals, Hungarian comma
       await tester.tap(find.text('kat. hold'));
       await tester.pumpAndSettle();
       expect(find.text('1'), findsOneWidget);
@@ -138,7 +139,7 @@ void main() {
   group('"did you mean 1200?"', () {
     testWidgets('1.200 gets the note, and its button makes it 1200', (tester) async {
       double? saved;
-      await _pump(tester, NumberField(value: null, onChanged: (v) => saved = v, suffix: 'kWh'));
+      await _pump(tester, NumberField(value: null, wholeExpected: true, onChanged: (v) => saved = v, suffix: 'kWh'));
       await tester.enterText(find.byType(TextField), '1.200');
       await tester.pump();
       expect(saved, 1.2);
@@ -151,7 +152,7 @@ void main() {
     });
 
     testWidgets('in Hungarian the note writes the decimal with a comma', (tester) async {
-      await _pump(tester, NumberField(value: null, onChanged: (_) {}), language: 'hu');
+      await _pump(tester, NumberField(value: null, wholeExpected: true, onChanged: (_) {}), language: 'hu');
       await tester.enterText(find.byType(TextField), '1,200');
       await tester.pump();
       expect(find.textContaining('1,2?'), findsOneWidget);
@@ -160,7 +161,7 @@ void main() {
     });
 
     testWidgets('1.250 reads as 1.25, 3.000 as 3', (tester) async {
-      await _pump(tester, NumberField(value: null, onChanged: (_) {}));
+      await _pump(tester, NumberField(value: null, wholeExpected: true, onChanged: (_) {}));
       await tester.enterText(find.byType(TextField), '1.250');
       await tester.pump();
       expect(find.text('Did you mean 1.25? If you meant 1250, type 1250.'), findsOneWidget);
@@ -170,7 +171,7 @@ void main() {
     });
 
     testWidgets('ordinary numbers get no note', (tester) async {
-      await _pump(tester, NumberField(value: null, onChanged: (_) {}));
+      await _pump(tester, NumberField(value: null, wholeExpected: true, onChanged: (_) {}));
       for (final text in ['1200', '1.2', '4.25', '0.125', '12']) {
         await tester.enterText(find.byType(TextField), text);
         await tester.pump();
@@ -179,10 +180,83 @@ void main() {
     });
 
     testWidgets('money never gets the note (cents have two digits)', (tester) async {
-      await _pump(tester, NumberField(value: null, money: true, onChanged: (_) {}));
+      await _pump(tester, NumberField(value: null, money: true, wholeExpected: true, onChanged: (_) {}));
       await tester.enterText(find.byType(TextField), '1.20');
       await tester.pump();
       expect(find.textContaining('Did you mean'), findsNothing);
+    });
+  });
+
+  group('decimal mark', () {
+    testWidgets('only fields that expect large amounts ask about 1200', (tester) async {
+      await _pump(tester, NumberField(value: null, onChanged: (_) {}));
+      await tester.enterText(find.byType(TextField), '1.200');
+      await tester.pump();
+      expect(find.textContaining('Did you mean'), findsNothing);
+    });
+
+    testWidgets('area fields ask about 1200 too', (tester) async {
+      await _pump(tester, MeasureField(value: null, measure: Measure.area, onChanged: (_) {}));
+      await tester.enterText(find.byType(TextField), '1.200');
+      await tester.pump();
+      expect(find.textContaining('Did you mean'), findsOneWidget);
+    });
+
+    testWidgets('in Hungarian a dot typed becomes a comma, and the number is the same', (tester) async {
+      double? saved;
+      await _pump(tester, NumberField(value: null, onChanged: (v) => saved = v), language: 'hu');
+      await tester.enterText(find.byType(TextField), '4.5');
+      await tester.pump();
+      expect(find.text('4,5'), findsOneWidget);
+      expect(saved, 4.5);
+    });
+
+    testWidgets('in English a comma typed becomes a dot', (tester) async {
+      double? saved;
+      await _pump(tester, NumberField(value: null, onChanged: (v) => saved = v));
+      await tester.enterText(find.byType(TextField), '4,5');
+      await tester.pump();
+      expect(find.text('4.5'), findsOneWidget);
+      expect(saved, 4.5);
+    });
+
+    testWidgets('a saved 2.5 shows as 2,5 in Hungarian and 2.5 in English', (tester) async {
+      await _pump(tester, NumberField(value: 2.5, onChanged: (_) {}), language: 'hu');
+      expect(find.text('2,5'), findsOneWidget);
+      await _pump(tester, NumberField(value: 2.5, onChanged: (_) {}));
+      expect(find.text('2.5'), findsOneWidget);
+    });
+
+    testWidgets('whole numbers stay without dot or comma', (tester) async {
+      await _pump(tester, NumberField(value: 1200, onChanged: (_) {}), language: 'hu');
+      expect(find.text('1200'), findsOneWidget);
+    });
+  });
+
+  group('switching units', () {
+    testWidgets('called off: the units stay', (tester) async {
+      final settings = await _pump(tester, UnitsField(beforeChange: (_) async => false));
+      expect(settings.unitSystem, UnitSystem.metric);
+      await tester.tap(find.text('Metric (m, km, °C)'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('US (ft, mi, °F)').last);
+      await tester.pumpAndSettle();
+      expect(settings.unitSystem, UnitSystem.metric);
+      expect(find.text('Metric (m, km, °C)'), findsOneWidget);
+    });
+
+    testWidgets('accepted: the units switch', (tester) async {
+      UnitSystem? asked;
+      final settings = await _pump(tester, UnitsField(beforeChange: (to) async {
+        asked = to;
+        return true;
+      }));
+      await tester.tap(find.text('Metric (m, km, °C)'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('US (ft, mi, °F)').last);
+      await tester.pumpAndSettle();
+      expect(asked, UnitSystem.us);
+      expect(settings.unitSystem, UnitSystem.us);
     });
   });
 }

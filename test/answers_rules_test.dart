@@ -158,4 +158,50 @@ void main() {
     a.dispose();
     b.dispose();
   });
+
+  test('an assessment keeps the units it was started in; starting again forgets them', () async {
+    final a = HomeAnswers();
+    expect(a.started, isFalse);
+    a
+      ..unitSystem = UnitSystem.us
+      ..audience = Audience.home;
+    expect(a.started, isTrue);
+    SharedPreferences.setMockInitialValues({'assessment.home.v2': jsonEncode(a.toJson())});
+    final b = HomeAnswers();
+    await b.restore();
+    expect(b.unitSystem, UnitSystem.us);
+    b.reset();
+    expect(b.unitSystem, isNull);
+    expect(b.started, isFalse);
+    a.dispose();
+    b.dispose();
+  });
+
+  test('the gas bill unit starts on m³ and keeps what the person picks', () async {
+    final a = HomeAnswers();
+    expect(a.gasUnit, GasUnit.m3);
+    a.gasUnit = GasUnit.kwh;
+    SharedPreferences.setMockInitialValues({'assessment.home.v2': jsonEncode(a.toJson())});
+    final b = HomeAnswers();
+    await b.restore();
+    expect(b.gasUnit, GasUnit.kwh);
+    a.dispose();
+    b.dispose();
+  });
+
+  test('pellets are a source of their own; old saves with pellets under firewood get it', () async {
+    SharedPreferences.setMockInitialValues({
+      'assessment.home.v2': jsonEncode({'sources': ['wood'], 'pelletsTonnes': 2, 'firewoodM3': 0}),
+    });
+    final a = HomeAnswers();
+    await a.restore();
+    expect(a.sources, containsAll([Source.wood, Source.pellets]));
+
+    SharedPreferences.setMockInitialValues({'assessment.home.v2': jsonEncode({'sources': ['wood'], 'firewoodM3': 8})});
+    final b = HomeAnswers();
+    await b.restore();
+    expect(b.sources, {Source.wood});
+    a.dispose();
+    b.dispose();
+  });
 }
