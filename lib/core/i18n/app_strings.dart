@@ -271,6 +271,7 @@ class AppStrings {
     required this.avgElecQuestion,
     required this.avgNote,
     required this.tooHigh,
+    required this.elecTooLow,
     required this.sameMonthTwice,
     required this.billPhoto,
     required this.paidTitle,
@@ -333,6 +334,9 @@ class AppStrings {
     required this.noteBuilding,
     required this.noteEra,
     required this.noteReno,
+    required this.noteBuildingRoof,
+    required this.noteEraRoof,
+    required this.noteRenoRoof,
     required this.noteIns,
     required this.noteWin,
     required this.noteSrc,
@@ -809,6 +813,9 @@ class AppStrings {
   final String avgElecQuestion;
   final String avgNote;
   final String tooHigh;
+
+  /// Under 50 kWh of electricity in a month: very little for a home.
+  final String elecTooLow;
   final String sameMonthTwice;
   final String billPhoto;
   final String paidTitle;
@@ -873,6 +880,11 @@ class AppStrings {
   final String noteBuilding;
   final String noteEra;
   final String noteReno;
+
+  /// The same questions asked for the roof's load (no heating): why we ask.
+  final String noteBuildingRoof;
+  final String noteEraRoof;
+  final String noteRenoRoof;
   final String noteIns;
   final String noteWin;
   final String noteSrc;
@@ -1121,6 +1133,9 @@ class AppStrings {
 
   /// "bag (15 kg)"
   String pelletUnitBagFor(String size) => pelletUnitBag.replaceAll('{size}', size);
+
+  /// "Less than 50 kWh a month is very little for a home. Did you really mean 2 kWh?"
+  String elecTooLowFor(String value) => elecTooLow.replaceAll('{value}', value);
 
   /// "Did you mean 1,2? If you meant 1200, type 1200."
   String numberMaybeGroupedFor(String decimal, String whole) =>

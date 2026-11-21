@@ -204,4 +204,16 @@ void main() {
     a.dispose();
     b.dispose();
   });
+
+  test('the roof is in play when it is picked as a free space, or the person is not sure', () {
+    final a = HomeAnswers();
+    expect(a.roofInPlay, isFalse);
+    a.spaces = {Space.garden};
+    expect(a.roofInPlay, isFalse);
+    a.spaces = {Space.roof};
+    expect(a.roofInPlay, isTrue);
+    a.spaces = {Space.notSure};
+    expect(a.roofInPlay, isTrue);
+    a.dispose();
+  });
 }

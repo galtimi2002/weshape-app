@@ -760,6 +760,11 @@ class HomeAnswers extends ChangeNotifier {
   /// where it is possible.
   bool get asksIndependence =>
       cuts != null && (cuts == PowerCuts.never || cutLength != null) && offGridPossible;
+  /// Panels may go on the roof: the roof is picked as a free space, or the person is not sure.
+  /// Then the building's type, age, material and renovation are asked even without heating, for
+  /// the roof's load (decided with Timi, 2026-11-21).
+  bool get roofInPlay => spaces.contains(Space.roof) || spaces.contains(Space.notSure);
+
   bool get oldBuilding => era == BuildEra.before1960 || era == BuildEra.from1960 || era == BuildEra.unknown;
   bool get hasFuels =>
       sources.contains(Source.wood) ||

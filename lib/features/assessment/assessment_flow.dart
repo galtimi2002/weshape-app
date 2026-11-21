@@ -182,6 +182,13 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
       if (a.hasFuels) 'fuels',
       'spaces',
       if (a.hasPlaces) 'sizes',
+      // Without heating the building questions were not asked; for panels on the roof they are, as
+      // its age and material tell how much load it takes. Insulation and windows stay with heating.
+      if (!a.uses.contains(Use.heating) && a.roofInPlay) ...[
+        'building',
+        'era',
+        if (a.oldBuilding) 'renovation',
+      ],
       'ownership',
       'upkeep',
       'priority',
@@ -219,10 +226,10 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
           'audience' => _AudienceStep(answers: a, nav: nav),
           'place' => _PlaceStep(answers: a, nav: nav, countryCode: widget.countryCode, onPickOnMap: widget.onPickOnMap),
           'uses' => _UsesStep(answers: a, nav: nav),
-          'building' => _BuildingStep(answers: a, nav: nav),
+          'building' => _BuildingStep(answers: a, nav: nav, forRoof: !a.uses.contains(Use.heating)),
           'people' => _PeopleStep(answers: a, nav: nav),
-          'era' => _EraStep(answers: a, nav: nav),
-          'renovation' => _RenovationStep(answers: a, nav: nav),
+          'era' => _EraStep(answers: a, nav: nav, forRoof: !a.uses.contains(Use.heating)),
+          'renovation' => _RenovationStep(answers: a, nav: nav, forRoof: !a.uses.contains(Use.heating)),
           'insulation' => _InsulationStep(answers: a, nav: nav),
           'windows' => _WindowsStep(answers: a, nav: nav),
           'sources' => _SourcesStep(answers: a, nav: nav),
@@ -1145,10 +1152,13 @@ class _UsesStep extends StatelessWidget {
 // ---------------------------------------------------------------- 4: the building
 
 class _BuildingStep extends StatelessWidget {
-  const _BuildingStep({required this.answers, required this.nav});
+  const _BuildingStep({required this.answers, required this.nav, this.forRoof = false});
 
   final HomeAnswers answers;
   final _Nav nav;
+
+  /// Asked for the roof's load, not for heating: the note says so.
+  final bool forRoof;
 
   @override
   Widget build(BuildContext context) {
@@ -1157,7 +1167,7 @@ class _BuildingStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.buildingTitle,
-      note: t.noteBuilding,
+      note: forRoof ? t.noteBuildingRoof : t.noteBuilding,
       hint: t.buildingHint,
       canContinue: a.type != null &&
           a.area != null &&
@@ -1249,10 +1259,13 @@ class _PeopleStep extends StatelessWidget {
 }
 
 class _EraStep extends StatelessWidget {
-  const _EraStep({required this.answers, required this.nav});
+  const _EraStep({required this.answers, required this.nav, this.forRoof = false});
 
   final HomeAnswers answers;
   final _Nav nav;
+
+  /// Asked for the roof's load, not for heating: the note says so.
+  final bool forRoof;
 
   @override
   Widget build(BuildContext context) {
@@ -1261,7 +1274,7 @@ class _EraStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: a.type == BuildingType.flat ? t.eraTitleFlat : t.eraTitle,
-      note: t.noteEra,
+      note: forRoof ? t.noteEraRoof : t.noteEra,
       canContinue: a.era != null && a.material != null,
       children: [
         _Options<BuildEra>(
@@ -1309,10 +1322,13 @@ class _EraStep extends StatelessWidget {
 }
 
 class _RenovationStep extends StatelessWidget {
-  const _RenovationStep({required this.answers, required this.nav});
+  const _RenovationStep({required this.answers, required this.nav, this.forRoof = false});
 
   final HomeAnswers answers;
   final _Nav nav;
+
+  /// Asked for the roof's load, not for heating: the note says so.
+  final bool forRoof;
 
   @override
   Widget build(BuildContext context) {
@@ -1333,7 +1349,7 @@ class _RenovationStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.renoTitle,
-      note: t.noteReno,
+      note: forRoof ? t.noteRenoRoof : t.noteReno,
       canContinue: a.renovations.isNotEmpty && parts.every(a.renovationAge.containsKey),
       children: [
         MultiChips<Renovation>(values: Renovation.values, label: label, selected: a.renovations, onToggle: a.toggleRenovation),
@@ -1522,6 +1538,9 @@ String _useLabel(AppStrings t, Use v) => switch (v) {
 /// More than this in a month is unusual for a home: ask whether it is right.
 const _highKwhMonth = 3000.0;
 
+/// Under this a month's electricity is very little for a home (Timi, 2026-11-21): a note asks.
+const _lowKwhMonth = 50.0;
+
 bool _twice(List<int> months) => months.toSet().length < months.length;
 
 /// The three month rows: the month (a drop-down, or fixed text) and one or two number fields.
@@ -1656,6 +1675,10 @@ class _ElectricityStep extends StatelessWidget {
     const unit = 'kWh';
     final values = a.useAverage ? [a.electricityAverageKwh] : a.electricityKwh;
     final high = values.any((v) => (v ?? 0) > _highKwhMonth);
+    // Only a warning: an empty house or a holiday home can use that little.
+    final lowValue = high ? null : values.firstWhere((v) => v != null && v < _lowKwhMonth, orElse: () => null);
+    final low = lowValue != null;
+    final lowText = lowValue == null ? '' : t.elecTooLowFor('${formatNumber(lowValue, context.units.language)} kWh');
     return _StepPage(
       nav: nav,
       title: t.elecUseTitle,
@@ -1677,6 +1700,7 @@ class _ElectricityStep extends StatelessWidget {
           ),
           if (_twice(a.months)) FieldWarning(t.sameMonthTwice),
           if (high) FieldWarning(t.tooHigh),
+          if (low) FieldWarning(lowText),
           const SizedBox(height: 8),
           LinkButton(label: t.dontKnowExact, onTap: () => a.update((x) => x.useAverage = true)),
         ] else ...[
@@ -1689,6 +1713,7 @@ class _ElectricityStep extends StatelessWidget {
             onChanged: (v) => a.update((x) => x.electricityAverageKwh = v),
           ),
           if (high) FieldWarning(t.tooHigh),
+          if (low) FieldWarning(lowText),
           const SizedBox(height: 10),
           Text(t.avgNote, style: TextStyle(fontSize: 12.5, color: p.muted)),
           const SizedBox(height: 8),
