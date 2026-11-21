@@ -48,7 +48,7 @@ extension type _WeShapeMapJs._(JSObject _) implements JSObject {
 }
 
 /// Raise together with VERSION in assets/map/weshape_map.js whenever that file changes.
-const _bridgeVersion = 25;
+const _bridgeVersion = 26;
 
 Future<void>? _scriptLoading;
 

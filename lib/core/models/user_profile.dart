@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../units/units.dart';
+
 /// The signed-in person as the backend stores them.
 class UserProfile {
   const UserProfile({
@@ -11,6 +13,7 @@ class UserProfile {
     this.country,
     this.preferredLanguage = 'en',
     this.themeMode = ThemeMode.system,
+    this.unitSystem,
     this.authProvider = 'UNKNOWN',
     this.profileComplete = false,
   });
@@ -27,6 +30,9 @@ class UserProfile {
   final String? country;
   final String preferredLanguage;
   final ThemeMode themeMode;
+
+  /// Units picked by hand; null: the country's usual ones.
+  final UnitSystem? unitSystem;
   final String authProvider;
 
   /// False until first name, last name and country are set.
@@ -53,6 +59,7 @@ class UserProfile {
         country: json['country'] as String?,
         preferredLanguage: json['preferredLanguage'] as String? ?? 'en',
         themeMode: themeModeFromApi(json['themeMode'] as String?),
+        unitSystem: unitSystemFromApi(json['unitSystem'] as String?),
         authProvider: json['authProvider'] as String? ?? 'UNKNOWN',
         profileComplete: json['profileComplete'] as bool? ?? false,
       );
@@ -78,6 +85,7 @@ class ProfileDraft {
     required this.country,
     required this.preferredLanguage,
     required this.themeMode,
+    this.unitSystem,
   });
 
   final String firstName;
@@ -86,11 +94,15 @@ class ProfileDraft {
   final String preferredLanguage;
   final ThemeMode themeMode;
 
+  /// Units picked on the form; null: the country's usual ones.
+  final UnitSystem? unitSystem;
+
   Map<String, dynamic> toJson() => <String, dynamic>{
         'firstName': firstName.trim(),
         'lastName': lastName.trim(),
         'country': country,
         'preferredLanguage': preferredLanguage,
         'themeMode': themeModeToApi(themeMode),
+        if (unitSystem != null) 'unitSystem': unitSystemToApi(unitSystem),
       };
 }

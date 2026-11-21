@@ -286,6 +286,8 @@ class AppStrings {
     required this.fuelsTitle,
     required this.fuelFirewood,
     required this.fuelPellets,
+    required this.pelletUnitBag,
+    required this.pelletBagSizeQ,
     required this.fuelBottles,
     required this.fuelDistrict,
     required this.spacesTitle,
@@ -344,6 +346,10 @@ class AppStrings {
     required this.noteFollow,
     required this.noteNew,
     required this.woodM3Note,
+    required this.woodCordNote,
+    required this.unitsLabel,
+    required this.unitsMetric,
+    required this.unitsUs,
     required this.woodKindQ,
     required this.woodHard,
     required this.woodSoft,
@@ -467,6 +473,17 @@ class AppStrings {
     required this.matStone,
     required this.bottleSizeQ,
     required this.bottleSizeNote,
+    required this.numberMaybeGrouped,
+    required this.bottleLitresQ,
+    required this.bottleLitresBottle,
+    required this.bottleLitresGas,
+    required this.bottleLitresWhy,
+    required this.woodUnitStacked,
+    required this.woodUnitLoose,
+    required this.woodUnitSolid,
+    required this.woodUnitQuintal,
+    required this.woodLooseNote,
+    required this.woodSolidNote,
     required this.animCrops,
     required this.animKindsQ,
     required this.animCattle,
@@ -799,6 +816,10 @@ class AppStrings {
   final String fuelsTitle;
   final String fuelFirewood;
   final String fuelPellets;
+
+  /// "bag (15 kg)" and the question about the bag's weight.
+  final String pelletUnitBag;
+  final String pelletBagSizeQ;
   final String fuelBottles;
   final String fuelDistrict;
   final String spacesTitle;
@@ -857,6 +878,14 @@ class AppStrings {
   final String noteFollow;
   final String noteNew;
   final String woodM3Note;
+
+  /// What a cord of firewood is (US units).
+  final String woodCordNote;
+
+  /// The unit choice in the language menu.
+  final String unitsLabel;
+  final String unitsMetric;
+  final String unitsUs;
   final String woodKindQ;
   final String woodHard;
   final String woodSoft;
@@ -980,6 +1009,23 @@ class AppStrings {
   final String matStone;
   final String bottleSizeQ;
   final String bottleSizeNote;
+
+  /// "1.200" typed: the dot is a decimal mark, so this is 1.2; maybe 1200 was meant.
+  final String numberMaybeGrouped;
+
+  /// With litres: the bottle's size, or the gas put in; and why we ask.
+  final String bottleLitresQ;
+  final String bottleLitresBottle;
+  final String bottleLitresGas;
+  final String bottleLitresWhy;
+
+  /// Firewood units (m³ stacked / loose / solid, 100 kg) and what loose and solid mean.
+  final String woodUnitStacked;
+  final String woodUnitLoose;
+  final String woodUnitSolid;
+  final String woodUnitQuintal;
+  final String woodLooseNote;
+  final String woodSolidNote;
   final String animCrops;
   final String animKindsQ;
   final String animCattle;
@@ -1016,15 +1062,56 @@ class AppStrings {
   /// "Step 3 of 14"
   String stepOfTotalFor(int n, int total) => stepOfTotal.replaceAll('{n}', '$n').replaceAll('{total}', '$total');
 
+  // Measures arrive as finished text ("60 m²", "650 sq ft"): see core/units/units.dart.
+
   /// "about 60 m²"
-  String aboutM2For(int n) => aboutM2.replaceAll('{n}', '$n');
-  String newDrawAreaFor(int n) => newDrawArea.replaceAll('{n}', '$n');
+  String aboutM2For(String area) => aboutM2.replaceAll('{area}', area);
+
+  /// "Drawn area: about 60 m²"
+  String newDrawAreaFor(String area) => newDrawArea.replaceAll('{area}', area);
+
+  /// "Small, like a garage roof (about 20 m²)"
+  String landSmallFor(String area) => landSmall.replaceAll('{area}', area);
+
+  /// "Small (1–2 m wide)", "Large (3 m or more)"
+  String balconySmallFor(String size) => balconySmall.replaceAll('{size}', size);
+  String balconyLargeFor(String size) => balconyLarge.replaceAll('{size}', size);
+
+  /// "Low (under 5 m)", "Medium (5–10 m)", "Tall (over 10 m)"
+  String treeLowFor(String size) => treeLow.replaceAll('{size}', size);
+  String treeMediumFor(String size) => treeMedium.replaceAll('{size}', size);
+  String treeTallFor(String size) => treeTall.replaceAll('{size}', size);
+
+  /// "Thin, up to 5 cm", "Medium, 5–10 cm", "Thick, 10 cm or more"
+  String insThinFor(String size) => insThin.replaceAll('{size}', size);
+  String insMediumFor(String size) => insMedium.replaceAll('{size}', size);
+  String insThickFor(String size) => insThick.replaceAll('{size}', size);
+
+  /// "How much does 1 m³ of firewood cost?"
+  String woodPriceQFor(String amount) => woodPriceQ.replaceAll('{amount}', amount);
+
+  /// "A rough number helps a lot, for example “about 8 m³”."
+  String unsureAmountFor(String amount) => unsureAmount.replaceAll('{amount}', amount);
+
+  /// "As written on it, e.g. 26 L or 11 kg."
+  String bottleSizeNoteFor(String a, String b) => bottleSizeNote.replaceAll('{a}', a).replaceAll('{b}', b);
+
+  /// "bag (15 kg)"
+  String pelletUnitBagFor(String size) => pelletUnitBag.replaceAll('{size}', size);
+
+  /// "Did you mean 1,2? If you meant 1200, type 1200."
+  String numberMaybeGroupedFor(String decimal, String whole) =>
+      numberMaybeGrouped.replaceAll('{decimal}', decimal).replaceAll('{whole}', whole);
 
   /// "We found a river about 350 m from your place. …"
-  String riverFoundFor(int metres) => riverFound.replaceAll('{m}', '$metres');
+  String riverFoundFor(String distance) => riverFound.replaceAll('{dist}', distance);
 
   /// "The wind here is about 4.2 m/s at 20 m height. …"
-  String windFoundFor(String speed) => windFound.replaceAll('{speed}', speed);
+  String windFoundFor(String speed, String height) =>
+      windFound.replaceAll('{speed}', speed).replaceAll('{height}', height);
+
+  /// "No river within 2 km of this spot. …"
+  String noHydroDataHereFor(String distance) => noHydroDataHere.replaceAll('{dist}', distance);
 
   /// "Wind is coming soon."
   String comingSoonFor(String resource) => comingSoonMessage.replaceAll('{resource}', resource);
@@ -1033,28 +1120,44 @@ class AppStrings {
   String mapCountryHintFor(String country) => mapCountryHint.replaceAll('{country}', country);
 
   /// "at 100 m"
-  String atHeightFor(int height) => atHeight.replaceAll('{height}', '$height');
+  String atHeightFor(String height) => atHeight.replaceAll('{height}', height);
 
   /// "Mean wind speed at 100 m · m/s"
-  String legendWindSpeedFor(int height) => legendWindSpeed.replaceAll('{height}', '$height');
+  String legendWindSpeedFor(String height, String unit) =>
+      legendWindSpeed.replaceAll('{height}', height).replaceAll('{unit}', unit);
+
+  /// "Wind power density at 100 m · W/m²"
+  String legendPowerDensityFor(String height) => legendPowerDensity.replaceAll('{height}', height);
+
+  /// "Available river flow · m³/s", "Hydraulic head per river reach · m"
+  String legendRiverFlowFor(String unit) => legendRiverFlow.replaceAll('{unit}', unit);
+  String legendHeadFor(String unit) => legendHead.replaceAll('{unit}', unit);
+
+  /// "Geothermal (ground) temperature near the surface · °C"
+  String legendGroundTempFor(String unit) => legendGroundTemp.replaceAll('{unit}', unit);
+
+  /// "Biomass … within 25 km · …"
+  String legendBioResourceFor(String distance) => legendBioResource.replaceAll('{dist}', distance);
+  String legendBioEnergyFor(String distance) => legendBioEnergy.replaceAll('{dist}', distance);
 
   /// "River reach 0.4 km away"
-  String riverAwayFor(String km) => riverAway.replaceAll('{km}', km);
+  String riverAwayFor(String distance) => riverAway.replaceAll('{dist}', distance);
 
   /// "10% of the mean flow stays in the river for nature."
   String ecologicalFlowNoteFor(int percent) => ecologicalFlowNote.replaceAll('{percent}', '$percent');
 
   /// "Temperature at 2 km depth"
-  String depthTempTitleFor(int depth) => depthTempTitle.replaceAll('{depth}', '$depth');
+  String depthTempTitleFor(String depth) => depthTempTitle.replaceAll('{depth}', depth);
 
   /// "Estimated temperature at 2 km depth · °C"
-  String legendDepthTempFor(int depth) => legendDepthTemp.replaceAll('{depth}', '$depth');
+  String legendDepthTempFor(String depth, String unit) =>
+      legendDepthTemp.replaceAll('{depth}', depth).replaceAll('{unit}', unit);
 
   /// "Temperature at depth = ground temperature + heat flow ÷ 2.5 W/m·K × depth: …"
   String depthEstimateNoteFor(String conductivity) => depthEstimateNote.replaceAll('{k}', conductivity);
 
   /// "within 25 km, per year"
-  String withinRadiusFor(int km) => withinRadius.replaceAll('{km}', '$km');
+  String withinRadiusFor(String distance) => withinRadius.replaceAll('{dist}', distance);
 
   /// "≈ 59,400 family homes heated for a year"
   String homesHeatedFor(String n) => homesHeated.replaceAll('{n}', n);

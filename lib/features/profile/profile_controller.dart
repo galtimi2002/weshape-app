@@ -4,9 +4,10 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/models/user_profile.dart';
 import '../../core/settings/settings_controller.dart';
+import '../../core/units/units.dart';
 
-/// The signed-in person's profile, and the one place language and theme
-/// changes go through.
+/// The signed-in person's profile, and the one place language, theme and
+/// unit changes go through.
 ///
 /// Changing either while signed in updates the screen at once and saves to
 /// the profile in the background, so the choice follows the person to any
@@ -116,6 +117,17 @@ class ProfileController extends ChangeNotifier {
     }
   }
 
+  /// Metric or US units; null goes back to the country's usual ones.
+  Future<void> changeUnits(UnitSystem? system) async {
+    await _settings.setUnitSystem(system);
+    if (_profile == null || _profile!.unitSystem == system) return;
+    try {
+      _profile = await _api.updatePreferences(unitSystem: unitSystemToApi(system) ?? 'AUTO');
+    } on ApiException {
+      // Kept on this device; the next change or sign-in tries again.
+    }
+  }
+
   void clear() {
     _generation++;
     _profile = null;
@@ -130,7 +142,12 @@ class ProfileController extends ChangeNotifier {
     // system theme). Applying those would undo what the person picked on the
     // login page a moment ago, so only a finished profile takes over.
     if (profile.profileComplete) {
-      await _settings.applyFromProfile(languageCode: profile.preferredLanguage, themeMode: profile.themeMode);
+      await _settings.applyFromProfile(
+        languageCode: profile.preferredLanguage,
+        themeMode: profile.themeMode,
+        unitSystem: profile.unitSystem,
+        country: profile.country,
+      );
     }
   }
 }

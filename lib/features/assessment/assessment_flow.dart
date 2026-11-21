@@ -12,6 +12,7 @@ import '../../core/i18n/app_strings.dart';
 import '../../core/settings/settings_controller.dart';
 import '../../core/theme/weshape_palette.dart';
 import '../../core/theme/weshape_theme.dart';
+import '../../core/units/units.dart';
 import '../../core/widgets/primary_button.dart';
 import '../../core/widgets/stage_background.dart';
 import '../home/map/geocoder.dart';
@@ -300,14 +301,6 @@ TextStyle _mono(BuildContext context, double size) {
   return WeShapeTheme.useGoogleFonts
       ? GoogleFonts.jetBrainsMono(fontSize: size, color: color)
       : TextStyle(fontFamily: 'monospace', fontSize: size, color: color);
-}
-
-const _commaLanguages = {'hu', 'ro', 'de', 'fr', 'es', 'it', 'pt', 'nl', 'pl', 'hr', 'fi', 'ru', 'tr', 'sv', 'da', 'el', 'id', 'vi'};
-
-/// 4.2 / 4,2, as each language writes decimals.
-String _decimal(double v, String language) {
-  final s = v.toStringAsFixed(1);
-  return _commaLanguages.contains(language) ? s.replaceAll('.', ',') : s;
 }
 
 List<String> _monthNames(AppStrings t) => [for (final m in t.monthNames.split(',')) m.trim()];
@@ -1177,17 +1170,31 @@ class _BuildingStep extends StatelessWidget {
         ),
         _gap,
         FieldLabel(t.areaLabel),
-        NumberSlider(
-          value: a.area,
-          min: 20,
-          max: 400,
-          step: 5,
-          unit: 'm²',
-          onChanged: (v) => a.update((x) {
-            x.area = v;
-            x.areaSet = true;
-          }),
-        ),
+        if (context.units.isUs)
+          // The same 20–400 m², in steps of 50 sq ft; kept in m².
+          NumberSlider(
+            value: a.area == null ? null : (a.area! * sqFtPerM2 / 50).round() * 50,
+            min: 200,
+            max: 4300,
+            step: 50,
+            unit: context.units.symbol(Measure.area),
+            onChanged: (v) => a.update((x) {
+              x.area = (v / sqFtPerM2).round();
+              x.areaSet = true;
+            }),
+          )
+        else
+          NumberSlider(
+            value: a.area,
+            min: 20,
+            max: 400,
+            step: 5,
+            unit: context.units.symbol(Measure.area),
+            onChanged: (v) => a.update((x) {
+              x.area = v;
+              x.areaSet = true;
+            }),
+          ),
         if (a.type == BuildingType.house) ...[
           _gap,
           FieldLabel(t.floorsLabel),
@@ -1360,12 +1367,13 @@ class _InsulationStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final u = context.units;
     final a = answers;
     String level(InsulationLevel v) => switch (v) {
           InsulationLevel.none => t.insNone,
-          InsulationLevel.thin => t.insThin,
-          InsulationLevel.medium => t.insMedium,
-          InsulationLevel.thick => t.insThick,
+          InsulationLevel.thin => t.insThinFor(u.round(5, Measure.smallLength)),
+          InsulationLevel.medium => t.insMediumFor(u.range(5, 10, Measure.smallLength)),
+          InsulationLevel.thick => t.insThickFor(u.round(10, Measure.smallLength)),
           InsulationLevel.unknown => t.dontKnow,
         };
     // A renovated wall or roof is insulated: only how thick is left to choose.
@@ -1755,7 +1763,15 @@ class _PaidStep extends StatelessWidget {
   }
 }
 
-/// Countries whose gas bills count cubic metres; elsewhere kWh.
+String _gasUnitLabel(GasUnit v) => switch (v) {
+      GasUnit.m3 => 'm³',
+      GasUnit.kwh => 'kWh',
+      GasUnit.mj => 'MJ',
+      GasUnit.therm => 'therm',
+      GasUnit.ccf => 'CCF',
+    };
+
+/// Countries whose gas bills count cubic metres; elsewhere kWh (therms in the US).
 const _gasInM3 = {'HU', 'UA', 'MD', 'RS', 'BA', 'MK', 'ME', 'RU', 'BY', 'GE', 'AM', 'AZ', 'KZ', 'UZ', 'KG', 'TR'};
 
 class _GasStep extends StatefulWidget {
@@ -1776,7 +1792,11 @@ class _GasStepState extends State<_GasStep> {
     // Nothing typed yet: start with the unit the country's bills use.
     final a = widget.answers;
     if (a.gasAmount.every((v) => v == null)) {
-      final unit = _gasInM3.contains(widget.countryCode?.toUpperCase()) ? GasUnit.m3 : GasUnit.kwh;
+      final settings = context.read<SettingsController>();
+      final country = (widget.countryCode ?? settings.country)?.toUpperCase();
+      final unit = settings.unitSystem == UnitSystem.us
+          ? GasUnit.therm
+          : (_gasInM3.contains(country) ? GasUnit.m3 : GasUnit.kwh);
       if (unit != a.gasUnit) WidgetsBinding.instance.addPostFrameCallback((_) => a.update((x) => x.gasUnit = unit));
     }
   }
@@ -1786,12 +1806,21 @@ class _GasStepState extends State<_GasStep> {
     final t = context.t;
     final a = widget.answers;
     final currency = a.currency ?? currencyOf(widget.countryCode);
-    final unit = a.gasUnit == GasUnit.m3 ? 'm³' : 'kWh';
+    final unit = _gasUnitLabel(a.gasUnit);
+    // Every unit can be picked; the usual one is chosen at the start.
+    const gasUnits = GasUnit.values;
     // About 10.5 kWh in a cubic metre: a number in the wrong unit is off about tenfold.
     final amounts = a.gasAmount.whereType<double>();
     final looksKwh = a.gasUnit == GasUnit.m3 && amounts.any((v) => v > 1200);
     final looksM3 = a.gasUnit == GasUnit.kwh && amounts.isNotEmpty && amounts.every((v) => v > 0 && v < 40);
-    final high = a.gasUnit == GasUnit.m3 ? amounts.any((v) => v > 12000) : amounts.any((v) => v > 120000);
+    // A month above about 120,000 kWh (12,000 m³, 4,100 therms, 4,200 CCF) is not a home.
+    final high = amounts.any((v) => v > switch (a.gasUnit) {
+          GasUnit.m3 => 12000,
+          GasUnit.kwh => 120000,
+          GasUnit.mj => 430000,
+          GasUnit.therm => 4100,
+          GasUnit.ccf => 4200,
+        });
     return _StepPage(
       nav: widget.nav,
       title: t.gasTitle,
@@ -1801,8 +1830,8 @@ class _GasStepState extends State<_GasStep> {
         _gap,
         FieldLabel(t.gasUnitLabel),
         ChoiceChips<GasUnit>(
-          values: GasUnit.values,
-          label: (v) => v == GasUnit.m3 ? 'm³' : 'kWh',
+          values: gasUnits,
+          label: _gasUnitLabel,
           selected: a.gasUnit,
           onSelect: (v) => a.update((x) => x.gasUnit = v),
         ),
@@ -1841,6 +1870,48 @@ class _GasStepState extends State<_GasStep> {
   }
 }
 
+/// Bottles are labelled in kg almost everywhere; in Romania and Moldova by the bottle's litres (26 L);
+/// in the US in pounds (20 lb).
+BottleUnit _defaultBottleUnit(UnitSystem system, String? country) => system == UnitSystem.us
+    ? BottleUnit.lb
+    : (const {'RO', 'MD'}.contains(country?.toUpperCase()) ? BottleUnit.litre : BottleUnit.kg);
+
+String _woodUnitLabel(AppStrings t, WoodUnit v) => switch (v) {
+      WoodUnit.stacked => t.woodUnitStacked,
+      WoodUnit.loose => t.woodUnitLoose,
+      WoodUnit.solid => t.woodUnitSolid,
+      WoodUnit.quintal => t.woodUnitQuintal,
+      WoodUnit.tonne => 't',
+      WoodUnit.cord => 'cord',
+    };
+
+/// What the unit means, where it needs saying.
+String? _woodUnitNote(AppStrings t, WoodUnit v) => switch (v) {
+      WoodUnit.stacked => t.woodM3Note,
+      WoodUnit.loose => t.woodLooseNote,
+      WoodUnit.solid => t.woodSolidNote,
+      WoodUnit.cord => t.woodCordNote,
+      WoodUnit.quintal || WoodUnit.tonne => null,
+    };
+
+/// One of the unit, for the price question: "1 m³", "100 kg", "1 cord".
+String _woodOne(AppStrings t, WoodUnit v) => switch (v) {
+      WoodUnit.stacked || WoodUnit.loose || WoodUnit.solid => '1 m³ (${_woodUnitLabel(t, v)})',
+      WoodUnit.quintal => '100 kg',
+      WoodUnit.tonne => '1 t',
+      WoodUnit.cord => '1 cord',
+    };
+
+/// A usual winter's amount, for the "a rough number helps" note.
+String _woodExample(AppStrings t, WoodUnit v) => switch (v) {
+      WoodUnit.stacked => '8 m³',
+      WoodUnit.loose => '11 m³',
+      WoodUnit.solid => '6 m³',
+      WoodUnit.quintal => '50 × 100 kg',
+      WoodUnit.tonne => '5 t',
+      WoodUnit.cord => '2 cords',
+    };
+
 class _FuelsStep extends StatefulWidget {
   const _FuelsStep({required this.answers, required this.nav, required this.countryCode});
 
@@ -1860,18 +1931,31 @@ class _FuelsStepState extends State<_FuelsStep> {
   bool get _woodMissing {
     final a = widget.answers;
     if (!a.sources.contains(Source.wood)) return false;
-    if (a.firewoodM3 == null) return true;
+    if (a.firewoodAmount == null) return true;
     return a.firewoodKind == null || a.firewoodPrice == null;
   }
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
+    final u = context.units;
     final a = widget.answers;
     final nav = widget.nav;
+    final country = widget.countryCode ?? context.read<SettingsController>().country;
+    // Not picked yet: the units chosen in the profile first, then what is usual in the country.
+    final woodUnit = a.firewoodUnit ?? (u.isUs ? WoodUnit.cord : WoodUnit.stacked);
+    final bottleUnit = a.bottleUnit ?? _defaultBottleUnit(u.system, country);
+    // Pellets: bags unless picked otherwise; a US ton only in US units, a tonne otherwise.
+    var pelletUnit = a.pelletsUnit ?? PelletUnit.bag;
+    if (u.isUs && pelletUnit == PelletUnit.tonne) pelletUnit = PelletUnit.shortTon;
+    if (!u.isUs && pelletUnit == PelletUnit.shortTon) pelletUnit = PelletUnit.tonne;
+    final bagKg = a.pelletBagKg ?? (u.isUs ? 40 * kgPerLb : 15.0);
+    final bagLabel = a.pelletBagKg == null
+        ? (u.isUs ? '40 lb' : '15 kg')
+        : (u.isUs ? '${formatNumber(bagKg / kgPerLb, u.language)} lb' : '${formatNumber(bagKg, u.language)} kg');
     final currency = a.currency ?? currencyOf(widget.countryCode);
     final wood = a.sources.contains(Source.wood);
-    final hasWood = wood && (a.firewoodM3 ?? 0) > 0;
+    final hasWood = wood && (a.firewoodAmount ?? 0) > 0;
     final next = nav.onNext;
     final guarded = _Nav(
       index: nav.index,
@@ -1913,10 +1997,34 @@ class _FuelsStepState extends State<_FuelsStep> {
         ],
         if (wood) ...[
           SubQuestion(t.fuelFirewood),
-          field(a.firewoodM3, 'm³', (v) => a.update((x) => x.firewoodM3 = v)),
-          const SizedBox(height: 6),
-          Text(t.woodM3Note, style: TextStyle(fontSize: 13, color: context.palette.muted)),
-          if (_warned && a.firewoodM3 == null) _Unsure('${t.unsureLead} ${t.unsureAmount}'),
+          // In the unit the person measures in: stacked, loose or solid m³, 100 kg, tonnes or cords
+          // (backend Firewood.Unit); it starts on the usual one.
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              NumberField(
+                value: a.firewoodAmount,
+                width: 140,
+                onChanged: (v) => a.update((x) {
+                  x.firewoodAmount = v;
+                  x.firewoodUnit ??= woodUnit;
+                }),
+              ),
+              ChoiceChips<WoodUnit>(
+                values: WoodUnit.values,
+                label: (v) => _woodUnitLabel(t, v),
+                selected: woodUnit,
+                onSelect: (v) => a.update((x) => x.firewoodUnit = v),
+              ),
+            ],
+          ),
+          if (_woodUnitNote(t, woodUnit) case final note?) ...[
+            const SizedBox(height: 6),
+            Text(note, style: TextStyle(fontSize: 13, color: context.palette.muted)),
+          ],
+          if (_warned && a.firewoodAmount == null) _Unsure('${t.unsureLead} ${t.unsureAmountFor(_woodExample(t, woodUnit))}'),
           const SizedBox(height: 22),
           if (hasWood) ...[
             SubQuestion(t.woodKindQ),
@@ -1934,12 +2042,53 @@ class _FuelsStepState extends State<_FuelsStep> {
             if (a.firewoodKind == WoodKind.unknown || (_warned && a.firewoodKind == null))
               _Unsure('${t.unsureLead} ${t.unsureWood}'),
             const SizedBox(height: 22),
-            SubQuestion(t.woodPriceQ),
+            // The price of one of the unit the amount is in.
+            SubQuestion(t.woodPriceQFor(_woodOne(t, woodUnit))),
             field(a.firewoodPrice, currency, (v) => a.update((x) => x.firewoodPrice = v), money: true),
             if (_warned && a.firewoodPrice == null) _Unsure('${t.unsureLead} ${t.unsurePrice}'),
             const SizedBox(height: 22),
           ],
-          row(t.fuelPellets, a.pelletsTonnes, 't', (v) => a.update((x) => x.pelletsTonnes = v)),
+          // Pellets as they are bought: bags (15 kg, 40 lb in US units, or the size typed), kg, tonnes,
+          // or US tons (backend Pellets).
+          SubQuestion(t.fuelPellets),
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              NumberField(
+                value: a.pelletsAmount,
+                width: 140,
+                onChanged: (v) => a.update((x) {
+                  x.pelletsAmount = v;
+                  x.pelletsUnit ??= pelletUnit;
+                }),
+              ),
+              ChoiceChips<PelletUnit>(
+                values: [PelletUnit.bag, PelletUnit.kg, u.isUs ? PelletUnit.shortTon : PelletUnit.tonne],
+                label: (v) => switch (v) {
+                  PelletUnit.bag => t.pelletUnitBagFor(bagLabel),
+                  PelletUnit.kg => 'kg',
+                  PelletUnit.tonne => 't',
+                  PelletUnit.shortTon => 'ton (907 kg)',
+                },
+                selected: pelletUnit,
+                onSelect: (v) => a.update((x) => x.pelletsUnit = v),
+              ),
+            ],
+          ),
+          if (pelletUnit == PelletUnit.bag) ...[
+            const SizedBox(height: 12),
+            FieldLabel(t.pelletBagSizeQ),
+            // Kept in kg; typed in lb in US units.
+            MeasureField(
+              value: bagKg,
+              measure: Measure.mass,
+              width: 140,
+              onChanged: (v) => a.update((x) => x.pelletBagKg = v),
+            ),
+          ],
+          const SizedBox(height: 22),
         ],
         if (a.sources.contains(Source.gasBottles)) ...[
           row(t.fuelBottles, a.gasBottlesPerMonth, null, (v) => a.update((x) => x.gasBottlesPerMonth = v)),
@@ -1954,7 +2103,10 @@ class _FuelsStepState extends State<_FuelsStep> {
               NumberField(
                 value: a.bottleSize,
                 width: 140,
-                onChanged: (v) => a.update((x) => x.bottleSize = v),
+                onChanged: (v) => a.update((x) {
+                  x.bottleSize = v;
+                  x.bottleUnit ??= bottleUnit;
+                }),
               ),
               ChoiceChips<BottleUnit>(
                 values: BottleUnit.values,
@@ -1962,14 +2114,29 @@ class _FuelsStepState extends State<_FuelsStep> {
                   BottleUnit.litre => 'L',
                   BottleUnit.kg => 'kg',
                   BottleUnit.gallon => 'gal',
+                  BottleUnit.lb => 'lb',
                 },
-                selected: a.bottleUnit,
+                selected: bottleUnit,
                 onSelect: (v) => a.update((x) => x.bottleUnit = v),
               ),
             ],
           ),
+          // Litres can be the bottle's size (filled only to about 80%) or the liquid gas put in.
+          if (bottleUnit == BottleUnit.litre) ...[
+            const SizedBox(height: 14),
+            FieldLabel(t.bottleLitresQ),
+            ChoiceChips<BottleLitres>(
+              values: BottleLitres.values,
+              label: (v) => v == BottleLitres.bottle ? t.bottleLitresBottle : t.bottleLitresGas,
+              selected: a.bottleLitres,
+              onSelect: (v) => a.update((x) => x.bottleLitres = v),
+            ),
+            const SizedBox(height: 6),
+            Text(t.bottleLitresWhy, style: TextStyle(fontSize: 13, color: context.palette.muted)),
+          ],
           const SizedBox(height: 6),
-          Text(t.bottleSizeNote, style: TextStyle(fontSize: 13, color: context.palette.muted)),
+          Text(bottleUnit == BottleUnit.lb || bottleUnit == BottleUnit.gallon ? t.bottleSizeNoteFor('20 lb', '4.7 gal') : t.bottleSizeNoteFor('11 kg', '26 L'),
+              style: TextStyle(fontSize: 13, color: context.palette.muted)),
           const SizedBox(height: 22),
         ],
         if (a.sources.contains(Source.district))
@@ -2081,9 +2248,12 @@ class _SizesStep extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Text(t.exactSize, style: TextStyle(fontSize: 13, color: p.muted)),
-              NumberField(
+              // m² (sq ft in US units), and for gardens and land the country's own units too.
+              AreaField(
                 value: a.sizeOf(s).exactM2,
-                suffix: 'm²',
+                units: s == Space.roof || s == Space.balcony
+                    ? plotAreaUnits(context.units.system, null)
+                    : plotAreaUnits(context.units.system, context.read<SettingsController>().country, land: s == Space.land),
                 width: 130,
                 onChanged: (v) => a.update((x) {
                   final size = x.sizeOf(s);
@@ -2109,7 +2279,7 @@ class _SizesStep extends StatelessWidget {
         );
 
     String land(AreaSize v) => switch (v) {
-          AreaSize.small => t.landSmall,
+          AreaSize.small => t.landSmallFor(context.units.round(20, Measure.area)),
           AreaSize.medium => t.landMedium,
           AreaSize.large => t.landLarge,
           AreaSize.none => t.noGarden,
@@ -2144,11 +2314,11 @@ class _SizesStep extends StatelessWidget {
             AreaSize.medium => t.roofMedium,
             AreaSize.large || AreaSize.none => t.roofLarge,
           },
-          sublabel: (v) => t.aboutM2For(switch (v) {
+          sublabel: (v) => t.aboutM2For(context.units.round(switch (v) {
             AreaSize.small => 30,
             AreaSize.medium => 60,
             AreaSize.large || AreaSize.none => 100,
-          }),
+          }, Measure.area)),
         ),
         exact(Space.roof),
         const SizedBox(height: 18),
@@ -2172,7 +2342,9 @@ class _SizesStep extends StatelessWidget {
       if (a.spaces.contains(Space.land)) landSection(Space.land, t.sizeLandLabel),
       if (a.spaces.contains(Space.balcony)) ...[
         SubQuestion(t.sizeBalconyLabel),
-        sizes(Space.balcony, const [AreaSize.small, AreaSize.large], (v) => v == AreaSize.small ? t.balconySmall : t.balconyLarge),
+        sizes(Space.balcony, const [AreaSize.small, AreaSize.large], (v) => v == AreaSize.small
+                ? t.balconySmallFor(context.units.range(1, 2, Measure.length))
+                : t.balconyLargeFor(context.units.round(3, Measure.length))),
       ],
     ];
     final note = [
@@ -2333,7 +2505,6 @@ class _FollowUpsStep extends StatelessWidget {
     final p = context.palette;
     final a = answers;
     final loading = facts?.loading ?? false;
-    final language = Localizations.localeOf(context).languageCode;
     final metres = math.max(10, ((facts?.riverKm ?? 0) * 100).round() * 10);
     // Every question shown here needs an answer ("None", "No" count), and the map
     // check has to finish first.
@@ -2362,7 +2533,7 @@ class _FollowUpsStep extends StatelessWidget {
           )
         else ...[
           if (river) ...[
-            _MapFound(text: t.riverFoundFor(metres)),
+            _MapFound(text: t.riverFoundFor(context.units.round(metres.toDouble(), Measure.length))),
             const SizedBox(height: 8),
             _Options<RiverAccess>(
               values: RiverAccess.values,
@@ -2379,7 +2550,7 @@ class _FollowUpsStep extends StatelessWidget {
             _gap,
           ],
           if (wind && facts?.wind20 != null) ...[
-            _MapFound(text: t.windFoundFor(_decimal(facts!.wind20!, language))),
+            _MapFound(text: t.windFoundFor(context.units.speed(facts!.wind20!), context.units.round(20, Measure.length))),
             const SizedBox(height: 8),
             _Options<WindExposure>(
               values: WindExposure.values,
@@ -2412,6 +2583,7 @@ class _AnimalsAnswer extends StatelessWidget {
     final t = context.t;
     final p = context.palette;
     final a = answers;
+    final cropUnit = a.cropUnit ?? defaultFieldAreaUnit(context.units.system, context.read<SettingsController>().country);
     Widget note(String text) => Padding(
           padding: const EdgeInsets.only(top: 6),
           child: Text(text, style: TextStyle(fontSize: 13, color: p.muted)),
@@ -2503,10 +2675,11 @@ class _AnimalsAnswer extends StatelessWidget {
           ),
           if (a.cropArea.isNotEmpty) ...[
             const SizedBox(height: 14),
-            ChoiceChips<LandUnit>(
-              values: LandUnit.values,
-              label: (v) => v == LandUnit.hectare ? 'ha' : 'acre',
-              selected: a.cropUnit,
+            // Hectares, acres and the country's own (kat. hold, ar, сотка, 亩); it starts on the usual one.
+            ChoiceChips<AreaUnit>(
+              values: fieldAreaUnits(context.read<SettingsController>().country),
+              label: (v) => v.label,
+              selected: cropUnit,
               onSelect: (v) => a.update((x) => x.cropUnit = v),
             ),
             const SizedBox(height: 12),
@@ -2517,8 +2690,11 @@ class _AnimalsAnswer extends StatelessWidget {
                   NumberField(
                     value: a.cropArea[k],
                     width: 120,
-                    suffix: a.cropUnit == null ? null : (a.cropUnit == LandUnit.hectare ? 'ha' : 'acre'),
-                    onChanged: (v) => a.update((x) => x.cropArea[k] = v),
+                    suffix: cropUnit.label,
+                    onChanged: (v) => a.update((x) {
+                      x.cropArea[k] = v;
+                      x.cropUnit ??= cropUnit;
+                    }),
                   ),
                 ),
           ],
@@ -2701,9 +2877,9 @@ class _KeepWhy extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               SizedBox(width: 150, child: Text(label, style: TextStyle(fontSize: 14, color: p.text))),
-              NumberField(value: w, width: 110, hint: t.widthLabel, suffix: 'm', onChanged: onW),
+              MeasureField(value: w, measure: Measure.length, width: 110, hint: t.widthLabel, onChanged: onW),
               Text('×', style: TextStyle(fontSize: 15, color: p.muted)),
-              NumberField(value: h, width: 110, hint: t.heightLabel, suffix: 'm', onChanged: onH),
+              MeasureField(value: h, measure: Measure.length, width: 110, hint: t.heightLabel, onChanged: onH),
             ],
           ),
         );
@@ -3049,9 +3225,9 @@ class _NewThingStepState extends State<_NewThingStep> {
         ChoiceChips<TreeHeight>(
           values: TreeHeight.values,
           label: (h) => switch (h) {
-            TreeHeight.low => t.treeLow,
-            TreeHeight.medium => t.treeMedium,
-            TreeHeight.tall => t.treeTall,
+            TreeHeight.low => t.treeLowFor(context.units.round(5, Measure.length)),
+            TreeHeight.medium => t.treeMediumFor(context.units.range(5, 10, Measure.length)),
+            TreeHeight.tall => t.treeTallFor(context.units.round(10, Measure.length)),
           },
           selected: a.newTreeHeight,
           onSelect: (h) => a.update((x) => x.newTreeHeight = h),
@@ -3065,7 +3241,7 @@ class _NewThingStepState extends State<_NewThingStep> {
             AreaSize.medium => t.newSizeMedium,
             _ => t.newSizeLarge,
           },
-          sublabel: (v) => t.aboutM2For(typical[sizes.indexOf(v)]),
+          sublabel: (v) => t.aboutM2For(context.units.round(typical[sizes.indexOf(v)].toDouble(), Measure.area)),
           selected: a.newSize,
           onSelect: (v) => a.update((x) => x.setNewSize(v)),
         ),
@@ -3076,10 +3252,10 @@ class _NewThingStepState extends State<_NewThingStep> {
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Text(t.exactSize, style: TextStyle(fontSize: 13, color: p.muted)),
-            NumberField(
+            MeasureField(
               // A drawn area shows below, not here.
               value: drawnArea == null ? a.newAreaM2 : null,
-              suffix: 'm²',
+              measure: Measure.area,
               width: 130,
               onChanged: (v) => a.update((x) => x.setNewArea(v)),
             ),
@@ -3116,7 +3292,7 @@ class _NewThingStepState extends State<_NewThingStep> {
       ),
       if (drawnArea != null) ...[
         const SizedBox(height: 8),
-        Text(t.newDrawAreaFor(drawnArea.round()),
+        Text(t.newDrawAreaFor(context.units.round(drawnArea, Measure.area)),
             style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: p.text)),
       ],
       if (a.newCrossesRoad) _Unsure(t.newRoadCrosses),

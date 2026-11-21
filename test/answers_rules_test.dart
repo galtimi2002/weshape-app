@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:weshape_app/core/units/units.dart';
 import 'package:weshape_app/features/assessment/home_answers.dart';
 
 void main() {
@@ -49,7 +53,7 @@ void main() {
       expect(a.animalsComplete, isFalse);
       a.cropArea[CropKind.maize] = 2;
       expect(a.animalsComplete, isFalse, reason: 'unit missing');
-      a.cropUnit = LandUnit.hectare;
+      a.cropUnit = AreaUnit.hectare;
       expect(a.animalsComplete, isTrue);
       a.toggleAnimals(Animals.none);
       expect(a.animals, {Animals.none});
@@ -92,12 +96,66 @@ void main() {
       ..animals = {Animals.few, Animals.crops}
       ..animalCounts = {AnimalKind.pigs: 3}
       ..cropArea = {CropKind.wheatBarley: 1.5}
-      ..cropUnit = LandUnit.acre
+      ..cropUnit = AreaUnit.acre
       ..keeps = {Zone.roofFront: ZoneKeep()..reason = KeepReason.somethingThere..things = {KeepThing.chimney}};
     final json = a.toJson();
     expect(json['material'], 'wood');
     expect(json['animals'], containsAll(['few', 'crops']));
     expect((json['keeps'] as Map)['roofFront'], isA<Map>());
     a.dispose();
+  });
+
+  test('firewood saved before units could be picked comes back as stacked m³', () async {
+    SharedPreferences.setMockInitialValues({
+      'assessment.home.v2': jsonEncode({'firewoodM3': 8, 'firewoodPrice': 300}),
+    });
+    final a = HomeAnswers();
+    await a.restore();
+    expect(a.firewoodAmount, 8);
+    expect(a.firewoodUnit, WoodUnit.stacked);
+    expect(a.firewoodPrice, 300);
+    a.dispose();
+  });
+
+  test('the units picked go into the save and come back', () async {
+    final a = HomeAnswers()
+      ..firewoodAmount = 40
+      ..firewoodUnit = WoodUnit.quintal
+      ..bottleSize = 21
+      ..bottleUnit = BottleUnit.litre
+      ..bottleLitres = BottleLitres.gas
+      ..gasUnit = GasUnit.mj
+      ..cropUnit = AreaUnit.hold;
+    SharedPreferences.setMockInitialValues({'assessment.home.v2': jsonEncode(a.toJson())});
+    final b = HomeAnswers();
+    await b.restore();
+    expect(b.firewoodAmount, 40);
+    expect(b.firewoodUnit, WoodUnit.quintal);
+    expect(b.bottleLitres, BottleLitres.gas);
+    expect(b.gasUnit, GasUnit.mj);
+    expect(b.cropUnit, AreaUnit.hold);
+    a.dispose();
+    b.dispose();
+  });
+
+  test('pellets: saved as tonnes before come back as tonnes; bags and their weight are saved', () async {
+    SharedPreferences.setMockInitialValues({'assessment.home.v2': jsonEncode({'pelletsTonnes': 2})});
+    final a = HomeAnswers();
+    await a.restore();
+    expect(a.pelletsAmount, 2);
+    expect(a.pelletsUnit, PelletUnit.tonne);
+
+    a
+      ..pelletsAmount = 120
+      ..pelletsUnit = PelletUnit.bag
+      ..pelletBagKg = 25;
+    SharedPreferences.setMockInitialValues({'assessment.home.v2': jsonEncode(a.toJson())});
+    final b = HomeAnswers();
+    await b.restore();
+    expect(b.pelletsAmount, 120);
+    expect(b.pelletsUnit, PelletUnit.bag);
+    expect(b.pelletBagKg, 25);
+    a.dispose();
+    b.dispose();
   });
 }

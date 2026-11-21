@@ -39,10 +39,12 @@ class ApiClient {
   Future<UserProfile> completeProfile(ProfileDraft draft) async => UserProfile.fromJson(
       await _send('PUT', '/api/v1/users/me', body: draft.toJson()) as Map<String, dynamic>);
 
-  Future<UserProfile> updatePreferences({String? language, String? themeMode}) async =>
+  /// [unitSystem] 'METRIC' or 'US'; 'AUTO' clears a choice so the country's usual units apply.
+  Future<UserProfile> updatePreferences({String? language, String? themeMode, String? unitSystem}) async =>
       UserProfile.fromJson(await _send('PUT', '/api/v1/users/me/preferences', body: <String, dynamic>{
         if (language != null) 'preferredLanguage': language,
         if (themeMode != null) 'themeMode': themeMode,
+        if (unitSystem != null) 'unitSystem': unitSystem,
       }) as Map<String, dynamic>);
 
   /// Irradiation, PV output and optimum tilt for one place.

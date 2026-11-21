@@ -9,7 +9,7 @@
   'use strict';
   // Must match _bridgeVersion in map_bridge_web.dart. A newer copy replaces an older one
   // (after a hot restart the page still holds the previous script).
-  var VERSION = 25;
+  var VERSION = 26;
   if (window.WeShapeMap && window.WeShapeMap.version === VERSION) return;
   if (window.WeShapeMap && window.WeShapeMap.destroy) {
     try { window.WeShapeMap.destroy(); } catch (e) { /* already gone */ }
@@ -794,6 +794,9 @@
         map.on('touchstart', drawStart);
         map.on('click', function (e) {
           if (!state.interactive || !state.onClick) return;
+          // Phones send a late "click" after a tap; if the tap closed a card, its blocker is gone
+          // by then and the click would land on the map as a new pick (see setBlockers).
+          if (Date.now() - (state.blockerPressAt || 0) < 800) return;
           // The click that ends a drawn rectangle is not a click.
           if (state.drawMode || Date.now() - (state.drawnAt || 0) < 500) return;
           // Two clicks (or taps) close together in time and place make a double click; the
@@ -1002,6 +1005,9 @@
       while (shield.children.length < n) {
         var b = document.createElement('div');
         b.style.cssText = 'position:absolute;pointer-events:auto';
+        // A press on a Flutter control: the click that may follow is not a pick on the map.
+        b.addEventListener('pointerdown', function () { state.blockerPressAt = Date.now(); });
+        b.addEventListener('touchstart', function () { state.blockerPressAt = Date.now(); }, { passive: true });
         shield.appendChild(b);
       }
       for (var i = 0; i < n; i++) {

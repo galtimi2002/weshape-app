@@ -11,6 +11,7 @@ import '../../core/theme/weshape_palette.dart';
 import '../../core/widgets/auth_layout.dart';
 import '../../core/widgets/country_field.dart';
 import '../../core/widgets/language_field.dart';
+import '../../core/widgets/units_field.dart';
 import '../../core/widgets/primary_button.dart';
 import '../auth/validators.dart';
 import 'profile_controller.dart';
@@ -41,6 +42,13 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
     _lastName = TextEditingController(text: profile?.lastName ?? '');
     _country = profile?.country;
     _languageWeSet = context.read<SettingsController>().languageCode;
+    // The units field starts on the usual units of a country already known.
+    final country = _country;
+    if (country != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) context.read<SettingsController>().setCountry(country);
+      });
+    }
   }
 
   @override
@@ -52,6 +60,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
 
   void _onCountry(String country) {
     setState(() => _country = country);
+    // The units follow the country until picked by hand.
+    context.read<SettingsController>().setCountry(country);
     if (context.read<SettingsController>().languageCode == _languageWeSet) {
       _languageWeSet = AppLanguages.forCountry(country);
       context.read<ProfileController>().changeLanguage(_languageWeSet);
@@ -72,6 +82,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             country: _country!,
             preferredLanguage: settings.languageCode,
             themeMode: settings.themeMode,
+            unitSystem: settings.unitSystemChoice,
           ));
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e);
@@ -138,6 +149,8 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
             ),
             const SizedBox(height: 6),
             Text(t.languageHint, style: TextStyle(fontSize: 12, color: p.muted)),
+            const SizedBox(height: 12),
+            LabeledField(label: t.unitsLabel, child: const UnitsField()),
             if (_error != null) ...[const SizedBox(height: 12), ErrorBanner(_error!.message(t))],
             const SizedBox(height: 18),
             PrimaryButton(label: t.saveAndContinue, busy: _saving, onPressed: _save),

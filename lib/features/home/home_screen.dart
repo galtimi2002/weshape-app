@@ -7,8 +7,10 @@ import '../../core/i18n/app_localizations.dart';
 import '../../core/i18n/countries.dart';
 import '../../core/models/user_profile.dart';
 import '../../core/theme/weshape_palette.dart';
+import '../../core/widgets/auth_layout.dart';
 import '../../core/widgets/language_menu.dart';
 import '../../core/widgets/theme_switch.dart';
+import '../../core/widgets/units_field.dart';
 import '../../core/widgets/weshape_logo.dart';
 import '../profile/profile_controller.dart';
 import '../assessment/assessment_flow.dart';
@@ -316,6 +318,9 @@ class _AccountDialog extends StatelessWidget {
                   style: TextStyle(fontSize: 14, color: p.text),
                 ),
               ],
+              const SizedBox(height: 18),
+              // Metric or US units: shown in full, so it is clear what they change.
+              LabeledField(label: t.unitsLabel, child: const UnitsField()),
               const SizedBox(height: 18),
               OutlinedButton.icon(
                 onPressed: () {

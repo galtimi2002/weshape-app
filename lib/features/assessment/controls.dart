@@ -1,7 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../core/i18n/app_localizations.dart';
 import '../../core/theme/weshape_palette.dart';
+import '../../core/units/units.dart';
 
 /// Small grey label over a group of choices.
 class FieldLabel extends StatelessWidget {
@@ -278,6 +282,95 @@ class MultiChips<T> extends StatelessWidget {
 }
 
 /// A number typed by the person; empty means "not given". Keeps its own text while typing.
+/// A [NumberField] for a metric amount, shown and typed in the person's units (sq ft, cords …).
+/// [value] and [onChanged] stay metric.
+class MeasureField extends StatelessWidget {
+  const MeasureField({super.key, required this.value, required this.measure, required this.onChanged, this.width = 140, this.hint});
+
+  final double? value;
+  final Measure measure;
+  final ValueChanged<double?> onChanged;
+  final double width;
+  final String? hint;
+
+  @override
+  Widget build(BuildContext context) {
+    final u = context.units;
+    final v = value;
+    // Two decimals, so a typed 1.5 cords comes back as 1.5 and not 1.4999999.
+    final shown = v == null ? null : (u.toDisplay(v, measure) * 100).round() / 100;
+    return NumberField(
+      value: shown,
+      suffix: u.symbol(measure),
+      width: width,
+      hint: hint,
+      onChanged: (typed) => onChanged(typed == null ? null : u.fromDisplay(typed, measure)),
+    );
+  }
+}
+
+/// "1.200" or "1,200": the dot or comma is a decimal mark everywhere in the app, so this is 1.2;
+/// but it looks like 1200 written with a thousands separator. Returns the whole number then, else null.
+String? looksLikeThousands(String text) {
+  final m = RegExp(r'^(\d{1,3})[.,](\d{3})$').firstMatch(text.trim());
+  if (m == null || m.group(1) == '0') return null;
+  return '${m.group(1)}${m.group(2)}';
+}
+
+/// An area typed in a unit the person picks: m² (or sq ft) and the units usual in their country
+/// (négyszögöl, ar, сотка …; hectares for land). [value] and [onChanged] stay in m².
+class AreaField extends StatefulWidget {
+  const AreaField({super.key, required this.value, required this.units, required this.onChanged, this.width = 130});
+
+  final double? value;
+
+  /// The units offered, the first one picked at the start.
+  final List<AreaUnit> units;
+  final ValueChanged<double?> onChanged;
+  final double width;
+
+  @override
+  State<AreaField> createState() => _AreaFieldState();
+}
+
+class _AreaFieldState extends State<AreaField> {
+  late AreaUnit _unit = widget.units.first;
+
+  @override
+  void didUpdateWidget(AreaField old) {
+    super.didUpdateWidget(old);
+    if (!widget.units.contains(_unit)) _unit = widget.units.first;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final v = widget.value;
+    // Two decimals, so a typed 1.5 comes back as 1.5.
+    final shown = v == null ? null : (_unit.fromM2(v) * 100).round() / 100;
+    final field = NumberField(
+      value: shown,
+      suffix: widget.units.length == 1 ? _unit.label : null,
+      width: widget.width,
+      onChanged: (typed) => widget.onChanged(typed == null ? null : _unit.toM2(typed)),
+    );
+    if (widget.units.length == 1) return field;
+    return Wrap(
+      spacing: 10,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        field,
+        ChoiceChips<AreaUnit>(
+          values: widget.units,
+          label: (u) => u.label,
+          selected: _unit,
+          onSelect: (u) => setState(() => _unit = u),
+        ),
+      ],
+    );
+  }
+}
+
 class NumberField extends StatefulWidget {
   const NumberField({
     super.key,
@@ -329,7 +422,8 @@ class _NumberFieldState extends State<NumberField> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return SizedBox(
+    final whole = widget.money ? null : looksLikeThousands(_controller.text);
+    final field = SizedBox(
       width: widget.width,
       child: TextField(
         controller: _controller,
@@ -362,8 +456,36 @@ class _NumberFieldState extends State<NumberField> {
         onChanged: (text) {
           final t = text.replaceAll(',', '.').replaceAll(' ', '');
           widget.onChanged(t.isEmpty ? null : double.tryParse(t));
+          setState(() {}); // the note below follows what is typed
         },
       ),
+    );
+    if (whole == null) return field;
+    final t = context.t;
+    final language = context.units.language;
+    // What the app takes it for: "1.200" is 1.2 (trailing zeros dropped), written the language's way.
+    final parts = _controller.text.trim().replaceAll(',', '.').split('.');
+    final fraction = parts[1].replaceFirst(RegExp(r'0+$'), '');
+    final decimal = fraction.isEmpty ? parts[0] : '${parts[0]}${usesDecimalComma(language) ? ',' : '.'}$fraction';
+    // Wider than the field, so the note reads in one or two lines.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        field,
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: math.max(widget.width, 300)),
+          child: FieldWarning(
+            t.numberMaybeGroupedFor(decimal, whole),
+            action: whole,
+            onAction: () {
+              _controller.text = whole;
+              widget.onChanged(double.tryParse(whole));
+              setState(() {});
+            },
+          ),
+        ),
+      ],
     );
   }
 }

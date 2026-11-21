@@ -11,6 +11,7 @@ import '../../core/theme/weshape_palette.dart';
 import '../../core/widgets/auth_layout.dart';
 import '../../core/widgets/country_field.dart';
 import '../../core/widgets/language_field.dart';
+import '../../core/widgets/units_field.dart';
 import '../../core/widgets/primary_button.dart';
 import '../profile/profile_controller.dart';
 import 'masked_controller.dart';
@@ -90,6 +91,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _onCountry(String country) {
     setState(() => _country = country);
+    // The units follow the country until picked by hand.
+    context.read<SettingsController>().setCountry(country);
     final current = context.read<SettingsController>().languageCode;
     if (current == _languageWeSet) {
       _languageWeSet = AppLanguages.forCountry(country);
@@ -110,6 +113,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         country: _country!,
         preferredLanguage: settings.languageCode,
         themeMode: settings.themeMode,
+        unitSystem: settings.unitSystemChoice,
       ));
 
     try {
@@ -255,6 +259,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ...pair(country, languageField),
               const SizedBox(height: 4),
               Text(t.languageHint, style: TextStyle(fontSize: 11.5, color: p.muted)),
+              const SizedBox(height: 12),
+              LabeledField(label: t.unitsLabel, child: const UnitsField()),
               const SizedBox(height: 12),
               ...pair(password, confirm),
               // Once the person starts typing, only what is still missing shows; each line goes away

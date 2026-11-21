@@ -76,6 +76,8 @@ const _ownScript = {
 const _latinOk = {
   'Google', 'kWh', 'kWp', 'kW', 'km', 'm', 'W', 'GWh', 'mW', 'K', 'L', 'kg', 'cm', 's', 'ha', 't',
   'C', 'PV', 'k', 'LPG', 'email', 'Email',
+  // US units in the unit picker and the note on cords of firewood.
+  'ft', 'mi', 'F', 'cord',
 };
 
 final _nonLatinScripts = RegExp(
@@ -198,12 +200,16 @@ void main() {
 
   test('units from English survive the translation', () {
     const units = {'m²': 'м²', 'm³': 'м³', '°C': '°C', 'm/s': 'м/с', 'kWh': 'кВт·'};
+    // Firewood measures go by their local names, which say "cubic metre" in their own words
+    // (Raummeter, metru ster, stère, складометр).
+    const localNames = {'woodUnitStacked', 'woodUnitLoose', 'woodUnitSolid'};
     final problems = <String>[];
     // Languages in their own script may write units their way (м³, 立方米, م³); Cyrillic
     // ones are still checked, with the Cyrillic spelling allowed.
     all.forEach((c, t) {
       if (_ownScript.contains(c) && !_cyrillic.contains(c)) return;
       t.forEach((k, v) {
+        if (localNames.contains(k)) return;
         final e = en[k]!;
         units.forEach((latin, cyr) {
           if (e.contains(latin) && !v.contains(latin) && !v.contains(cyr)) {

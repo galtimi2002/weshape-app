@@ -21,6 +21,7 @@ import '../../../core/models/wind.dart';
 import '../../../core/settings/settings_controller.dart';
 import '../../../core/theme/weshape_palette.dart';
 import '../../../core/theme/weshape_theme.dart';
+import '../../../core/units/units.dart';
 import '../../assessment/home_answers.dart';
 import 'country_bounds.dart';
 import 'geocoder.dart';
@@ -115,12 +116,13 @@ class _Selection {
   final HydroPoint? hydro;
   final GeoPoint? geo;
   final BioPoint? bio;
-  final String? error;
+  /// Says what went wrong, in whatever language is current when the card is drawn.
+  final String Function(AppStrings, Units)? error;
 
   /// The map's zoom when the place was picked (for hydro: the rivers drawn then).
   final double? zoom;
 
-  _Selection copyWith({String? title, String? detail, SolarPoint? point, WindPoint? wind, HydroPoint? hydro, GeoPoint? geo, BioPoint? bio, String? error}) =>
+  _Selection copyWith({String? title, String? detail, SolarPoint? point, WindPoint? wind, HydroPoint? hydro, GeoPoint? geo, BioPoint? bio, String Function(AppStrings, Units)? error}) =>
       _Selection(
         lat: lat,
         lon: lon,
@@ -262,7 +264,13 @@ class _ResourceMapState extends State<ResourceMap> {
       final dockRect = dock.localToGlobal(Offset.zero, ancestor: stack) & dock.size;
       final room = dockRect.left - 10 - 12;
       final beside = room >= _attributionMinWidth;
-      final lift = beside ? 0.0 : stack.size.height - dockRect.top + 6;
+      var lift = beside ? 0.0 : stack.size.height - dockRect.top + 6;
+      // On a phone the place card sits above the dock across the whole width: lift past it too.
+      final card = _cardKey.currentContext?.findRenderObject();
+      if (!beside && card is RenderBox && card.hasSize && card.attached) {
+        final cardTop = card.localToGlobal(Offset.zero, ancestor: stack).dy;
+        lift = math.max(lift, stack.size.height - cardTop + 6);
+      }
       final width = beside ? room : 0.0;
       if ((width - _attributionWidth).abs() > 0.5) {
         _attributionWidth = width;
@@ -620,7 +628,6 @@ class _ResourceMapState extends State<ResourceMap> {
   /// The values of the current resource for the selected place.
   Future<void> _fetchValues(double lat, double lon) async {
     final request = ++_valuesRequest;
-    final t = context.t;
     final resource = _resource;
     try {
       if (resource == _Resource.biomass) {
@@ -646,14 +653,15 @@ class _ResourceMapState extends State<ResourceMap> {
       }
     } on ApiException catch (e) {
       if (!mounted || request != _valuesRequest) return;
-      final noData = switch (resource) {
-        _Resource.wind => t.noWindDataHere,
-        _Resource.hydro => t.noHydroDataHere,
-        _Resource.geothermal => t.noGeoDataHere,
-        _Resource.biomass => t.noBioDataHere,
-        _ => t.noSolarDataHere,
-      };
-      setState(() => _selection = _selection?.copyWith(error: e.statusCode == 404 ? noData : e.message(t)));
+      String noData(AppStrings t, Units u) => switch (resource) {
+            _Resource.wind => t.noWindDataHere,
+            _Resource.hydro => t.noHydroDataHereFor(u.round(2, Measure.distance)),
+            _Resource.geothermal => t.noGeoDataHere,
+            _Resource.biomass => t.noBioDataHere,
+            _ => t.noSolarDataHere,
+          };
+      final String Function(AppStrings, Units) error = e.statusCode == 404 ? noData : (t, _) => e.message(t);
+      setState(() => _selection = _selection?.copyWith(error: error));
     }
   }
 
@@ -760,6 +768,7 @@ class _ResourceMapState extends State<ResourceMap> {
     final t = context.t;
     final p = context.palette;
     final language = context.watch<SettingsController>().languageCode;
+    final units = context.units;
     if (language != _language) {
       final changed = _language != null;
       _language = language;
@@ -929,6 +938,7 @@ class _ResourceMapState extends State<ResourceMap> {
               child: KeyedSubtree(
                 key: _cardKey,
                 child: _ResultCard(
+                  units: units,
                   key: ValueKey('${_selection!.lat},${_selection!.lon}'),
                   selection: _selection!,
                   resource: _resource,
@@ -1336,6 +1346,7 @@ class _ResultCard extends StatelessWidget {
     required this.bioLayer,
     required this.phone,
     required this.language,
+    required this.units,
     required this.onLayer,
     required this.onWindLayer,
     required this.onHeight,
@@ -1364,6 +1375,7 @@ class _ResultCard extends StatelessWidget {
   final BioLayerId bioLayer;
   final bool phone;
   final String language;
+  final Units units;
   final ValueChanged<SolarLayerId> onLayer;
   final ValueChanged<WindLayerId> onWindLayer;
   final ValueChanged<int> onHeight;
@@ -1473,7 +1485,7 @@ class _ResultCard extends StatelessWidget {
     if (selection.error != null) {
       return Padding(
         padding: const EdgeInsets.only(top: 12),
-        child: Text(selection.error!, style: TextStyle(color: p.error, fontSize: 13)),
+        child: Text(selection.error!(t, units), style: TextStyle(color: p.error, fontSize: 13)),
       );
     }
     if (_isBio) {
@@ -1582,19 +1594,19 @@ class _ResultCard extends StatelessWidget {
     switch (windLayer) {
       case WindLayerId.speed:
         label = t.windSpeedTitle;
-        value = _decimal(point.speed100, language);
-        unit = 'm/s';
-        note = t.atHeightFor(100);
+        value = _decimal(units.toDisplay(point.speed100, Measure.speed), language);
+        unit = units.symbol(Measure.speed);
+        note = t.atHeightFor(units.round(100, Measure.length));
       case WindLayerId.power:
         label = t.powerDensityTitle;
         value = density == null ? '–' : _group(density.round(), language);
         unit = density == null ? '' : 'W/m²';
-        note = t.atHeightFor(100);
+        note = t.atHeightFor(units.round(100, Measure.length));
       case WindLayerId.height:
         label = t.windSpeedTitle;
-        value = atHeight == null ? '–' : _decimal(atHeight, language);
-        unit = atHeight == null ? '' : 'm/s';
-        note = t.atHeightFor(height);
+        value = atHeight == null ? '–' : _decimal(units.toDisplay(atHeight, Measure.speed), language);
+        unit = atHeight == null ? '' : units.symbol(Measure.speed);
+        note = t.atHeightFor(units.round(height.toDouble(), Measure.length));
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1619,14 +1631,14 @@ class _ResultCard extends StatelessWidget {
                 child: _MetricTile(
                   label: _windShort(t, id),
                   value: switch (id) {
-                    WindLayerId.speed => _decimal(point.speed100, language),
+                    WindLayerId.speed => _decimal(units.toDisplay(point.speed100, Measure.speed), language),
                     WindLayerId.power => density == null ? '–' : _group(density.round(), language),
-                    WindLayerId.height => atHeight == null ? '–' : _decimal(atHeight, language),
+                    WindLayerId.height => atHeight == null ? '–' : _decimal(units.toDisplay(atHeight, Measure.speed), language),
                   },
                   unit: switch (id) {
-                    WindLayerId.speed => 'm/s',
+                    WindLayerId.speed => units.symbol(Measure.speed),
                     WindLayerId.power => 'W/m²',
-                    WindLayerId.height => '$height m',
+                    WindLayerId.height => units.round(height.toDouble(), Measure.length),
                   },
                   selected: id == windLayer,
                   accent: wind[id].accent,
@@ -1655,7 +1667,7 @@ class _ResultCard extends StatelessWidget {
       BioLayerId.resource => t.bioResourceTitle,
       BioLayerId.energy => t.bioEnergyTitle,
     };
-    final note = bioLayer == BioLayerId.density ? t.perYear : t.withinRadiusFor(point.radiusKm);
+    final note = bioLayer == BioLayerId.density ? t.perYear : t.withinRadiusFor(units.round(point.radiusKm.toDouble(), Measure.distance));
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1706,20 +1718,20 @@ class _ResultCard extends StatelessWidget {
     final atDepth = point.temperatureAt(depth);
     final q = point.heatFlow;
     String value(GeoLayerId id) => switch (id) {
-          GeoLayerId.ground => _decimal(point.groundTemperature, language),
-          GeoLayerId.depth => atDepth == null ? '–' : '${atDepth.round()}',
+          GeoLayerId.ground => _decimal(units.toDisplay(point.groundTemperature, Measure.temperature), language),
+          GeoLayerId.depth => atDepth == null ? '–' : '${units.toDisplay(atDepth, Measure.temperature).round()}',
           GeoLayerId.heatflow => q == null ? '–' : '${q.round()}',
         };
     final title = switch (geoLayer) {
       GeoLayerId.ground => t.groundTempTitle,
-      GeoLayerId.depth => t.depthTempTitleFor(depth),
+      GeoLayerId.depth => t.depthTempTitleFor(units.round(depth.toDouble(), Measure.distance)),
       GeoLayerId.heatflow => t.heatFlowTitle,
     };
     final missing = geoLayer != GeoLayerId.ground && q == null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _headline(p, title, value(geoLayer), missing ? '' : geo[geoLayer].unit,
+        _headline(p, title, value(geoLayer), missing ? '' : (geoLayer == GeoLayerId.heatflow ? geo[geoLayer].unit : units.symbol(Measure.temperature)),
             geoLayer == GeoLayerId.ground ? t.nearSurface : ''),
         if (point.depths.isNotEmpty && !phone) ...[
           const SizedBox(height: 8),
@@ -1743,7 +1755,11 @@ class _ResultCard extends StatelessWidget {
                 child: _MetricTile(
                   label: _geoShort(t, id),
                   value: value(id),
-                  unit: id == GeoLayerId.depth ? '°C · $depth km' : geo[id].unit,
+                  unit: switch (id) {
+                    GeoLayerId.ground => units.symbol(Measure.temperature),
+                    GeoLayerId.depth => '${units.symbol(Measure.temperature)} · ${units.round(depth.toDouble(), Measure.distance)}',
+                    GeoLayerId.heatflow => geo[id].unit,
+                  },
                   selected: id == geoLayer,
                   accent: geo[id].accent,
                   onTap: () => onGeoLayer(id),
@@ -1766,23 +1782,30 @@ class _ResultCard extends StatelessWidget {
   Widget _hydroBody(AppStrings t, WeShapePalette p, HydroPoint point, Color accent) {
     String value(HydroLayerId id) => switch (id) {
           HydroLayerId.potential => _number(point.potentialKw, language),
-          HydroLayerId.flow => _number(point.availableFlow, language),
-          HydroLayerId.head => _number(point.headM, language),
+          HydroLayerId.flow => _number(units.toDisplay(point.availableFlow, Measure.flow), language),
+          HydroLayerId.head => _number(units.toDisplay(point.headM, Measure.length), language),
         };
     final title = switch (hydroLayer) {
       HydroLayerId.potential => t.hydroPotentialTitle,
       HydroLayerId.flow => t.riverFlowTitle,
       HydroLayerId.head => t.headTitle,
     };
-    final km = _number(point.distanceKm < 0.05 ? 0.05 : point.distanceKm, language);
+    final away = units.distance(point.distanceKm < 0.05 ? 0.05 : point.distanceKm);
+    final hydroUnit = switch (hydroLayer) {
+      HydroLayerId.potential => hydro[hydroLayer].unit,
+      HydroLayerId.flow => units.symbol(Measure.flow),
+      HydroLayerId.head => units.symbol(Measure.length),
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _headline(p, title, value(hydroLayer), hydro[hydroLayer].unit, t.riverAwayFor(km)),
+        _headline(p, title, value(hydroLayer), hydroUnit, t.riverAwayFor(away)),
         if (!phone) ...[
           const SizedBox(height: 8),
           _FlowBars(
-            values: [point.driestMonthFlow, point.meanFlow, point.wettestMonthFlow],
+            values: [
+              for (final q in [point.driestMonthFlow, point.meanFlow, point.wettestMonthFlow]) units.toDisplay(q, Measure.flow),
+            ],
             labels: [t.driestMonth, t.averageFlow, t.wettestMonth],
             color: hydro[HydroLayerId.flow].accent,
             language: language,
@@ -1926,7 +1949,7 @@ class _DepthProfile extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text('${depths[i].temperature.round()}',
+                      Text('${context.units.toDisplay(depths[i].temperature, Measure.temperature).round()}',
                           style: _mono(9.5, depths[i].depthKm == selected ? p.text : p.muted)),
                       const SizedBox(height: 2),
                       SizedBox(
@@ -1951,7 +1974,7 @@ class _DepthProfile extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 3),
-                      Text('${depths[i].depthKm} km', style: _mono(9, p.muted)),
+                      Text(context.units.round(depths[i].depthKm.toDouble(), Measure.distance), style: _mono(9, p.muted)),
                     ],
                   ),
                 ),
@@ -2004,7 +2027,7 @@ class _HeightProfile extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        _decimal(speeds[i].speed, language),
+                        _decimal(context.units.toDisplay(speeds[i].speed, Measure.speed), language),
                         style: _mono(9.5, speeds[i].height == selected ? p.text : p.muted),
                       ),
                       const SizedBox(height: 2),
@@ -2030,7 +2053,7 @@ class _HeightProfile extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 3),
-                      Text('${speeds[i].height} m', style: _mono(9, p.muted)),
+                      Text(context.units.round(speeds[i].height.toDouble(), Measure.length), style: _mono(9, p.muted)),
                     ],
                   ),
                 ),
@@ -2295,6 +2318,7 @@ class _Dock extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.t;
     final p = context.palette;
+    final units = context.units;
     final isWind = resource == _Resource.wind;
 
     final resources = [
@@ -2325,8 +2349,8 @@ class _Dock extends StatelessWidget {
       ];
       legend = switch (bioLayer) {
         BioLayerId.density => t.legendBioDensity,
-        BioLayerId.resource => t.legendBioResource,
-        BioLayerId.energy => t.legendBioEnergy,
+        BioLayerId.resource => t.legendBioResourceFor(units.round(25, Measure.distance)),
+        BioLayerId.energy => t.legendBioEnergyFor(units.round(25, Measure.distance)),
       };
       low = _group(info.min.round(), language);
       high = '${_group(info.max.round(), language)}+';
@@ -2338,13 +2362,14 @@ class _Dock extends StatelessWidget {
           _LayerChip(label: _geoShort(t, id), selected: id == geoLayer, accent: info.accent, onTap: () => onGeoLayer(id)),
       ];
       legend = switch (geoLayer) {
-        GeoLayerId.ground => t.legendGroundTemp,
-        GeoLayerId.depth => t.legendDepthTempFor(depth),
+        GeoLayerId.ground => t.legendGroundTempFor(units.symbol(Measure.temperature)),
+        GeoLayerId.depth => t.legendDepthTempFor(units.round(depth.toDouble(), Measure.distance), units.symbol(Measure.temperature)),
         GeoLayerId.heatflow => t.legendHeatFlow,
       };
       final (lo, hi) = info.rangeAt(depth);
-      low = '${lo.round()}';
-      high = '${hi.round()}';
+      final temp = geoLayer != GeoLayerId.heatflow;
+      low = '${(temp ? units.toDisplay(lo, Measure.temperature) : lo).round()}';
+      high = '${(temp ? units.toDisplay(hi, Measure.temperature) : hi).round()}';
       colors = info.colors;
     } else if (resource == _Resource.hydro) {
       final info = hydro[hydroLayer];
@@ -2354,11 +2379,17 @@ class _Dock extends StatelessWidget {
       ];
       legend = switch (hydroLayer) {
         HydroLayerId.potential => t.legendHydroPotential,
-        HydroLayerId.flow => t.legendRiverFlow,
-        HydroLayerId.head => t.legendHead,
+        HydroLayerId.flow => t.legendRiverFlowFor(units.symbol(Measure.flow)),
+        HydroLayerId.head => t.legendHeadFor(units.symbol(Measure.length)),
       };
-      low = _number(info.min, language);
-      high = '${_number(info.max, language)}+';
+      final measure = switch (hydroLayer) {
+        HydroLayerId.flow => Measure.flow,
+        HydroLayerId.head => Measure.length,
+        HydroLayerId.potential => null,
+      };
+      double shown(double v) => measure == null ? v : units.toDisplay(v, measure);
+      low = _number(shown(info.min), language);
+      high = '${_number(shown(info.max), language)}+';
       colors = info.colors;
     } else if (isWind) {
       final info = wind[windLayer];
@@ -2367,12 +2398,13 @@ class _Dock extends StatelessWidget {
           _LayerChip(label: _windShort(t, id), selected: id == windLayer, accent: info.accent, onTap: () => onWindLayer(id)),
       ];
       legend = switch (windLayer) {
-        WindLayerId.speed => t.legendWindSpeedFor(100),
-        WindLayerId.power => t.legendPowerDensity,
-        WindLayerId.height => t.legendWindSpeedFor(height),
+        WindLayerId.speed => t.legendWindSpeedFor(units.round(100, Measure.length), units.symbol(Measure.speed)),
+        WindLayerId.power => t.legendPowerDensityFor(units.round(100, Measure.length)),
+        WindLayerId.height => t.legendWindSpeedFor(units.round(height.toDouble(), Measure.length), units.symbol(Measure.speed)),
       };
-      low = _group(info.min.round(), language);
-      high = _group(info.max.round(), language);
+      final speed = windLayer != WindLayerId.power;
+      low = _group((speed ? units.toDisplay(info.min, Measure.speed) : info.min).round(), language);
+      high = _group((speed ? units.toDisplay(info.max, Measure.speed) : info.max).round(), language);
       colors = info.colors;
     } else {
       final info = layers[layer];
@@ -2415,7 +2447,7 @@ class _Dock extends StatelessWidget {
               spacing: 2,
               children: [
                 for (final h in wind.heights)
-                  _HeightChip(label: '$h m', selected: h == height, accent: wind[WindLayerId.height].accent, onTap: () => onHeight(h)),
+                  _HeightChip(label: units.round(h.toDouble(), Measure.length), selected: h == height, accent: wind[WindLayerId.height].accent, onTap: () => onHeight(h)),
               ],
             ),
           ],
@@ -2426,7 +2458,7 @@ class _Dock extends StatelessWidget {
               spacing: 2,
               children: [
                 for (final d in geo.depths)
-                  _HeightChip(label: '$d km', selected: d == depth, accent: geo[GeoLayerId.depth].accent, onTap: () => onDepth(d)),
+                  _HeightChip(label: units.round(d.toDouble(), Measure.distance), selected: d == depth, accent: geo[GeoLayerId.depth].accent, onTap: () => onDepth(d)),
               ],
             ),
           ],
@@ -2743,23 +2775,9 @@ String _hydroShort(AppStrings t, HydroLayerId id) => switch (id) {
       HydroLayerId.head => t.layerHead,
     };
 
-/// A measured value with as many digits as it deserves: 1,230 · 42 · 7.2 · 0.45.
-String _number(double v, String language) {
-  final a = v.abs();
-  if (a >= 100) return _group(v.round(), language);
-  if (a >= 10) return '${v.round()}';
-  const comma = {'de', 'nl', 'id', 'it', 'es', 'pt', 'tr', 'da', 'el', 'ro', 'hr', 'vi', 'hu', 'fr', 'pl', 'fi', 'sv', 'ru'};
-  var text = v.toStringAsFixed(a >= 1 ? 1 : 2);
-  if (text.contains('.')) text = text.replaceFirst(RegExp(r'\.?0+$'), '');
-  return comma.contains(language) ? text.replaceAll('.', ',') : text;
-}
-
-/// 5.2 / 5,2, as each language writes decimals.
-String _decimal(double v, String language) {
-  const comma = {'de', 'nl', 'id', 'it', 'es', 'pt', 'tr', 'da', 'el', 'ro', 'hr', 'vi', 'hu', 'fr', 'pl', 'fi', 'sv', 'ru'};
-  final text = v.toStringAsFixed(1);
-  return comma.contains(language) ? text.replaceAll('.', ',') : text;
-}
+/// Numbers as each language writes them (core/units/units.dart).
+String _number(double v, String language) => formatNumber(v, language);
+String _decimal(double v, String language) => formatDecimal(v, language);
 
 String _format(double v, SolarLayerId id, String language) =>
     id == SolarLayerId.opta ? '${v.round()}°' : _group((v / 5).round() * 5, language);
@@ -2767,19 +2785,7 @@ String _format(double v, SolarLayerId id, String language) =>
 String _legendNumber(double v, SolarLayerId id, String language) =>
     id == SolarLayerId.opta ? '${v.round()}°' : _group(v.round(), language);
 
-/// 1,276 / 1.276 / 1 276, as each language writes thousands.
-String _group(int v, String language) {
-  const dot = {'de', 'nl', 'id', 'it', 'es', 'pt', 'tr', 'da', 'el', 'ro', 'hr', 'vi'};
-  const space = {'hu', 'fr', 'pl', 'fi', 'sv', 'ru'};
-  final sep = dot.contains(language) ? '.' : (space.contains(language) ? ' ' : ',');
-  final digits = v.abs().toString();
-  final out = StringBuffer(v < 0 ? '-' : '');
-  for (var i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0) out.write(sep);
-    out.write(digits[i]);
-  }
-  return out.toString();
-}
+String _group(int v, String language) => groupDigits(v, language);
 
 String _coordinates(double lat, double lon) =>
     '${lat.abs().toStringAsFixed(2)}° ${lat >= 0 ? 'N' : 'S'} · ${lon.abs().toStringAsFixed(2)}° ${lon >= 0 ? 'E' : 'W'}';

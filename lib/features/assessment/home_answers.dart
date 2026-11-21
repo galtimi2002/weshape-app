@@ -5,6 +5,8 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../core/units/units.dart';
+
 /// Who the assessment is for (question 1). Only [home] is open for now.
 enum Audience { home, farm, business, community, village, site }
 
@@ -35,10 +37,26 @@ enum WindowKind { single, doubleOld, doubleNew, triple, mix, unknown }
 enum Source { mains, pipedGas, district, gasBottles, wood, generator, nothing }
 
 
-enum GasUnit { m3, kwh }
+/// Unit of the gas bill (backend `GasBill.Unit`): cubic metres, kWh, MJ (Hungarian bills), or the US
+/// therm and CCF (a hundred cubic feet).
+enum GasUnit { m3, kwh, mj, therm, ccf }
 
-/// Unit of a gas bottle's size (backend `GasBottle.Unit`): litres of the bottle, kg of gas, US gallons.
-enum BottleUnit { litre, kg, gallon }
+/// Unit of a gas bottle's size (backend `GasBottle.Unit`): litres of the bottle, kg of gas, US gallons,
+/// pounds of gas (US tanks: 20 lb).
+enum BottleUnit { litre, kg, gallon, lb }
+
+/// What a bottle's litres mean: the size of the bottle as written on it (filled only to about 80%), or
+/// the liquid gas put in (paid by the litre where bottles are refilled). Backend `GasBottle.Unit`
+/// LITRE and LITRE_LIQUID.
+enum BottleLitres { bottle, gas }
+
+/// How firewood is measured (backend `Firewood.Unit`): stacked, loose or solid cubic metres, 100 kg
+/// (mázsa, quintal), tonnes, or US cords.
+enum WoodUnit { stacked, loose, solid, quintal, tonne, cord }
+
+/// How pellets are counted (backend `Pellets.Unit`): bags (of [HomeAnswers.pelletBagKg]), kg, tonnes,
+/// or US short tons (907 kg).
+enum PelletUnit { bag, kg, tonne, shortTon }
 
 /// Where there is free space (question 8, pick any; [nowhere] stands alone).
 enum Space { roof, garden, land, balcony, notSure, nowhere }
@@ -64,8 +82,6 @@ enum AnimalKind { cattle, pigs, poultry, horses, sheepGoats }
 enum CropKind { maize, wheatBarley, sunflower, rapeseed, vineyardOrchard }
 
 enum MassUnit { kg, lb }
-
-enum LandUnit { hectare, acre }
 
 /// How often the power goes out (backend `Battery.Cuts`).
 enum PowerCuts { never, hardlyEver, monthly, mostDays }
@@ -273,17 +289,27 @@ class HomeAnswers extends ChangeNotifier {
   CutLength? cutLength;
   bool? independent;
 
-  double? firewoodM3;
+  /// Firewood burnt in a heating season, in [firewoodUnit].
+  double? firewoodAmount;
+  WoodUnit? firewoodUnit;
   WoodKind? firewoodKind;
 
-  /// Price of 1 m³ of firewood, in [currency].
+  /// Price of one [firewoodUnit] of firewood, in [currency].
   double? firewoodPrice;
-  double? pelletsTonnes;
+  /// Pellets burnt in a heating season, in [pelletsUnit].
+  double? pelletsAmount;
+  PelletUnit? pelletsUnit;
+
+  /// The weight of one bag, kg (15 kg in Europe, 40 lb in the US unless typed otherwise).
+  double? pelletBagKg;
   double? gasBottlesPerMonth;
 
   /// One bottle's size in [bottleUnit]: as written on it (26 L, 11 kg).
   double? bottleSize;
   BottleUnit? bottleUnit;
+
+  /// Only with litres: whether they are the bottle's size or the gas put in.
+  BottleLitres? bottleLitres;
   double? districtPerMonth;
 
 
@@ -304,7 +330,7 @@ class HomeAnswers extends ChangeNotifier {
 
   /// Area of each crop, in [cropUnit].
   Map<CropKind, double?> cropArea = {};
-  LandUnit? cropUnit;
+  AreaUnit? cropUnit;
   RiverAccess? river;
   WindExposure? wind;
 
@@ -870,13 +896,17 @@ class HomeAnswers extends ChangeNotifier {
         'cuts': cuts?.name,
         'cutLength': cutLength?.name,
         'independent': independent,
-        'firewoodM3': firewoodM3,
+        'firewoodAmount': firewoodAmount,
+        'firewoodUnit': firewoodUnit?.name,
         'firewoodKind': firewoodKind?.name,
         'firewoodPrice': firewoodPrice,
-        'pelletsTonnes': pelletsTonnes,
+        'pelletsAmount': pelletsAmount,
+        'pelletsUnit': pelletsUnit?.name,
+        'pelletBagKg': pelletBagKg,
         'gasBottlesPerMonth': gasBottlesPerMonth,
         'bottleSize': bottleSize,
         'bottleUnit': bottleUnit?.name,
+        'bottleLitres': bottleLitres?.name,
         'districtPerMonth': districtPerMonth,
         'spaces': [for (final s in spaces) s.name],
         'sizes': {for (final e in sizes.entries) e.key.name: e.value.toJson()},
@@ -948,13 +978,19 @@ class HomeAnswers extends ChangeNotifier {
     cuts = _enum(PowerCuts.values, j['cuts']);
     cutLength = _enum(CutLength.values, j['cutLength']);
     independent = j['independent'] as bool?;
-    firewoodM3 = (j['firewoodM3'] as num?)?.toDouble();
+    // Saved before the unit could be picked: stacked m³.
+    firewoodAmount = (j['firewoodAmount'] as num?)?.toDouble() ?? (j['firewoodM3'] as num?)?.toDouble();
+    firewoodUnit = _enum(WoodUnit.values, j['firewoodUnit']) ?? (j['firewoodM3'] == null ? null : WoodUnit.stacked);
     firewoodKind = _enum(WoodKind.values, j['firewoodKind']);
     firewoodPrice = (j['firewoodPrice'] as num?)?.toDouble();
-    pelletsTonnes = (j['pelletsTonnes'] as num?)?.toDouble();
+    // Saved before the unit could be picked: tonnes.
+    pelletsAmount = (j['pelletsAmount'] as num?)?.toDouble() ?? (j['pelletsTonnes'] as num?)?.toDouble();
+    pelletsUnit = _enum(PelletUnit.values, j['pelletsUnit']) ?? (j['pelletsTonnes'] == null ? null : PelletUnit.tonne);
+    pelletBagKg = (j['pelletBagKg'] as num?)?.toDouble();
     gasBottlesPerMonth = (j['gasBottlesPerMonth'] as num?)?.toDouble();
     bottleSize = (j['bottleSize'] as num?)?.toDouble();
     bottleUnit = _enum(BottleUnit.values, j['bottleUnit']);
+    bottleLitres = _enum(BottleLitres.values, j['bottleLitres']);
     districtPerMonth = (j['districtPerMonth'] as num?)?.toDouble();
     spaces = _enumSet(Space.values, j['spaces']);
     sizes = {
@@ -980,7 +1016,7 @@ class HomeAnswers extends ChangeNotifier {
         for (final e in (j['cropArea'] as Map).entries)
           if (_enum(CropKind.values, e.key) case final CropKind k) k: (e.value as num?)?.toDouble(),
     };
-    cropUnit = _enum(LandUnit.values, j['cropUnit']);
+    cropUnit = _enum(AreaUnit.values, j['cropUnit']);
     river = _enum(RiverAccess.values, j['river']);
     wind = _enum(WindExposure.values, j['wind']);
     excludeSomewhere = j['excludeSomewhere'] as bool?;
