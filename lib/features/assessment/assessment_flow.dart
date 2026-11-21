@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/i18n/app_localizations.dart';
 import '../../core/i18n/app_strings.dart';
+import '../../core/i18n/local_calendars.dart';
 import '../../core/settings/settings_controller.dart';
 import '../../core/theme/weshape_palette.dart';
 import '../../core/theme/weshape_theme.dart';
@@ -1559,7 +1560,10 @@ class _MonthRows extends StatelessWidget {
     final p = context.palette;
     final names = _monthNames(t);
     final a = answers;
-    String name(int m) => names.length == 12 ? names[m] : '${m + 1}';
+    // Iran, Ethiopia, Nepal: the local month first, as on the bill, then ours.
+    final country = context.read<SettingsController>().country;
+    final local = localCalendarOf(country) != null;
+    String name(int m) => monthLabel(m, names.length == 12 ? names[m] : '${m + 1}', country);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1575,12 +1579,13 @@ class _MonthRows extends StatelessWidget {
                   SmallDropdown<int>(
                     value: a.months[i],
                     values: List.generate(12, (m) => m),
+                    width: local ? 230 : 150,
                     label: name,
                     onChanged: (m) => a.update((x) => x.months[i] = m),
                   )
                 else
                   SizedBox(
-                    width: 150,
+                    width: local ? 230 : 150,
                     child: Text(name(a.months[i]), style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w600, color: p.text)),
                   ),
                 ...fields(i),
@@ -1673,8 +1678,13 @@ class _ElectricityStep extends StatelessWidget {
     final p = context.palette;
     final a = answers;
     const unit = 'kWh';
-    final values = a.useAverage ? [a.electricityAverageKwh] : a.electricityKwh;
-    final high = values.any((v) => (v ?? 0) > _highKwhMonth);
+    // A yearly total is checked as a twelfth; the low-month note is for months only.
+    final values = a.useYear
+        ? <double?>[]
+        : (a.useAverage ? [a.electricityAverageKwh] : a.electricityKwh);
+    final high = a.useYear
+        ? (a.electricityYearKwh ?? 0) / 12 > _highKwhMonth
+        : values.any((v) => (v ?? 0) > _highKwhMonth);
     // Only a warning: an empty house or a holiday home can use that little.
     final lowValue = high ? null : values.firstWhere((v) => v != null && v < _lowKwhMonth, orElse: () => null);
     final low = lowValue != null;
@@ -1683,9 +1693,23 @@ class _ElectricityStep extends StatelessWidget {
       nav: nav,
       title: t.elecUseTitle,
       note: t.noteElec,
-      canContinue: a.useAverage ? a.electricityAverageKwh != null : a.electricityKwh.every((v) => v != null),
+      canContinue: a.useYear
+          ? a.electricityYearKwh != null
+          : (a.useAverage ? a.electricityAverageKwh != null : a.electricityKwh.every((v) => v != null)),
       children: [
-        if (!a.useAverage) ...[
+        if (a.useYear) ...[
+          SubQuestion(t.yearElecQuestion),
+          NumberField(
+            value: a.electricityYearKwh,
+            suffix: unit,
+            width: 190,
+            wholeExpected: true,
+            onChanged: (v) => a.update((x) => x.electricityYearKwh = v),
+          ),
+          if (high) FieldWarning(t.tooHigh),
+          const SizedBox(height: 8),
+          LinkButton(label: t.knowExact, onTap: () => a.update((x) => x.useYear = false)),
+        ] else if (!a.useAverage) ...[
           _MonthRows(
             answers: a,
             fields: (i) => [
@@ -1703,6 +1727,7 @@ class _ElectricityStep extends StatelessWidget {
           if (low) FieldWarning(lowText),
           const SizedBox(height: 8),
           LinkButton(label: t.dontKnowExact, onTap: () => a.update((x) => x.useAverage = true)),
+          LinkButton(label: t.billNotMonthly, onTap: () => a.update((x) => x.useYear = true)),
         ] else ...[
           SubQuestion(t.avgElecQuestion),
           NumberField(
@@ -1719,6 +1744,9 @@ class _ElectricityStep extends StatelessWidget {
           const SizedBox(height: 8),
           LinkButton(label: t.knowExact, onTap: () => a.update((x) => x.useAverage = false)),
         ],
+        const SizedBox(height: 10),
+        // An advance is only an estimate: the yearly settlement has the real figures.
+        Text(t.advanceNote, style: TextStyle(fontSize: 12.5, color: p.muted)),
         const _BillPhotoSoon(),
       ],
     );
@@ -1770,11 +1798,17 @@ class _PaidStep extends StatelessWidget {
     return _StepPage(
       nav: nav,
       title: t.paidTitle,
-      canContinue: a.useAverage ? a.paidAverage != null : a.paid.every((v) => v != null),
+      canContinue: a.useYear
+          ? a.paidYear != null
+          : (a.useAverage ? a.paidAverage != null : a.paid.every((v) => v != null)),
       children: [
         _CurrencyPicker(answers: a, countryCode: countryCode),
         _gap,
-        if (!a.useAverage)
+        // Follows the electricity question: yearly totals there, a yearly payment here.
+        if (a.useYear) ...[
+          SubQuestion(t.yearPaidQuestion),
+          NumberField(value: a.paidYear, suffix: currency, width: 170, money: true, onChanged: (v) => a.update((x) => x.paidYear = v)),
+        ] else if (!a.useAverage)
           _MonthRows(
             answers: a,
             monthsEditable: false,
@@ -1839,8 +1873,10 @@ class _GasStepState extends State<_GasStep> {
       nav: widget.nav,
       title: t.gasTitle,
       note: t.noteGas,
-      // Every month's amount and payment.
-      canContinue: a.gasAmount.every((v) => v != null) && a.gasPaid.every((v) => v != null),
+      // Every month's amount and payment, or the yearly totals.
+      canContinue: a.gasUseYear
+          ? a.gasYearAmount != null && a.gasYearPaid != null
+          : a.gasAmount.every((v) => v != null) && a.gasPaid.every((v) => v != null),
       children: [
         _CurrencyPicker(answers: a, countryCode: widget.countryCode),
         _gap,
@@ -1852,35 +1888,67 @@ class _GasStepState extends State<_GasStep> {
           onSelect: (v) => a.update((x) => x.gasUnit = v),
         ),
         _gap,
-        _MonthRows(
-          answers: a,
-          // The months can be changed here too (shared with the electricity questions).
-          monthsEditable: true,
-          fields: (i) => [
-            NumberField(
-              value: a.gasAmount[i],
-              suffix: _gasUnitLabel(gasUnit),
-              width: 150,
-              wholeExpected: true,
-              hint: t.gasUsed,
-              onChanged: (v) => a.update((x) => x.gasAmount[i] = v),
-            ),
-            NumberField(
-              value: a.gasPaid[i],
-              suffix: currency,
-              money: true,
-              width: 150,
-              hint: t.gasPaid,
-              onChanged: (v) => a.update((x) => x.gasPaid[i] = v),
-            ),
-          ],
-        ),
-        if (looksKwh)
-          FieldWarning(t.unitLooksKwh, action: t.yes, onAction: () => a.update((x) => x.gasUnit = GasUnit.kwh))
-        else if (looksM3)
-          FieldWarning(t.unitLooksM3, action: t.yes, onAction: () => a.update((x) => x.gasUnit = GasUnit.m3))
-        else if (high)
-          FieldWarning(t.tooHigh),
+        if (a.gasUseYear) ...[
+          SubQuestion(t.yearGasQuestion),
+          Wrap(
+            spacing: 10,
+            runSpacing: 8,
+            children: [
+              NumberField(
+                value: a.gasYearAmount,
+                suffix: _gasUnitLabel(gasUnit),
+                width: 170,
+                wholeExpected: true,
+                hint: t.gasUsed,
+                onChanged: (v) => a.update((x) => x.gasYearAmount = v),
+              ),
+              NumberField(
+                value: a.gasYearPaid,
+                suffix: currency,
+                money: true,
+                width: 170,
+                hint: t.gasPaid,
+                onChanged: (v) => a.update((x) => x.gasYearPaid = v),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LinkButton(label: t.knowExact, onTap: () => a.update((x) => x.gasUseYear = false)),
+        ] else ...[
+          _MonthRows(
+            answers: a,
+            // The months can be changed here too (shared with the electricity questions).
+            monthsEditable: true,
+            fields: (i) => [
+              NumberField(
+                value: a.gasAmount[i],
+                suffix: _gasUnitLabel(gasUnit),
+                width: 150,
+                wholeExpected: true,
+                hint: t.gasUsed,
+                onChanged: (v) => a.update((x) => x.gasAmount[i] = v),
+              ),
+              NumberField(
+                value: a.gasPaid[i],
+                suffix: currency,
+                money: true,
+                width: 150,
+                hint: t.gasPaid,
+                onChanged: (v) => a.update((x) => x.gasPaid[i] = v),
+              ),
+            ],
+          ),
+          if (looksKwh)
+            FieldWarning(t.unitLooksKwh, action: t.yes, onAction: () => a.update((x) => x.gasUnit = GasUnit.kwh))
+          else if (looksM3)
+            FieldWarning(t.unitLooksM3, action: t.yes, onAction: () => a.update((x) => x.gasUnit = GasUnit.m3))
+          else if (high)
+            FieldWarning(t.tooHigh),
+          const SizedBox(height: 8),
+          LinkButton(label: t.billNotMonthly, onTap: () => a.update((x) => x.gasUseYear = true)),
+        ],
+        const SizedBox(height: 10),
+        Text(t.advanceNote, style: TextStyle(fontSize: 12.5, color: context.palette.muted)),
         const _BillPhotoSoon(),
       ],
     );
@@ -1951,7 +2019,8 @@ class _FuelsStepState extends State<_FuelsStep> {
     final hasWood = wood && (a.firewoodAmount ?? 0) > 0;
     // "Next" only once everything on the page is answered (Timi, 2026-11-21; it used to let people
     // go on after a warning). "I don't know" for the kind of wood counts as an answer.
-    final complete = (!a.sources.contains(Source.district) || a.districtPerMonth != null) &&
+    final complete = (!a.sources.contains(Source.district) ||
+            (a.districtPerMonth != null && (a.districtNotOnBill || a.districtHeatAmount != null))) &&
         (!wood || (a.firewoodAmount != null && (!hasWood || (a.firewoodKind != null && a.firewoodPrice != null)))) &&
         (!pellets || a.pelletsAmount != null) &&
         (!a.sources.contains(Source.gasBottles) ||
@@ -2125,8 +2194,42 @@ class _FuelsStepState extends State<_FuelsStep> {
               style: TextStyle(fontSize: 13, color: context.palette.muted)),
           const SizedBox(height: 22),
         ],
-        if (a.sources.contains(Source.district))
+        if (a.sources.contains(Source.district)) ...[
           row(t.fuelDistrict, a.districtPerMonth, currency, (v) => a.update((x) => x.districtPerMonth = v), money: true),
+          // The heat on the bill, in its unit (kWh, MWh, GJ, Gcal), unless the bill does not say.
+          SubQuestion(t.districtHeatQ),
+          if (!a.districtNotOnBill)
+            Wrap(
+              spacing: 12,
+              runSpacing: 10,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                NumberField(
+                  value: a.districtHeatAmount,
+                  width: 140,
+                  onChanged: (v) => a.update((x) => x.districtHeatAmount = v),
+                ),
+                ChoiceChips<DistrictUnit>(
+                  values: DistrictUnit.values,
+                  label: (v) => switch (v) {
+                    DistrictUnit.kwh => 'kWh',
+                    DistrictUnit.mwh => 'MWh',
+                    DistrictUnit.gj => 'GJ',
+                    DistrictUnit.gcal => 'Gcal',
+                  },
+                  selected: a.districtUnit,
+                  onSelect: (v) => a.update((x) => x.districtUnit = v),
+                ),
+              ],
+            ),
+          const SizedBox(height: 8),
+          CheckRow(
+            title: t.districtNotOnBill,
+            checked: a.districtNotOnBill,
+            onTap: () => a.update((x) => x.districtNotOnBill = !x.districtNotOnBill),
+          ),
+          const SizedBox(height: 22),
+        ],
       ],
     );
   }

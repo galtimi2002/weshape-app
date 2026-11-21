@@ -268,6 +268,13 @@ class AppStrings {
     required this.monthNames,
     required this.dontKnowExact,
     required this.knowExact,
+    required this.billNotMonthly,
+    required this.yearElecQuestion,
+    required this.yearPaidQuestion,
+    required this.yearGasQuestion,
+    required this.advanceNote,
+    required this.districtHeatQ,
+    required this.districtNotOnBill,
     required this.avgElecQuestion,
     required this.avgNote,
     required this.tooHigh,
@@ -810,6 +817,15 @@ class AppStrings {
   final String monthNames;
   final String dontKnowExact;
   final String knowExact;
+
+  /// Bills that are not monthly (a yearly total instead), advances, and district heat on the bill.
+  final String billNotMonthly;
+  final String yearElecQuestion;
+  final String yearPaidQuestion;
+  final String yearGasQuestion;
+  final String advanceNote;
+  final String districtHeatQ;
+  final String districtNotOnBill;
   final String avgElecQuestion;
   final String avgNote;
   final String tooHigh;

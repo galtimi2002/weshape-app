@@ -187,7 +187,8 @@ class _ResourceMapState extends State<ResourceMap> {
 
   bool? _dark;
   String? _language;
-  bool _interactive = true;
+  /// What the map was last told; null until then, so the first sync always tells it.
+  bool? _interactive;
 
   String? _toast;
   Timer? _toastTimer;

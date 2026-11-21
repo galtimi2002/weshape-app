@@ -60,6 +60,10 @@ enum WoodUnit { stacked, loose, solid, quintal, tonne, cord }
 /// or US short tons (907 kg).
 enum PelletUnit { bag, kg, tonne, shortTon }
 
+/// The unit of the heat on a district heating bill (backend `DistrictHeat.Unit`): kWh, MWh, GJ (Hungary),
+/// Gcal (Romania).
+enum DistrictUnit { kwh, mwh, gj, gcal }
+
 /// Where there is free space (question 8, pick any; [nowhere] stands alone).
 enum Space { roof, garden, land, balcony, notSure, nowhere }
 
@@ -282,6 +286,12 @@ class HomeAnswers extends ChangeNotifier {
   /// Month indexes 0–11 of the three months asked about.
   List<int> months = [0, 1, 2];
   bool useAverage = false;
+
+  /// The bill is not monthly (two months, a year): the yearly totals are given instead
+  /// (decided with Timi, 2026-11-21). For electricity and its payments.
+  bool useYear = false;
+  double? electricityYearKwh;
+  double? paidYear;
   List<double?> electricityKwh = [null, null, null];
   double? electricityAverageKwh;
   List<double?> paid = [null, null, null];
@@ -293,6 +303,11 @@ class HomeAnswers extends ChangeNotifier {
   GasUnit gasUnit = GasUnit.m3;
   List<double?> gasAmount = [null, null, null];
   List<double?> gasPaid = [null, null, null];
+
+  /// Gas: the yearly totals instead of three months, in [gasUnit] and [currency].
+  bool gasUseYear = false;
+  double? gasYearAmount;
+  double? gasYearPaid;
 
   /// Power cuts, their usual length, and whether the person wants to be fully off the grid; asked
   /// only on the grid (docs/decisions/2026-11-14-power-cuts-back.md in the backend).
@@ -322,6 +337,12 @@ class HomeAnswers extends ChangeNotifier {
   /// Only with litres: whether they are the bottle's size or the gas put in.
   BottleLitres? bottleLitres;
   double? districtPerMonth;
+
+  /// The heat on a month's district heating bill, in [districtUnit]; none when the bill does not say
+  /// (paid by m² or a flat fee).
+  double? districtHeatAmount;
+  DistrictUnit districtUnit = DistrictUnit.kwh;
+  bool districtNotOnBill = false;
 
 
   Set<Space> spaces = {};
@@ -905,6 +926,12 @@ class HomeAnswers extends ChangeNotifier {
         'sources': [for (final s in sources) s.name],
         'months': months,
         'useAverage': useAverage,
+        'useYear': useYear,
+        'electricityYearKwh': electricityYearKwh,
+        'paidYear': paidYear,
+        'gasUseYear': gasUseYear,
+        'gasYearAmount': gasYearAmount,
+        'gasYearPaid': gasYearPaid,
         'electricityKwh': electricityKwh,
         'electricityAverageKwh': electricityAverageKwh,
         'paid': paid,
@@ -928,6 +955,9 @@ class HomeAnswers extends ChangeNotifier {
         'bottleUnit': bottleUnit?.name,
         'bottleLitres': bottleLitres?.name,
         'districtPerMonth': districtPerMonth,
+        'districtHeatAmount': districtHeatAmount,
+        'districtUnit': districtUnit.name,
+        'districtNotOnBill': districtNotOnBill,
         'spaces': [for (final s in spaces) s.name],
         'sizes': {for (final e in sizes.entries) e.key.name: e.value.toJson()},
         'facing': facing?.name,
@@ -988,6 +1018,12 @@ class HomeAnswers extends ChangeNotifier {
     sources = _enumSet(Source.values, j['sources']);
     if (j['months'] is List && (j['months'] as List).length == 3) months = [for (final m in j['months'] as List) (m as num).toInt()];
     useAverage = j['useAverage'] as bool? ?? useAverage;
+    useYear = j['useYear'] as bool? ?? false;
+    electricityYearKwh = (j['electricityYearKwh'] as num?)?.toDouble();
+    paidYear = (j['paidYear'] as num?)?.toDouble();
+    gasUseYear = j['gasUseYear'] as bool? ?? false;
+    gasYearAmount = (j['gasYearAmount'] as num?)?.toDouble();
+    gasYearPaid = (j['gasYearPaid'] as num?)?.toDouble();
     electricityKwh = _doubles(j['electricityKwh'], 3);
     electricityAverageKwh = (j['electricityAverageKwh'] as num?)?.toDouble();
     paid = _doubles(j['paid'], 3);
@@ -1015,6 +1051,9 @@ class HomeAnswers extends ChangeNotifier {
     bottleUnit = _enum(BottleUnit.values, j['bottleUnit']);
     bottleLitres = _enum(BottleLitres.values, j['bottleLitres']);
     districtPerMonth = (j['districtPerMonth'] as num?)?.toDouble();
+    districtHeatAmount = (j['districtHeatAmount'] as num?)?.toDouble();
+    districtUnit = _enum(DistrictUnit.values, j['districtUnit']) ?? DistrictUnit.kwh;
+    districtNotOnBill = j['districtNotOnBill'] as bool? ?? false;
     spaces = _enumSet(Space.values, j['spaces']);
     sizes = {
       if (j['sizes'] is Map)

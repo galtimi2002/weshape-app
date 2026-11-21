@@ -216,4 +216,30 @@ void main() {
     expect(a.roofInPlay, isTrue);
     a.dispose();
   });
+
+  test('yearly totals, and district heat with its unit, are saved and come back', () async {
+    final a = HomeAnswers()
+      ..useYear = true
+      ..electricityYearKwh = 3200
+      ..paidYear = 2400
+      ..gasUseYear = true
+      ..gasYearAmount = 1100
+      ..gasYearPaid = 3000
+      ..districtHeatAmount = 1.2
+      ..districtUnit = DistrictUnit.gcal;
+    SharedPreferences.setMockInitialValues({'assessment.home.v2': jsonEncode(a.toJson())});
+    final b = HomeAnswers();
+    await b.restore();
+    expect(b.useYear, isTrue);
+    expect(b.electricityYearKwh, 3200);
+    expect(b.paidYear, 2400);
+    expect(b.gasUseYear, isTrue);
+    expect(b.gasYearAmount, 1100);
+    expect(b.gasYearPaid, 3000);
+    expect(b.districtHeatAmount, 1.2);
+    expect(b.districtUnit, DistrictUnit.gcal);
+    expect(b.districtNotOnBill, isFalse);
+    a.dispose();
+    b.dispose();
+  });
 }
