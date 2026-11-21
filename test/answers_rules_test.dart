@@ -120,6 +120,34 @@ void main() {
     a.dispose();
   });
 
+  test('bottles saved as one number a month come back as the same winter and summer month', () async {
+    SharedPreferences.setMockInitialValues({
+      'assessment.home.v2': jsonEncode({'gasBottlesPerMonth': 2, 'bottleSize': 11}),
+    });
+    final a = HomeAnswers();
+    await a.restore();
+    expect(a.gasBottlesWinter, 2);
+    expect(a.gasBottlesSummer, 2);
+    a.dispose();
+  });
+
+  test('the prices of pellets and bottles, winter and summer bottles and the district season are saved', () {
+    final a = HomeAnswers()
+      ..pelletsPrice = 25
+      ..gasBottlesWinter = 3
+      ..gasBottlesSummer = 1
+      ..bottlePrice = 120
+      ..districtWholeYear = false;
+    final json = a.toJson();
+    expect(json['pelletsPrice'], 25);
+    expect(json['gasBottlesWinter'], 3);
+    expect(json['gasBottlesSummer'], 1);
+    expect(json['bottlePrice'], 120);
+    expect(json['districtWholeYear'], false);
+    expect(json.containsKey('gasBottlesPerMonth'), isFalse);
+    a.dispose();
+  });
+
   test('firewood saved before units could be picked comes back as stacked m³', () async {
     SharedPreferences.setMockInitialValues({
       'assessment.home.v2': jsonEncode({'firewoodM3': 8, 'firewoodPrice': 300}),

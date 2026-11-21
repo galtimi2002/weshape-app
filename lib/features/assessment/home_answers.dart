@@ -324,7 +324,15 @@ class HomeAnswers extends ChangeNotifier {
 
   /// The weight of one bag, kg (15 kg in Europe, 40 lb in the US unless typed otherwise).
   double? pelletBagKg;
-  double? gasBottlesPerMonth;
+
+  /// The price of one of [pelletsUnit] (a bag, a kg, a tonne), like the firewood price.
+  double? pelletsPrice;
+
+  /// Bottled gas in a winter month and in a summer month (decided with Timi, 2026-11-21: the months
+  /// between follow the place's heating need), and the price of one full bottle.
+  double? gasBottlesWinter;
+  double? gasBottlesSummer;
+  double? bottlePrice;
 
   /// One bottle's size in [bottleUnit]: as written on it (26 L, 11 kg).
   double? bottleSize;
@@ -333,6 +341,9 @@ class HomeAnswers extends ChangeNotifier {
   /// Only with litres: whether they are the bottle's size or the gas put in.
   BottleLitres? bottleLitres;
   double? districtPerMonth;
+
+  /// District heating paid every month of the year (true) or only in the heating season (false).
+  bool? districtWholeYear;
 
   /// The heat on a month's district heating bill, in [districtUnit]; none when the bill does not say
   /// (paid by m² or a flat fee).
@@ -946,11 +957,15 @@ class HomeAnswers extends ChangeNotifier {
         'pelletsAmount': pelletsAmount,
         'pelletsUnit': pelletsUnit?.name,
         'pelletBagKg': pelletBagKg,
-        'gasBottlesPerMonth': gasBottlesPerMonth,
+        'pelletsPrice': pelletsPrice,
+        'gasBottlesWinter': gasBottlesWinter,
+        'gasBottlesSummer': gasBottlesSummer,
+        'bottlePrice': bottlePrice,
         'bottleSize': bottleSize,
         'bottleUnit': bottleUnit?.name,
         'bottleLitres': bottleLitres?.name,
         'districtPerMonth': districtPerMonth,
+        'districtWholeYear': districtWholeYear,
         'districtHeatAmount': districtHeatAmount,
         'districtUnit': districtUnit.name,
         'districtNotOnBill': districtNotOnBill,
@@ -1042,11 +1057,17 @@ class HomeAnswers extends ChangeNotifier {
     pelletBagKg = (j['pelletBagKg'] as num?)?.toDouble();
     // Saved when pellets were part of "firewood, pellets or charcoal": pellets typed mean pellets used.
     if (sources.contains(Source.wood) && (pelletsAmount ?? 0) > 0) sources = {...sources, Source.pellets};
-    gasBottlesPerMonth = (j['gasBottlesPerMonth'] as num?)?.toDouble();
+    pelletsPrice = (j['pelletsPrice'] as num?)?.toDouble();
+    // Saved when one number was asked for every month: it stands for winter and summer alike.
+    final perMonth = (j['gasBottlesPerMonth'] as num?)?.toDouble();
+    gasBottlesWinter = (j['gasBottlesWinter'] as num?)?.toDouble() ?? perMonth;
+    gasBottlesSummer = (j['gasBottlesSummer'] as num?)?.toDouble() ?? perMonth;
+    bottlePrice = (j['bottlePrice'] as num?)?.toDouble();
     bottleSize = (j['bottleSize'] as num?)?.toDouble();
     bottleUnit = _enum(BottleUnit.values, j['bottleUnit']);
     bottleLitres = _enum(BottleLitres.values, j['bottleLitres']);
     districtPerMonth = (j['districtPerMonth'] as num?)?.toDouble();
+    districtWholeYear = j['districtWholeYear'] as bool?;
     districtHeatAmount = (j['districtHeatAmount'] as num?)?.toDouble();
     districtUnit = _enum(DistrictUnit.values, j['districtUnit']) ?? DistrictUnit.kwh;
     districtNotOnBill = j['districtNotOnBill'] as bool? ?? false;

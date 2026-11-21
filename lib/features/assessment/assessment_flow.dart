@@ -2081,11 +2081,15 @@ class _FuelsStepState extends State<_FuelsStep> {
     // "Next" only once everything on the page is answered (Timi, 2026-11-21; it used to let people
     // go on after a warning). "I don't know" for the kind of wood counts as an answer.
     final complete = (!a.sources.contains(Source.district) ||
-            (a.districtPerMonth != null && (a.districtNotOnBill || a.districtHeatAmount != null))) &&
+            (a.districtPerMonth != null &&
+                a.districtWholeYear != null &&
+                (a.districtNotOnBill || a.districtHeatAmount != null))) &&
         (!wood || (a.firewoodAmount != null && (!hasWood || (a.firewoodKind != null && a.firewoodPrice != null)))) &&
-        (!pellets || a.pelletsAmount != null) &&
+        (!pellets || (a.pelletsAmount != null && ((a.pelletsAmount ?? 0) == 0 || a.pelletsPrice != null))) &&
         (!a.sources.contains(Source.gasBottles) ||
-            (a.gasBottlesPerMonth != null &&
+            (a.gasBottlesWinter != null &&
+                a.gasBottlesSummer != null &&
+                a.bottlePrice != null &&
                 a.bottleSize != null &&
                 (bottleUnit != BottleUnit.litre || a.bottleLitres != null)));
     Widget field(double? value, String? suffix, ValueChanged<double?> onChanged, {bool money = false}) =>
@@ -2204,10 +2208,23 @@ class _FuelsStepState extends State<_FuelsStep> {
               onChanged: (v) => a.update((x) => x.pelletBagKg = v),
             ),
           ],
+          if ((a.pelletsAmount ?? 0) > 0) ...[
+            const SizedBox(height: 22),
+            // The price of one of the unit the amount is in, like the firewood price.
+            SubQuestion(t.pelletPriceQFor(switch (pelletUnit) {
+              PelletUnit.bag => '1 ${t.pelletUnitBagFor(bagLabel)}',
+              PelletUnit.kg => '1 kg',
+              PelletUnit.tonne => '1 t',
+              PelletUnit.shortTon => '1 ton (907 kg)',
+            })),
+            field(a.pelletsPrice, currency, (v) => a.update((x) => x.pelletsPrice = v), money: true),
+          ],
           const SizedBox(height: 22),
         ],
         if (a.sources.contains(Source.gasBottles)) ...[
-          row(t.fuelBottles, a.gasBottlesPerMonth, null, (v) => a.update((x) => x.gasBottlesPerMonth = v)),
+          // A winter and a summer month: the months between follow the place's heating need (backend Baseline).
+          row(t.bottlesWinterQ, a.gasBottlesWinter, null, (v) => a.update((x) => x.gasBottlesWinter = v)),
+          row(t.bottlesSummerQ, a.gasBottlesSummer, null, (v) => a.update((x) => x.gasBottlesSummer = v)),
           // The size in the unit the person picks: litres (as European bottles are labelled), kg, or
           // US gallons (backend GasBottle).
           SubQuestion(t.bottleSizeQ),
@@ -2254,9 +2271,19 @@ class _FuelsStepState extends State<_FuelsStep> {
           Text(bottleUnit == BottleUnit.lb || bottleUnit == BottleUnit.gallon ? t.bottleSizeNoteFor('20 lb', '4.7 gal') : t.bottleSizeNoteFor('11 kg', '26 L'),
               style: TextStyle(fontSize: 13, color: context.palette.muted)),
           const SizedBox(height: 22),
+          row(t.bottlePriceQ, a.bottlePrice, currency, (v) => a.update((x) => x.bottlePrice = v), money: true),
         ],
         if (a.sources.contains(Source.district)) ...[
           row(t.fuelDistrict, a.districtPerMonth, currency, (v) => a.update((x) => x.districtPerMonth = v), money: true),
+          // All year, or only in the heating season (whose length comes from the place's climate).
+          SubQuestion(t.districtSeasonQ),
+          ChoiceChips<bool>(
+            values: const [true, false],
+            label: (v) => v ? t.districtAllYear : t.districtHeatingSeason,
+            selected: a.districtWholeYear,
+            onSelect: (v) => a.update((x) => x.districtWholeYear = v),
+          ),
+          const SizedBox(height: 22),
           // The heat on the bill, in its unit (kWh, MWh, GJ, Gcal), unless the bill does not say.
           SubQuestion(t.districtHeatQ),
           if (!a.districtNotOnBill)

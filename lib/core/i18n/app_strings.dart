@@ -300,7 +300,13 @@ class AppStrings {
     required this.fuelPellets,
     required this.pelletUnitBag,
     required this.pelletBagSizeQ,
-    required this.fuelBottles,
+    required this.pelletPriceQ,
+    required this.bottlesWinterQ,
+    required this.bottlesSummerQ,
+    required this.bottlePriceQ,
+    required this.districtSeasonQ,
+    required this.districtAllYear,
+    required this.districtHeatingSeason,
     required this.fuelDistrict,
     required this.spacesTitle,
     required this.spacesHint,
@@ -862,7 +868,19 @@ class AppStrings {
   /// "bag (15 kg)" and the question about the bag's weight.
   final String pelletUnitBag;
   final String pelletBagSizeQ;
-  final String fuelBottles;
+  /// {amount}: one of the unit the pellets were given in ("bag (15 kg)", "1 kg", "1 t").
+  final String pelletPriceQ;
+  String pelletPriceQFor(String amount) => pelletPriceQ.replaceAll('{amount}', amount);
+
+  /// Bottled gas in a winter and a summer month (decided with Timi, 2026-11-21).
+  final String bottlesWinterQ;
+  final String bottlesSummerQ;
+  final String bottlePriceQ;
+
+  /// District heating paid all year or only in the heating season.
+  final String districtSeasonQ;
+  final String districtAllYear;
+  final String districtHeatingSeason;
   final String fuelDistrict;
   final String spacesTitle;
   final String spacesHint;
