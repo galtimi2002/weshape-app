@@ -12,6 +12,7 @@ import '../models/solar.dart';
 import '../models/user_profile.dart';
 import '../models/wind.dart';
 import 'api_exception.dart';
+import 'submitted_assessment.dart';
 
 /// Thin REST client for weshape-backend.
 ///
@@ -102,6 +103,10 @@ class ApiClient {
 
   /// After a failed email sign-in: whether this address signs in with Google only. Any failure
   /// (no network, limit reached) counts as "no", so the usual message shows.
+  /// Sends a finished assessment; the backend checks it, keeps it and gives it its report number.
+  Future<SubmittedAssessment> submitAssessment(Map<String, dynamic> body) async => SubmittedAssessment.fromJson(
+      await _send('POST', '/api/v1/assessments', body: body) as Map<String, dynamic>);
+
   Future<bool> signInHint(String email) async {
     try {
       final r = await _send('POST', '/api/v1/auth/sign-in-hint', body: {'email': email.trim()});

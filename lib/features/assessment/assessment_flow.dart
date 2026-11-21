@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../../core/api/api_client.dart';
+import '../../core/api/api_exception.dart';
 import '../../core/i18n/app_localizations.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../core/i18n/local_calendars.dart';
@@ -22,6 +23,7 @@ import 'controls.dart';
 import 'currencies.dart';
 import 'home_answers.dart';
 import 'page_frame.dart';
+import 'submission.dart';
 
 /// The assessment tab: the questions of the home path, one screen at a time. Which screens
 /// appear depends on the answers (no gas questions without piped gas, and so on), so the
@@ -117,6 +119,60 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
       facts.loading = false;
       if (mounted && identical(facts, _facts)) setState(() {});
     });
+  }
+
+  /// The last screen's button: after "check your answers?", the assessment is sent and kept with its
+  /// report number (decided with Timi, 2026-11-21: sent at the end with one button, every one kept).
+  /// The answers stay in the app either way.
+  Future<void> _finish() async {
+    if (!await _confirmResult(context) || !mounted) return;
+    final t = context.t;
+    final api = context.read<ApiClient>();
+    final settings = context.read<SettingsController>();
+    final body = submissionBody(
+      answers: _a,
+      language: settings.languageCode,
+      country: widget.countryCode ?? settings.country ?? '',
+      units: context.units.system,
+      now: DateTime.now(),
+    );
+    final navigator = Navigator.of(context, rootNavigator: true);
+    unawaited(showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(
+            children: [
+              const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5)),
+              const SizedBox(width: 16),
+              Expanded(child: Text(t.submitSaving)),
+            ],
+          ),
+        ),
+      ),
+    ));
+    try {
+      final saved = await api.submitAssessment(body);
+      navigator.pop();
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(t.submitDoneTitle),
+          content: Text(t.submitDoneBodyFor(saved.reportNumber)),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.close))],
+        ),
+      );
+    } catch (e) {
+      // Not kept: the network, the server, or (when the check refuses it) a fault in the app.
+      navigator.pop();
+      if (!mounted) return;
+      final error = e is ApiException ? e : const ApiException(statusCode: 500);
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(error.message(t))));
+    }
   }
 
   /// Next screen; the last question is announced first ("Just one more question").
@@ -221,6 +277,7 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
           onReset: _confirmReset,
           // On every step (Timi, 2026-11-21): the answers are kept, and coming back goes on where it stopped.
           onToMap: widget.onBackToMap,
+          onFinish: _finish,
         );
         final a = _a;
         final Widget page = _oneMore ? const _OneMoreStep() : switch (id) {
@@ -284,6 +341,7 @@ class _Nav {
     required this.onFirst,
     required this.onReset,
     this.onToMap,
+    this.onFinish,
   });
 
   final int index;
@@ -301,6 +359,9 @@ class _Nav {
 
   /// Back to the map on the home page, on every question; the answers stay.
   final VoidCallback? onToMap;
+
+  /// On the last screen: asks to check, then sends the assessment to be kept.
+  final VoidCallback? onFinish;
 
   bool get last => onNext == null;
 }
@@ -484,7 +545,7 @@ class _StepButtons extends StatelessWidget {
             width: nav.last ? 230 : 200,
             child: PrimaryButton(
               label: nav.last ? t.seeResult : t.assessContinue,
-              onPressed: !canContinue ? null : (nav.last ? () => _confirmResult(context) : nav.onNext),
+              onPressed: !canContinue ? null : (nav.last ? nav.onFinish : nav.onNext),
             ),
           ),
         ),
@@ -538,7 +599,8 @@ class _StepButtons extends StatelessWidget {
 
 /// "Is everything filled in correctly?" before the result. The result itself is the
 /// next piece of work, so for now a confirmed answer only says it is coming.
-Future<void> _confirmResult(BuildContext context) async {
+/// "Check your answers?": true to go ahead.
+Future<bool> _confirmResult(BuildContext context) async {
   final t = context.t;
   final ok = await showDialog<bool>(
     context: context,
@@ -551,9 +613,7 @@ Future<void> _confirmResult(BuildContext context) async {
       ],
     ),
   );
-  if ((ok ?? false) && context.mounted) {
-    ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(t.resultSoon)));
-  }
+  return ok ?? false;
 }
 
 /// "Just one more question", for a moment before the last question.

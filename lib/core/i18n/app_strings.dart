@@ -162,6 +162,9 @@ class AppStrings {
     required this.backToMap,
     required this.seeResult,
     required this.resultSoon,
+    required this.submitSaving,
+    required this.submitDoneTitle,
+    required this.submitDoneBody,
     required this.placeTitle,
     required this.placeHint,
     required this.placePickOnMap,
@@ -708,6 +711,14 @@ class AppStrings {
   final String backToMap;
   final String seeResult;
   final String resultSoon;
+
+  /// While the finished assessment is sent.
+  final String submitSaving;
+  final String submitDoneTitle;
+
+  /// After it is kept: {number} is the report number (WSE-2026-11-00417).
+  final String submitDoneBody;
+  String submitDoneBodyFor(String number) => submitDoneBody.replaceAll('{number}', number);
   final String placeTitle;
   final String placeHint;
   final String placePickOnMap;
