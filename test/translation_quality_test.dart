@@ -246,7 +246,7 @@ void main() {
         'placeHint': 'Geben Sie die Adresse ein oder wählen Sie einen Punkt auf der Karte.',
         'cutsTitle': 'Wie oft fällt bei Ihnen der Strom aus?',
         'srcHint': 'Wählen Sie nur, was Sie ersetzen möchten. Was bleiben kann, wie es ist, lassen Sie weg.',
-        'stepOfTotal': 'Schritt {n} von {total}',
+        'stepNumber': 'Schritt {n}',
       },
       'hu': {
         'signIn': 'Bejelentkezés',
@@ -256,7 +256,7 @@ void main() {
         'switchToDark': 'Váltás sötét módra',
         'cutsTitle': 'Milyen gyakran megy el az áram?',
         'srcHint': 'Csak azt válaszd ki, amit le szeretnél váltani. Ami maradhat úgy, ahogy van, azt hagyd ki.',
-        'stepOfTotal': '{n}. lépés / {total}',
+        'stepNumber': '{n}. lépés',
       },
     };
     reviewed.forEach((c, texts) {

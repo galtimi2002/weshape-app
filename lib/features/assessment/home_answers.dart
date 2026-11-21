@@ -129,50 +129,46 @@ const roofZones = {
   RoofShape.flat: [Zone.roofWhole],
 };
 
-/// Why a part is kept free (backend `KeptFree.Reason`): with something there, only that thing is left
-/// out; otherwise nothing goes on the part.
-enum KeepReason { somethingThere, notWanted, hardToReach, rules }
+/// Why a part is kept free; more than one can be true (a chimney and a window).
+enum KeepWhy { chimney, window, notWanted, hardToReach, rules }
 
-/// What is on a part kept free.
-enum KeepThing { chimney, window, other }
-
-/// Why one part is kept free, and what is there with its rough size (m).
+/// Why one part is kept free, and with a window its rough size (m).
 class ZoneKeep {
-  KeepReason? reason;
-  Set<KeepThing> things = {};
+  Set<KeepWhy> whys = {};
   double? windowW;
   double? windowH;
-  double? otherW;
-  double? otherH;
 
-  /// Answered: a reason, and with "something there" what it is, with the sizes asked.
+  /// Answered: at least one reason, and with a window its size.
   bool get complete {
-    if (reason == null) return false;
-    if (reason != KeepReason.somethingThere) return true;
-    if (things.isEmpty) return false;
-    if (things.contains(KeepThing.window) && (windowW == null || windowH == null)) return false;
-    if (things.contains(KeepThing.other) && (otherW == null || otherH == null)) return false;
+    if (whys.isEmpty) return false;
+    if (whys.contains(KeepWhy.window) && (windowW == null || windowH == null)) return false;
     return true;
   }
 
   Map<String, Object?> toJson() => {
-        'reason': reason?.name,
-        'things': [for (final t in things) t.name],
+        'whys': [for (final w in whys) w.name],
         'windowW': windowW,
         'windowH': windowH,
-        'otherW': otherW,
-        'otherH': otherH,
       };
 
   static ZoneKeep fromJson(Object? json) {
     final k = ZoneKeep();
     if (json is Map) {
-      k.reason = _enum(KeepReason.values, json['reason']);
-      k.things = _enumSet(KeepThing.values, json['things']);
+      k.whys = _enumSet(KeepWhy.values, json['whys']);
+      // Saved before the reasons were one list: a reason, and with "something there" its things.
+      if (!json.containsKey('whys')) {
+        final reason = json['reason'];
+        final things = json['things'];
+        if (reason is String && KeepWhy.values.any((w) => w.name == reason)) {
+          k.whys.add(KeepWhy.values.byName(reason));
+        }
+        if (reason == 'somethingThere' && things is List) {
+          if (things.contains('chimney')) k.whys.add(KeepWhy.chimney);
+          if (things.contains('window')) k.whys.add(KeepWhy.window);
+        }
+      }
       k.windowW = (json['windowW'] as num?)?.toDouble();
       k.windowH = (json['windowH'] as num?)?.toDouble();
-      k.otherW = (json['otherW'] as num?)?.toDouble();
-      k.otherH = (json['otherH'] as num?)?.toDouble();
     }
     return k;
   }

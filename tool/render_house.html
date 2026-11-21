@@ -1,0 +1,225 @@
+<!doctype html><html><head><meta charset="utf-8">
+<!--
+  Renders the house pictures in assets/house/ (the 3D house of the "keep free" question).
+  A small ray-marcher in a WebGL shader: rounded walls and roof, soft light, the shadow on
+  the ground as transparency. The projection is the one of _Projection in
+  lib/features/assessment/assessment_flow.dart (size.width / 36, centre at 54 % height),
+  so the marks drawn over the pictures line up; change both together.
+  To render: open this file with ?w=1760, call render(shape, quarter) in the console
+  (shape 0 gable, 1 hip, 2 flat; quarter 0..3); it returns a PNG data URL, which is then
+  scaled down to 880 px wide and saved as assets/house/<shape>_<quarter>.png.
+-->
+</head><body style="margin:0;background:#cfe9f5">
+<canvas id="c"></canvas>
+<script id="fs" type="x-shader/x-fragment">#version 300 es
+precision highp float;
+uniform vec2 res;      // canvas size in px
+uniform float quarter; // 0..3
+uniform int shape;     // 0 gable, 1 hip, 2 flat
+out vec4 outColor;
+
+const float O = 0.45;              // eave overhang
+const float OZ = 3.0 - O*0.75;     // eave height
+const float WALL = 3.0;
+const float RIDGE = 6.0;
+const float T = 0.22;              // roof thickness
+
+float sdBox(vec3 p, vec3 b){ vec3 q=abs(p)-b; return length(max(q,0.))+min(max(q.x,max(q.y,q.z)),0.); }
+float sdRBox(vec3 p, vec3 b, float r){ return sdBox(p,b-r)-r; }
+
+// signed distance of the roof's outer solid (planes only), and which plane is closest to the surface
+float roofPlanes(vec3 p, out float side){
+  float h=RIDGE-OZ, w=4.0+O, n=sqrt(h*h+w*w);
+  float dF=((p.y-4.)*h+(p.z-RIDGE)*w)/n;
+  float dB=((4.-p.y)*h+(p.z-RIDGE)*w)/n;
+  float d=max(dF,dB); side=0.;
+  if(shape==0){
+    d=max(d,abs(p.x-5.)-(5.+O));
+  } else {
+    float wl=3.5+O, nl=sqrt(h*h+wl*wl);
+    float dL=((3.5-p.x)*h+(p.z-RIDGE)*wl)/nl;
+    float dR=((p.x-6.5)*h+(p.z-RIDGE)*wl)/nl;
+    float s=max(dL,dR); if(s>d){ side=1.; } d=max(d,s);
+  }
+  d=max(d,OZ-p.z);
+  return d;
+}
+
+// material: 1 wall, 2 roof, 3 glass, 4 door, 5 frame
+float map(vec3 p, out float mat){
+  float roofTop = shape==2 ? 3.3 : WALL;
+  // walls, rounded
+  float walls=sdRBox(p-vec3(5.,4.,(roofTop-0.5)*0.5), vec3(5.,4.,(roofTop+0.5)*0.5), 0.28);
+  // the gable ends under the roof
+  if(shape==0){
+    float s; float g=roofPlanes(p+vec3(0.,0.,0.35),s); // a little inside the roof
+    g=max(g,abs(p.x-5.)-5.); g=max(g,abs(p.y-4.)-3.85); g=max(g,2.95-p.z);
+    walls=min(walls,g-0.0);
+  }
+  mat=1.;
+  // openings: recesses 12 cm deep
+  float rec=1e3; float recMat=3.;
+  // front (y=8): windows and the door
+  vec3 q=p-vec3(0.,8.,0.);
+  float w1=sdBox(q-vec3(2.1,0.,1.7),vec3(0.9,0.08,0.6));
+  float w2=sdBox(q-vec3(7.9,0.,1.7),vec3(0.9,0.08,0.6));
+  float dr=sdBox(q-vec3(5.,0.,1.1),vec3(0.6,0.08,1.1));
+  // back (y=0)
+  vec3 r=p;
+  float w3=sdBox(r-vec3(2.4,0.,1.7),vec3(0.9,0.08,0.6));
+  float w4=sdBox(r-vec3(7.6,0.,1.7),vec3(0.9,0.08,0.6));
+  // sides (x=0, x=10)
+  float w5=sdBox(p-vec3(0.,4.,1.7),vec3(0.08,1.,0.6));
+  float w6=sdBox(p-vec3(10.,4.,1.7),vec3(0.08,1.,0.6));
+  // gable windows
+  float w7=1e3, w8=1e3;
+  if(shape==0){ w7=sdBox(p-vec3(0.,4.,4.15),vec3(0.08,0.5,0.45)); w8=sdBox(p-vec3(10.,4.,4.15),vec3(0.08,0.5,0.45)); }
+  float win=min(min(min(w1,w2),min(w3,w4)),min(min(w5,w6),min(w7,w8)));
+  float d=max(walls,-min(win,dr));
+  if(min(win,dr)<0.02 && walls<0.02 && d>-0.02){ /* inside a recess: decide below */ }
+  // panes and the door sit at the back of the recess
+  float pane=min(win+0.0,1e3);
+  // the roof
+  float rd;
+  if(shape==2){
+    float slab=sdRBox(p-vec3(5.,4.,3.2),vec3(5.12,4.12,0.1),0.08);
+    float rimA=sdRBox(p-vec3(5.,0.,3.36),vec3(5.12,0.12,0.14),0.08);
+    float rimB=sdRBox(p-vec3(5.,8.,3.36),vec3(5.12,0.12,0.14),0.08);
+    float rimC=sdRBox(p-vec3(0.,4.,3.36),vec3(0.12,4.12,0.14),0.08);
+    float rimD=sdRBox(p-vec3(10.,4.,3.36),vec3(0.12,4.12,0.14),0.08);
+    rd=min(slab,min(min(rimA,rimB),min(rimC,rimD)));
+  } else {
+    float s1,s2;
+    float outer=roofPlanes(p,s1)+0.09;
+    float under=roofPlanes(p+vec3(0.,0.,T),s2);
+    rd=max(outer,-under)-0.09;
+  }
+  if(rd<d){ d=rd; mat=2.; }
+  return d;
+}
+
+float mapD(vec3 p){ float m; return map(p,m); }
+
+vec3 normalAt(vec3 p){
+  vec2 e=vec2(0.004,0.);
+  return normalize(vec3(mapD(p+e.xyy)-mapD(p-e.xyy),mapD(p+e.yxy)-mapD(p-e.yxy),mapD(p+e.yyx)-mapD(p-e.yyx)));
+}
+
+float softShadow(vec3 ro, vec3 rd){
+  float res=1., t=0.04;
+  for(int i=0;i<200;i++){
+    float h=mapD(ro+rd*t);
+    res=min(res,5.*h/t);
+    t+=clamp(h,0.01,0.25);
+    if(res<0.001||t>30.) break;
+  }
+  res=clamp(res,0.,1.);
+  return res*res*(3.-2.*res);
+}
+
+float ao(vec3 p, vec3 n){
+  float occ=0., sca=1.;
+  for(int i=1;i<=6;i++){ float h=0.06*float(i)+0.02*float(i*i); occ+=(h-mapD(p+n*h))*sca; sca*=0.72; }
+  return clamp(1.-1.3*occ,0.35,1.);
+}
+
+void main(){
+  vec2 px=vec2(gl_FragCoord.x, res.y-gl_FragCoord.y);
+  float s=res.x/36.;
+  float a=(px.x-res.x*0.5)/(0.866*s);
+  float b=2.*(px.y-res.y*0.54)/s;
+  vec3 pt=vec3((a+b)*0.5,(b-a)*0.5,0.);        // turned coords, on the ground
+  vec3 dirT=-normalize(vec3(1.,1.,1.));
+  float ang=quarter*1.5707963;
+  float c=cos(ang), sn=sin(ang);
+  // turned -> house
+  mat2 inv=mat2(c,-sn,sn,c); // column-major: x = c*tx + sn*ty ; y = -sn*tx + c*ty
+  vec3 ro=pt-dirT*25.;
+  vec3 roH=vec3(inv*ro.xy+vec2(5.,4.),ro.z);
+  vec3 rdH=normalize(vec3(inv*dirT.xy,dirT.z));
+  vec3 lightT=normalize(vec3(-0.25,0.55,0.8));
+  vec3 L=normalize(vec3(inv*lightT.xy,lightT.z));
+
+  float t=0.; float mat=0.; bool hit=false;
+  for(int i=0;i<220;i++){
+    vec3 p=roH+rdH*t;
+    float d=map(p,mat);
+    if(d<0.0015){ hit=true; break; }
+    t+=d*0.9;
+    if(t>60.||p.z<-0.01) break;
+  }
+  // the ground plane: only shadow and occlusion, as alpha
+  float tg=(0.-roH.z)/rdH.z;
+  if(!hit || t>tg){
+    vec3 g=roH+rdH*tg;
+    float sh=softShadow(g+vec3(0.,0.,0.01),L);
+    float occ=ao(g,vec3(0.,0.,1.));
+    float dark=(1.-sh)*0.32+(1.-occ)*0.45;
+    dark=clamp(dark,0.,0.5);
+    outColor=vec4(vec3(0.25,0.30,0.48)*dark, dark); // premultiplied
+    return;
+  }
+  vec3 p=roH+rdH*t;
+  vec3 n=normalAt(p);
+  // which material at the surface
+  vec3 alb;
+  if(mat>1.5){
+    alb=vec3(0.90,0.91,0.95);
+    // standing-seam ribs along the slope
+    float side; roofPlanes(p,side);
+    float u = shape==2 ? -1. : (side>0.5 ? p.y : p.x);
+    if(u>-0.5){ float f=fract(u/0.5); float rib=smoothstep(0.0,0.08,f)*smoothstep(0.22,0.12,f);
+      alb*=1.-0.07*(1.-smoothstep(0.,0.06,abs(f-0.5)-0.4)); alb+=0.05*rib; }
+  } else {
+    alb=vec3(0.94,0.93,0.98);
+    // inside a window or door recess (back face of the recess)?
+    vec3 q=p;
+    bool front=abs(q.y-8.)<0.2, back=abs(q.y)<0.2, left=abs(q.x)<0.2, right=abs(q.x-10.)<0.2;
+    float depthIn = front?8.-q.y: back? q.y : left? q.x : right? 10.-q.x : 0.;
+    if(depthIn>0.04){
+      bool door = front && abs(q.x-5.)<0.62 && q.z<2.25;
+      if(door) alb=vec3(0.80,0.83,0.92);
+      else { alb=mix(vec3(0.70,0.82,0.95),vec3(0.93,0.97,1.0),smoothstep(1.1,2.3,q.z)); }
+      mat=door?4.:3.;
+    }
+  }
+  // No cast shadows on the house itself: soft light only, and a little shade under the eaves.
+  float sh=1.;
+  if(mat<1.5 && shape!=2) sh=mix(1.,0.55,smoothstep(WALL-1.0,WALL,p.z));
+  float occ=ao(p,n);
+  float dif=clamp(dot(n,L),0.,1.);
+  vec3 sky=mix(vec3(0.80,0.83,0.92),vec3(0.95,0.97,1.0),n.z*0.5+0.5);
+  float o2 = mat>2.5 ? mix(occ,1.,0.6) : occ;
+  vec3 col=alb*(sky*0.80*o2 + vec3(1.0,0.98,0.95)*0.38*dif*sh);
+  // a little sky reflection on the glass
+  if(mat>2.5&&mat<3.5){ col+=vec3(0.10,0.12,0.15)*occ; }
+  // a soft fresnel rim
+  float fr=pow(1.-clamp(dot(n,-rdH),0.,1.),3.);
+  col+=vec3(0.03,0.03,0.04)*fr*occ;
+  col=pow(col,vec3(0.85));
+  outColor=vec4(col,1.);
+}
+</script>
+<script>
+const W=+new URLSearchParams(location.search).get('w')||880, H=Math.round(W*0.78);
+const c=document.getElementById('c');c.width=W;c.height=H;
+const gl=c.getContext('webgl2',{premultipliedAlpha:true,preserveDrawingBuffer:true,alpha:true});
+function sh(t,src){const s=gl.createShader(t);gl.shaderSource(s,src);gl.compileShader(s);if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))throw new Error(gl.getShaderInfoLog(s));return s;}
+const pr=gl.createProgram();
+gl.attachShader(pr,sh(gl.VERTEX_SHADER,`#version 300 es
+in vec2 p;void main(){gl_Position=vec4(p,0.,1.);}`));
+gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,document.getElementById('fs').textContent));
+gl.linkProgram(pr);if(!gl.getProgramParameter(pr,gl.LINK_STATUS))throw new Error(gl.getProgramInfoLog(pr));
+gl.useProgram(pr);
+const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+const loc=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+window.render=(shape,quarter)=>{
+  gl.uniform2f(gl.getUniformLocation(pr,'res'),W,H);
+  gl.uniform1f(gl.getUniformLocation(pr,'quarter'),quarter);
+  gl.uniform1i(gl.getUniformLocation(pr,'shape'),shape);
+  gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.TRIANGLE_STRIP,0,4);gl.finish();
+  return c.toDataURL('image/png');
+};
+window.ready=true;
+</script></body></html>

@@ -316,7 +316,8 @@ TextStyle _mono(BuildContext context, double size) {
 
 List<String> _monthNames(AppStrings t) => [for (final m in t.monthNames.split(',')) m.trim()];
 
-/// Progress line on top of every page: "Step 2 of 14" with the bar filling up.
+/// Progress line on top of every page: "Step 2" with the bar filling up. The number of
+/// steps changes with the answers, so no total is written.
 class _Progress extends StatelessWidget {
   const _Progress({required this.nav});
 
@@ -327,7 +328,7 @@ class _Progress extends StatelessWidget {
     final p = context.palette;
     return Row(
       children: [
-        Text(context.t.stepOfTotalFor(nav.index + 1, nav.total), style: _mono(context, 11.5)),
+        Text(context.t.stepNumberFor(nav.index + 1), style: _mono(context, 11.5)),
         const SizedBox(width: 10),
         Expanded(
           child: ClipRRect(
@@ -2945,6 +2946,29 @@ class _ExcludeStepState extends State<_ExcludeStep> {
 /// Why one part is kept free (backend KeptFree). With something there, what it is and roughly how big
 /// (a chimney needs no size), and a note that the rest of the part can still be used; otherwise nothing
 /// goes on the part.
+/// A short red line saying what is still missing before "Next" works.
+class _KeepMissing extends StatelessWidget {
+  const _KeepMissing(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(padding: const EdgeInsets.only(top: 1), child: Icon(Icons.error_outline_rounded, size: 17, color: p.error)),
+          const SizedBox(width: 6),
+          Expanded(child: Text(text, style: TextStyle(fontSize: 13.5, color: p.error))),
+        ],
+      ),
+    );
+  }
+}
+
 class _KeepWhy extends StatelessWidget {
   const _KeepWhy({required this.answers, required this.zone});
 
@@ -2958,59 +2982,57 @@ class _KeepWhy extends StatelessWidget {
     final a = answers;
     final keep = a.keeps[zone] ?? ZoneKeep();
     void change(void Function(ZoneKeep k) f) => a.update((x) => f(x.keepOf(zone)));
-    Widget size(String label, double? w, double? h, ValueChanged<double?> onW, ValueChanged<double?> onH) => Padding(
-          padding: const EdgeInsets.only(top: 10),
-          child: Wrap(
-            spacing: 10,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              SizedBox(width: 150, child: Text(label, style: TextStyle(fontSize: 14, color: p.text))),
-              MeasureField(value: w, measure: Measure.length, width: 110, hint: t.widthLabel, onChanged: onW),
-              Text('×', style: TextStyle(fontSize: 15, color: p.muted)),
-              MeasureField(value: h, measure: Measure.length, width: 110, hint: t.heightLabel, onChanged: onH),
-            ],
-          ),
-        );
+    final window = keep.whys.contains(KeepWhy.window);
+    // Only the chimney or the window is left out; the rest of the part can still be used.
+    final partly = (window || keep.whys.contains(KeepWhy.chimney)) &&
+        !keep.whys.any((w) => w == KeepWhy.notWanted || w == KeepWhy.hardToReach || w == KeepWhy.rules);
     return Padding(
       padding: const EdgeInsets.only(bottom: 18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           FieldLabel(_zoneLabel(t, zone)),
-          ChoiceChips<KeepReason>(
-            values: KeepReason.values,
-            label: (r) => switch (r) {
-              KeepReason.somethingThere => t.keepSomething,
-              KeepReason.notWanted => t.keepNotWanted,
-              KeepReason.hardToReach => t.whyReach,
-              KeepReason.rules => t.whyRules,
+          MultiChips<KeepWhy>(
+            values: KeepWhy.values,
+            selected: keep.whys,
+            label: (w) => switch (w) {
+              KeepWhy.chimney => t.thingChimney,
+              KeepWhy.window => t.thingWindow,
+              KeepWhy.notWanted => t.keepNotWanted,
+              KeepWhy.hardToReach => t.whyReach,
+              KeepWhy.rules => t.whyRules,
             },
-            selected: keep.reason,
-            onSelect: (r) => change((k) => k.reason = r),
+            onToggle: (w) => change((k) => k.whys.contains(w) ? k.whys.remove(w) : k.whys.add(w)),
           ),
-          if (keep.reason == KeepReason.somethingThere) ...[
+          if (window) ...[
             const SizedBox(height: 12),
-            MultiChips<KeepThing>(
-              values: KeepThing.values,
-              selected: keep.things,
-              label: (v) => switch (v) {
-                KeepThing.chimney => t.thingChimney,
-                KeepThing.window => t.thingWindow,
-                KeepThing.other => t.thingOther,
-              },
-              onToggle: (v) => change((k) => k.things.contains(v) ? k.things.remove(v) : k.things.add(v)),
+            Text(t.keepSizeQ, style: TextStyle(fontSize: 13.5, color: p.muted)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 10,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                MeasureField(
+                  value: keep.windowW,
+                  measure: Measure.length,
+                  width: 110,
+                  hint: t.widthLabel,
+                  onChanged: (v) => change((k) => k.windowW = v),
+                ),
+                Text('×', style: TextStyle(fontSize: 15, color: p.muted)),
+                MeasureField(
+                  value: keep.windowH,
+                  measure: Measure.length,
+                  width: 110,
+                  hint: t.heightLabel,
+                  onChanged: (v) => change((k) => k.windowH = v),
+                ),
+              ],
             ),
-            if (keep.things.contains(KeepThing.window) || keep.things.contains(KeepThing.other)) ...[
-              const SizedBox(height: 10),
-              Text(t.keepSizeQ, style: TextStyle(fontSize: 13.5, color: p.muted)),
-              if (keep.things.contains(KeepThing.window))
-                size(t.thingWindow, keep.windowW, keep.windowH, (v) => change((k) => k.windowW = v),
-                    (v) => change((k) => k.windowH = v)),
-              if (keep.things.contains(KeepThing.other))
-                size(t.thingOther, keep.otherW, keep.otherH, (v) => change((k) => k.otherW = v),
-                    (v) => change((k) => k.otherH = v)),
-            ],
+            if (keep.windowW == null || keep.windowH == null) _KeepMissing(t.keepGiveSize),
+          ],
+          if (partly) ...[
             const SizedBox(height: 10),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -3027,12 +3049,6 @@ class _KeepWhy extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------- 14: something new
-
-/// Something new at the place that the map does not show yet (a garage, a pool). The map of
-/// the place shows through the middle of the page (see MapPeek), between the question at the
-/// top and the buttons at the bottom: with "Yes", a tap on it marks where the new thing is,
-/// and the questions about it follow in the bottom part.
 class _NewThingStep extends StatefulWidget {
   const _NewThingStep({required this.answers, required this.nav});
 
@@ -3465,6 +3481,8 @@ class _P3 {
   final double x;
   final double y;
   final double z;
+
+  _P3 lerp(_P3 o, double t) => _P3(x + (o.x - x) * t, y + (o.y - y) * t, z + (o.z - z) * t);
 }
 
 /// One face of the drawing: its corners, the zone it marks (null for walls and the
@@ -3482,9 +3500,19 @@ const _wallH = 3.0;
 const _ridgeH = 6.0;
 const _centre = _P3(5, 4, _wallH / 2);
 
+/// How far the eaves reach out past the walls.
+const _overhang = 0.45;
+
+/// The plot under the house and the street, drawn as a slab this thick.
+const _slab = 0.7;
+const _plotWest = -4.0, _plotEast = 14.0, _plotBack = -6.0, _plotFront = 17.0, _streetEdge = 14.0;
+
 List<_Face> _houseFaces(RoofShape shape) {
   final eave = shape == RoofShape.flat ? _wallH + 0.3 : _wallH;
   _P3 p(double x, double y, [double z = 0]) => _P3(x, y, z);
+  const o = _overhang;
+  // The eaves drop with the slope as they reach out.
+  const oz = _wallH - o * 0.75;
   return [
     _Face([p(-4, 14), p(14, 14), p(14, 17), p(-4, 17)], ground: true, street: true),
     _Face([p(-4, 8), p(14, 8), p(14, 14), p(-4, 14)], zone: Zone.frontYard, ground: true),
@@ -3500,14 +3528,14 @@ List<_Face> _houseFaces(RoofShape shape) {
       RoofShape.gable => [
           _Face([p(0, 0, _wallH), p(0, 8, _wallH), p(0, 4, _ridgeH)]),
           _Face([p(10, 0, _wallH), p(10, 8, _wallH), p(10, 4, _ridgeH)]),
-          _Face([p(0, 8, _wallH), p(10, 8, _wallH), p(10, 4, _ridgeH), p(0, 4, _ridgeH)], zone: Zone.roofFront),
-          _Face([p(0, 0, _wallH), p(10, 0, _wallH), p(10, 4, _ridgeH), p(0, 4, _ridgeH)], zone: Zone.roofBack),
+          _Face([p(-o, 8 + o, oz), p(10 + o, 8 + o, oz), p(10 + o, 4, _ridgeH), p(-o, 4, _ridgeH)], zone: Zone.roofFront),
+          _Face([p(-o, -o, oz), p(10 + o, -o, oz), p(10 + o, 4, _ridgeH), p(-o, 4, _ridgeH)], zone: Zone.roofBack),
         ],
       RoofShape.hip => [
-          _Face([p(0, 8, _wallH), p(10, 8, _wallH), p(6.5, 4, _ridgeH), p(3.5, 4, _ridgeH)], zone: Zone.roofFront),
-          _Face([p(0, 0, _wallH), p(10, 0, _wallH), p(6.5, 4, _ridgeH), p(3.5, 4, _ridgeH)], zone: Zone.roofBack),
-          _Face([p(0, 0, _wallH), p(0, 8, _wallH), p(3.5, 4, _ridgeH)], zone: Zone.roofLeft),
-          _Face([p(10, 0, _wallH), p(10, 8, _wallH), p(6.5, 4, _ridgeH)], zone: Zone.roofRight),
+          _Face([p(-o, 8 + o, oz), p(10 + o, 8 + o, oz), p(6.5, 4, _ridgeH), p(3.5, 4, _ridgeH)], zone: Zone.roofFront),
+          _Face([p(-o, -o, oz), p(10 + o, -o, oz), p(6.5, 4, _ridgeH), p(3.5, 4, _ridgeH)], zone: Zone.roofBack),
+          _Face([p(-o, -o, oz), p(-o, 8 + o, oz), p(3.5, 4, _ridgeH)], zone: Zone.roofLeft),
+          _Face([p(10 + o, -o, oz), p(10 + o, 8 + o, oz), p(6.5, 4, _ridgeH)], zone: Zone.roofRight),
         ],
       RoofShape.flat => [
           _Face([p(0, 0, eave), p(10, 0, eave), p(10, 8, eave), p(0, 8, eave)], zone: Zone.roofWhole),
@@ -3534,14 +3562,17 @@ class _Projection {
 
   Offset project(_P3 p) {
     final r = turn(p);
-    return Offset(size.width / 2 + (r.x - r.y) * 0.866 * scale, size.height * 0.56 + (r.x + r.y) * 0.5 * scale - r.z * scale);
+    return Offset(size.width / 2 + (r.x - r.y) * 0.866 * scale, size.height * 0.54 + (r.x + r.y) * 0.5 * scale - r.z * scale);
   }
 
-  Path path(_Face f) => Path()..addPolygon([for (final p in f.points) project(p)], true);
+  List<Offset> corners(List<_P3> points) => [for (final p in points) project(p)];
 
-  /// Whether the face points towards the viewer (up, and towards +x +y after turning).
-  bool facesViewer(_Face f) {
-    if (f.ground) return true;
+  Path polygon(List<_P3> points) => Path()..addPolygon(corners(points), true);
+
+  Path path(_Face f) => polygon(f.points);
+
+  /// The face's unit normal after turning, pointing away from the middle of the house.
+  List<double> normal(_Face f) {
     final r = [for (final p in f.points) turn(p)];
     final u = [r[1].x - r[0].x, r[1].y - r[0].y, r[1].z - r[0].z];
     final v = [r[2].x - r[0].x, r[2].y - r[0].y, r[2].z - r[0].z];
@@ -3551,8 +3582,15 @@ class _Projection {
       r.map((p) => p.y).reduce((a, b) => a + b) / r.length,
       r.map((p) => p.z).reduce((a, b) => a + b) / r.length - _centre.z,
     ];
-    // Point the normal outwards, away from the middle of the house.
     if (n[0] * c[0] + n[1] * c[1] + n[2] * c[2] < 0) n = [-n[0], -n[1], -n[2]];
+    final length = math.sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+    return [n[0] / length, n[1] / length, n[2] / length];
+  }
+
+  /// Whether the face points towards the viewer (up, and towards +x +y after turning).
+  bool facesViewer(_Face f) {
+    if (f.ground) return true;
+    final n = normal(f);
     return n[0] + n[1] + n[2] > 1e-6;
   }
 
@@ -3566,6 +3604,9 @@ class _Projection {
 
 /// The house and its plot in 3D: the roof's sides and the parts of the yard can be tapped
 /// to keep them free, and the arrows turn the house to reach the sides behind it.
+///
+/// The plot is drawn here; the house itself is a picture rendered for each roof shape and
+/// quarter turn (assets/house/), in the same projection, with the marks drawn over it.
 class _House3D extends StatefulWidget {
   const _House3D({
     required this.shape,
@@ -3587,13 +3628,30 @@ class _House3D extends StatefulWidget {
   State<_House3D> createState() => _House3DState();
 }
 
+String _houseAsset(RoofShape shape, int quarter) => 'assets/house/${shape.name}_$quarter.png';
+
 class _House3DState extends State<_House3D> {
   int _quarter = 0;
+  bool _cached = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // All turns of all shapes, so turning or changing the shape never flickers.
+    if (_cached) return;
+    _cached = true;
+    for (final shape in RoofShape.values) {
+      for (var q = 0; q < 4; q++) {
+        precacheImage(AssetImage(_houseAsset(shape, q)), context);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final t = context.t;
     final p = context.palette;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final faces = [
       for (final f in _houseFaces(widget.shape))
         if (widget.yard || !groundZones.contains(f.zone)) f,
@@ -3605,6 +3663,20 @@ class _House3DState extends State<_House3D> {
         final projection = _Projection(size, _quarter);
         final shown = projection.visible(faces);
         final hidden = faces.any((f) => f.zone != null && !f.ground && !projection.facesViewer(f));
+        _HousePainter painter(bool top) => _HousePainter(
+              projection: projection,
+              faces: shown,
+              selected: {...widget.selected},
+              missing: {...widget.missing},
+              yard: widget.yard,
+              labels: {
+                null: t.dirFront,
+                Zone.frontYard: t.zoneFrontYard,
+                Zone.backYard: t.zoneBackYard,
+              },
+              scene: dark ? _Scene.night : _Scene.day,
+              top: top,
+            );
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -3625,32 +3697,31 @@ class _House3DState extends State<_House3D> {
                       },
                       child: MouseRegion(
                         cursor: SystemMouseCursors.click,
-                        child: CustomPaint(
+                        child: SizedBox.fromSize(
                           size: size,
-                          painter: _HousePainter(
-                            projection: projection,
-                            faces: shown,
-                            selected: {...widget.selected},
-                            missing: {...widget.missing},
-                            street: t.dirFront,
-                            labels: {
-                              Zone.frontYard: t.zoneFrontYard,
-                              Zone.backYard: t.zoneBackYard,
-                            },
-                            ground: p.green.withValues(alpha: 0.16),
-                            streetFill: p.muted.withValues(alpha: 0.22),
-                            wall: Color.alphaBlend(p.text.withValues(alpha: 0.06), p.surface),
-                            roof: Color.alphaBlend(p.primary.withValues(alpha: 0.28), p.surface),
-                            mark: p.error.withValues(alpha: 0.45),
-                            line: p.text.withValues(alpha: 0.45),
-                            text: p.muted,
+                          child: Stack(
+                            children: [
+                              Positioned.fill(child: CustomPaint(painter: painter(false))),
+                              Positioned.fill(
+                                child: Image.asset(
+                                  _houseAsset(widget.shape, _quarter),
+                                  fit: BoxFit.fill,
+                                  gaplessPlayback: true,
+                                  filterQuality: FilterQuality.medium,
+                                  // A touch dimmer at night, so the house does not glare.
+                                  color: dark ? const Color(0x1F0E131B) : null,
+                                  colorBlendMode: dark ? BlendMode.srcATop : null,
+                                ),
+                              ),
+                              Positioned.fill(child: CustomPaint(painter: painter(true))),
+                            ],
                           ),
                         ),
                       ),
                     ),
                     PositionedDirectional(
-                      top: 0,
-                      end: 0,
+                      top: 4,
+                      end: 4,
                       child: Row(
                         children: [
                           IconButton(
@@ -3689,84 +3760,296 @@ class _House3DState extends State<_House3D> {
   }
 }
 
+/// The colours of the plot, in light and dark mode: soft and pale, without outlines.
+class _Scene {
+  const _Scene({
+    required this.skyInner,
+    required this.skyOuter,
+    required this.slabTop,
+    required this.slabLit,
+    required this.slabShade,
+    required this.grass,
+    required this.grassSide,
+    required this.street,
+    required this.lane,
+    required this.path,
+    required this.plotShadow,
+    required this.mark,
+    required this.missing,
+    required this.missingFill,
+    required this.label,
+    required this.labelText,
+    required this.labelShadow,
+    required this.divider,
+    required this.dark,
+  });
+
+  final Color skyInner;
+  final Color skyOuter;
+  final Color slabTop;
+  final Color slabLit;
+  final Color slabShade;
+  final Color grass;
+  final Color grassSide;
+  final Color street;
+  final Color lane;
+  final Color path;
+  final Color plotShadow;
+  final Color mark;
+  final Color missing;
+  final Color missingFill;
+  final Color label;
+  final Color labelText;
+  final Color labelShadow;
+  final Color divider;
+  final bool dark;
+
+  static const day = _Scene(
+    skyInner: Color(0xFFE3F3FB),
+    skyOuter: Color(0xFFBFE3F3),
+    slabTop: Color(0xFFF1F3F9),
+    slabLit: Color(0xFFDFE3EE),
+    slabShade: Color(0xFFCDD3E3),
+    grass: Color(0xFFE2F1EA),
+    grassSide: Color(0xFFDCEEE5),
+    street: Color(0xFFE5E8F0),
+    lane: Color(0xF2FFFFFF),
+    path: Color(0xFFF6F4F0),
+    plotShadow: Color(0x38285A8C),
+    mark: Color(0xFFEE7A62),
+    missing: Color(0x597882A0),
+    missingFill: Color(0xFFE9EBF1),
+    label: Color(0xEBFFFFFF),
+    labelText: Color(0xFF56607A),
+    labelShadow: Color(0x2E3C5082),
+    divider: Color(0xF2FFFFFF),
+    dark: false,
+  );
+
+  static const night = _Scene(
+    skyInner: Color(0xFF1B2740),
+    skyOuter: Color(0xFF0F1726),
+    slabTop: Color(0xFF27324A),
+    slabLit: Color(0xFF1E283C),
+    slabShade: Color(0xFF182133),
+    grass: Color(0xFF263F3D),
+    grassSide: Color(0xFF24403C),
+    street: Color(0xFF2F394F),
+    lane: Color(0x59FFFFFF),
+    path: Color(0xFF3A4560),
+    plotShadow: Color(0x8C000000),
+    mark: Color(0xFFF08C78),
+    missing: Color(0x38FFFFFF),
+    missingFill: Color(0xFF2B3346),
+    label: Color(0xE01E283C),
+    labelText: Color(0xFFD5DBE8),
+    labelShadow: Color(0x66000000),
+    divider: Color(0x1AFFFFFF),
+    dark: true,
+  );
+}
+
+/// Lighter towards white for k > 0, darker towards black for k < 0.
+Color _shade(Color c, double k) => k >= 0
+    ? Color.lerp(c, const Color(0xFFFFFFFF), k.clamp(0.0, 1.0).toDouble())!
+    : Color.lerp(c, const Color(0xFF000000), (-k).clamp(0.0, 1.0).toDouble())!;
+
+/// Paints the plot under the house picture ([top] false), or the roof's marks and the
+/// names over it ([top] true).
 class _HousePainter extends CustomPainter {
   _HousePainter({
     required this.projection,
     required this.faces,
     required this.selected,
     required this.missing,
-    required this.street,
+    required this.yard,
     required this.labels,
-    required this.ground,
-    required this.streetFill,
-    required this.wall,
-    required this.roof,
-    required this.mark,
-    required this.line,
-    required this.text,
+    required this.scene,
+    required this.top,
   });
 
   final _Projection projection;
   final List<_Face> faces;
   final Set<Zone> selected;
   final Set<Zone> missing;
-  final String street;
-  final Map<Zone, String> labels;
-  final Color ground;
-  final Color streetFill;
-  final Color wall;
-  final Color roof;
-  final Color mark;
-  final Color line;
-  final Color text;
+  final bool yard;
+
+  /// The names written on the ground; null is the street.
+  final Map<Zone?, String> labels;
+  final _Scene scene;
+  final bool top;
+
+  _Projection get pr => projection;
+
+  static Paint _fill(Color c) => Paint()..color = c;
+
+  static Path _poly(List<Offset> corners) => Path()..addPolygon(corners, true);
 
   @override
   void paint(Canvas canvas, Size size) {
-    final stroke = Paint()
+    final k = size.width / 424; // blur and line widths follow the drawing's size
+    final sky = RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(18 * k));
+    canvas.save();
+    canvas.clipRRect(sky);
+    if (top) {
+      _paintTop(canvas, size, k);
+    } else {
+      _paintPlot(canvas, size, sky, k);
+    }
+    canvas.restore();
+  }
+
+  void _paintPlot(Canvas canvas, Size size, RRect sky, double k) {
+    final s = scene;
+    // A soft sky behind everything.
+    canvas.drawRRect(
+      sky,
+      Paint()
+        ..shader = RadialGradient(
+          center: const Alignment(-0.1, -0.3),
+          radius: 0.95,
+          colors: [s.skyInner, s.skyOuter],
+        ).createShader(Offset.zero & size),
+    );
+
+    // The plot as a slab (only the street when there is no yard): its shadow, then its sides.
+    final back = yard ? _plotBack : _streetEdge;
+    final base = pr.corners([
+      for (final (x, y) in [(_plotWest, back), (_plotEast, back), (_plotEast, _plotFront), (_plotWest, _plotFront)]) _P3(x, y, -_slab - 1),
+    ]);
+    canvas.drawPath(
+      _poly([for (final o in base) o + Offset(0, 6 * k)]),
+      _fill(s.plotShadow)..maskFilter = MaskFilter.blur(BlurStyle.normal, 14 * k),
+    );
+    final middle = pr.turn(_P3((_plotWest + _plotEast) / 2, (back + _plotFront) / 2));
+    for (final (a, b) in [
+      (const _P3(_plotWest, _plotFront), const _P3(_plotEast, _plotFront)),
+      (_P3(_plotWest, back), _P3(_plotEast, back)),
+      (_P3(_plotWest, back), const _P3(_plotWest, _plotFront)),
+      (_P3(_plotEast, back), const _P3(_plotEast, _plotFront)),
+    ]) {
+      final ra = pr.turn(a), rb = pr.turn(b);
+      final dx = (ra.x + rb.x) / 2 - middle.x, dy = (ra.y + rb.y) / 2 - middle.y;
+      if (dx + dy <= 0) continue;
+      final side = pr.corners([a, b, _P3(b.x, b.y, -_slab), _P3(a.x, a.y, -_slab)]);
+      final c = dx < dy ? s.slabLit : s.slabShade;
+      final ys = side.map((o) => o.dy);
+      canvas.drawPath(
+        _poly(side),
+        Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [c, _shade(c, s.dark ? -0.15 : -0.06)],
+          ).createShader(Rect.fromLTRB(0, ys.reduce(math.min), 1, ys.reduce(math.max))),
+      );
+    }
+    canvas.drawPath(pr.polygon([_P3(_plotWest, back), _P3(_plotEast, back), const _P3(_plotEast, _plotFront), const _P3(_plotWest, _plotFront)]), _fill(s.slabTop));
+
+    // The ground: grass, the street with its lane, the path to the door, and the marks.
+    final ground = faces.where((f) => f.ground).toList();
+    for (final f in ground) {
+      final path = pr.path(f);
+      final side = f.zone == Zone.sideLeft || f.zone == Zone.sideRight;
+      canvas.drawPath(path, _fill(f.street ? s.street : side ? s.grassSide : s.grass));
+      if (f.zone == Zone.frontYard) {
+        canvas.drawPath(pr.polygon(const [_P3(4.4, 8), _P3(5.6, 8), _P3(5.6, 14), _P3(4.4, 14)]), _fill(s.path));
+      }
+      if (f.zone != null && missing.contains(f.zone)) _hatch(canvas, path);
+      if (f.zone != null && selected.contains(f.zone)) _mark(canvas, path, k);
+    }
+    final divider = Paint()
       ..style = PaintingStyle.stroke
       ..strokeJoin = StrokeJoin.round
-      ..strokeWidth = 1
-      ..color = line;
-    for (final f in faces) {
-      final base = f.street
-          ? streetFill
-          : f.ground
-              ? ground
-              : f.zone == null
-                  ? wall
-                  : roof;
-      final fill = f.zone != null && selected.contains(f.zone) ? Color.alphaBlend(mark, base) : base;
-      final path = projection.path(f);
-      final gone = f.zone != null && missing.contains(f.zone);
-      canvas.drawPath(path, Paint()..color = gone ? line.withValues(alpha: 0.08) : fill);
-      if (gone) {
-        // A part that is not there: grey, crossed with thin lines.
-        canvas.save();
-        canvas.clipPath(path);
-        final b = path.getBounds();
-        final hatch = Paint()
-          ..strokeWidth = 1
-          ..color = line.withValues(alpha: 0.35);
-        for (var x = b.left - b.height; x < b.right; x += 8) {
-          canvas.drawLine(Offset(x, b.bottom), Offset(x + b.height, b.top), hatch);
-        }
-        canvas.restore();
-      }
-      canvas.drawPath(path, stroke..color = f.ground ? line.withValues(alpha: 0.25) : line);
+      ..strokeWidth = 1.5 * k
+      ..color = s.divider;
+    for (final f in ground) {
+      canvas.drawPath(pr.path(f), divider);
+    }
+    _dashes(canvas, pr.project(const _P3(-3.4, 15.5)), pr.project(const _P3(13.4, 15.5)), k);
+  }
 
-      final name = f.street ? street : labels[f.zone];
-      if (name != null) {
-        final c = Offset(
-          f.points.map((p) => projection.project(p).dx).reduce((a, b) => a + b) / f.points.length,
-          f.points.map((p) => projection.project(p).dy).reduce((a, b) => a + b) / f.points.length,
-        );
-        final tp = TextPainter(
-          text: TextSpan(text: name, style: TextStyle(fontSize: 10.5, color: text, fontWeight: FontWeight.w600)),
-          textDirection: TextDirection.ltr,
-          textAlign: TextAlign.center,
-        )..layout(maxWidth: size.width / 3);
-        tp.paint(canvas, c - Offset(tp.width / 2, tp.height / 2));
-      }
+  void _paintTop(Canvas canvas, Size size, double k) {
+    final s = scene;
+    // The roof's sides that are kept free or are not there, over the picture.
+    for (final f in faces.where((f) => !f.ground && f.zone != null)) {
+      final path = pr.path(f);
+      if (missing.contains(f.zone)) _hatch(canvas, path);
+      if (selected.contains(f.zone)) _mark(canvas, path, k);
+    }
+
+    // The names, where each part lies farthest from the house on screen.
+    final house = pr.project(const _P3(5, 4, 3));
+    for (final f in faces.where((f) => f.ground)) {
+      if (!f.street && f.zone == null) continue;
+      final name = labels[f.street ? null : f.zone];
+      if (name == null) continue;
+      final m = _P3(
+        f.points.map((p) => p.x).reduce((a, b) => a + b) / f.points.length,
+        f.points.map((p) => p.y).reduce((a, b) => a + b) / f.points.length,
+      );
+      final spots = [pr.project(m), for (final p in f.points) pr.project(p.lerp(m, 0.45))];
+      final at = spots.reduce((a, b) => (b - house).distance > (a - house).distance ? b : a);
+      final tp = TextPainter(
+        text: TextSpan(text: name, style: TextStyle(fontSize: 10.5, color: s.labelText, fontWeight: FontWeight.w600)),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+        ellipsis: '…',
+      )..layout(maxWidth: size.width / 3);
+      final pill = RRect.fromRectAndRadius(
+        Rect.fromCenter(center: at, width: tp.width + 16, height: tp.height + 6),
+        const Radius.circular(11),
+      );
+      canvas.drawRRect(pill.shift(Offset(0, 2 * k)), _fill(s.labelShadow)..maskFilter = MaskFilter.blur(BlurStyle.normal, 4 * k));
+      canvas.drawRRect(pill, _fill(s.label));
+      tp.paint(canvas, at - Offset(tp.width / 2, tp.height / 2));
+    }
+  }
+
+  /// A part kept free: soft red with light stripes and a soft red edge inside it.
+  void _mark(Canvas canvas, Path path, double k) {
+    canvas.save();
+    canvas.clipPath(path);
+    canvas.drawPath(path, _fill(scene.mark.withValues(alpha: 0.42)));
+    _stripes(canvas, path.getBounds(), 11 * k, Paint()
+      ..strokeWidth = 2.5 * k
+      ..color = const Color(0x59FFFFFF));
+    canvas.drawPath(path, Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round
+      ..strokeWidth = 3 * k
+      ..color = scene.mark.withValues(alpha: 0.7));
+    canvas.restore();
+  }
+
+  /// A part that is not there: pale grey, crossed with thin lines.
+  void _hatch(Canvas canvas, Path path) {
+    canvas.save();
+    canvas.clipPath(path);
+    canvas.drawPath(path, _fill(scene.missingFill));
+    _stripes(canvas, path.getBounds(), 8, Paint()
+      ..strokeWidth = 1
+      ..color = scene.missing);
+    canvas.restore();
+  }
+
+  static void _stripes(Canvas canvas, Rect b, double gap, Paint paint) {
+    for (var x = b.left - b.height; x < b.right; x += gap) {
+      canvas.drawLine(Offset(x, b.bottom), Offset(x + b.height, b.top), paint);
+    }
+  }
+
+  /// The street's dashed middle line.
+  void _dashes(Canvas canvas, Offset from, Offset to, double k) {
+    final paint = Paint()
+      ..strokeWidth = 1.6 * k
+      ..strokeCap = StrokeCap.round
+      ..color = scene.lane;
+    final d = to - from;
+    final length = d.distance;
+    final step = d / length;
+    for (var t = 0.0; t < length; t += 17 * k) {
+      canvas.drawLine(from + step * t, from + step * math.min(t + 9 * k, length), paint);
     }
   }
 

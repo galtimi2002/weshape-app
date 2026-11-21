@@ -192,7 +192,7 @@ class AppStrings {
     required this.faceNorth,
     required this.pickOnMapHint,
     required this.pickConfirm,
-    required this.stepOfTotal,
+    required this.stepNumber,
     required this.toFirst,
     required this.resetAnswers,
     required this.resetTitle,
@@ -519,12 +519,11 @@ class AppStrings {
     required this.cropRapeseed,
     required this.cropVineyard,
     required this.cropsNote,
-    required this.keepSomething,
     required this.keepNotWanted,
     required this.thingChimney,
     required this.thingWindow,
-    required this.thingOther,
     required this.keepSizeQ,
+    required this.keepGiveSize,
     required this.keepRestNote,
     required this.widthLabel,
     required this.heightLabel,
@@ -741,7 +740,7 @@ class AppStrings {
   /// Banner on the map while a place is being chosen for the assessment.
   final String pickOnMapHint;
   final String pickConfirm;
-  final String stepOfTotal;
+  final String stepNumber;
   final String toFirst;
   final String resetAnswers;
   final String resetTitle;
@@ -1090,12 +1089,13 @@ class AppStrings {
   final String cropRapeseed;
   final String cropVineyard;
   final String cropsNote;
-  final String keepSomething;
   final String keepNotWanted;
   final String thingChimney;
   final String thingWindow;
-  final String thingOther;
   final String keepSizeQ;
+
+  /// Under the window's size while it is not given.
+  final String keepGiveSize;
   final String keepRestNote;
   final String widthLabel;
   final String heightLabel;
@@ -1108,7 +1108,7 @@ class AppStrings {
   String greet(String name) => greeting.replaceAll('{name}', name);
 
   /// "Step 3 of 14"
-  String stepOfTotalFor(int n, int total) => stepOfTotal.replaceAll('{n}', '$n').replaceAll('{total}', '$total');
+  String stepNumberFor(int n) => stepNumber.replaceAll('{n}', '$n');
 
   // Measures arrive as finished text ("60 m²", "650 sq ft"): see core/units/units.dart.
 

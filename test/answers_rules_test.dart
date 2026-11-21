@@ -62,20 +62,35 @@ void main() {
   });
 
   group('parts kept free', () {
-    test('a reason; with something there what it is and the sizes asked', () {
+    test('at least one reason; a window also needs its size', () {
       final k = ZoneKeep();
       expect(k.complete, isFalse);
-      k.reason = KeepReason.rules;
+      k.whys.add(KeepWhy.rules);
       expect(k.complete, isTrue);
-      k.reason = KeepReason.somethingThere;
-      expect(k.complete, isFalse);
-      k.things.add(KeepThing.chimney);
+      k.whys
+        ..clear()
+        ..add(KeepWhy.chimney);
       expect(k.complete, isTrue, reason: 'a chimney needs no size');
-      k.things.add(KeepThing.window);
+      k.whys.add(KeepWhy.window);
       expect(k.complete, isFalse);
       k.windowW = 1;
       k.windowH = 1.2;
       expect(k.complete, isTrue);
+    });
+
+    test('a reason saved the old way (reason + things) comes back in the one list', () {
+      final old = ZoneKeep.fromJson({
+        'reason': 'somethingThere',
+        'things': ['chimney', 'window', 'other'],
+        'windowW': 1.0,
+        'windowH': 1.2,
+      });
+      expect(old.whys, {KeepWhy.chimney, KeepWhy.window});
+      expect(old.complete, isTrue);
+      expect(ZoneKeep.fromJson({'reason': 'hardToReach'}).whys, {KeepWhy.hardToReach});
+      final again = ZoneKeep.fromJson(old.toJson());
+      expect(again.whys, old.whys);
+      expect(again.windowH, 1.2);
     });
   });
 
@@ -97,7 +112,7 @@ void main() {
       ..animalCounts = {AnimalKind.pigs: 3}
       ..cropArea = {CropKind.wheatBarley: 1.5}
       ..cropUnit = AreaUnit.acre
-      ..keeps = {Zone.roofFront: ZoneKeep()..reason = KeepReason.somethingThere..things = {KeepThing.chimney}};
+      ..keeps = {Zone.roofFront: ZoneKeep()..whys = {KeepWhy.chimney}};
     final json = a.toJson();
     expect(json['material'], 'wood');
     expect(json['animals'], containsAll(['few', 'crops']));
