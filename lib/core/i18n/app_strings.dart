@@ -339,11 +339,6 @@ class AppStrings {
     required this.ownBuilding,
     required this.ownRent,
     required this.ownShared,
-    required this.fixHint,
-    required this.handsTitle,
-    required this.handsNone,
-    required this.handsLittle,
-    required this.handsRegular,
     required this.noteAudience,
     required this.notePlace,
     required this.noteUses,
@@ -362,7 +357,6 @@ class AppStrings {
     required this.noteSpaces,
     required this.noteSizes,
     required this.noteOwn,
-    required this.noteUpkeep,
     required this.notePrio,
     required this.noteFollow,
     required this.noteNew,
@@ -913,11 +907,6 @@ class AppStrings {
   final String ownBuilding;
   final String ownRent;
   final String ownShared;
-  final String fixHint;
-  final String handsTitle;
-  final String handsNone;
-  final String handsLittle;
-  final String handsRegular;
   final String noteAudience;
   final String notePlace;
   final String noteUses;
@@ -938,7 +927,6 @@ class AppStrings {
   final String noteSpaces;
   final String noteSizes;
   final String noteOwn;
-  final String noteUpkeep;
   final String notePrio;
   final String noteFollow;
   final String noteNew;

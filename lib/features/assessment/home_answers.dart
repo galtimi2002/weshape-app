@@ -74,8 +74,6 @@ enum Facing { south, eastWest, north, flat }
 
 enum Ownership { own, building, rent, shared }
 
-enum HandsOn { none, little, regular }
-
 enum Priority { upfront, running, environment, reliable, balanced }
 
 /// Animals, food waste and crop residue (pick any; [none] stands alone).
@@ -360,7 +358,6 @@ class HomeAnswers extends ChangeNotifier {
   Facing? balconyFacing;
 
   Ownership? ownership;
-  HandsOn? handsOn;
   Priority? priority;
 
   Set<Animals> animals = {};
@@ -977,7 +974,6 @@ class HomeAnswers extends ChangeNotifier {
         'facing': facing?.name,
         'balconyFacing': balconyFacing?.name,
         'ownership': ownership?.name,
-        'handsOn': handsOn?.name,
         'priority': priority?.name,
         'animals': [for (final v in animals) v.name],
         'animalCounts': {for (final e in animalCounts.entries) e.key.name: e.value},
@@ -1084,7 +1080,6 @@ class HomeAnswers extends ChangeNotifier {
     facing = _enum(Facing.values, j['facing']);
     balconyFacing = _enum(Facing.values, j['balconyFacing']);
     ownership = _enum(Ownership.values, j['ownership']);
-    handsOn = _enum(HandsOn.values, j['handsOn']);
     priority = _enum(Priority.values, j['priority']);
     // An older save kept one answer as a string.
     animals = j['animals'] is String ? _enumSet(Animals.values, [j['animals']]) : _enumSet(Animals.values, j['animals']);

@@ -247,7 +247,6 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
         if (a.oldBuilding) 'renovation',
       ],
       'ownership',
-      'upkeep',
       'priority',
       if (_askFollowUps) 'followUps',
       'exclude',
@@ -265,7 +264,8 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
         // The assessment keeps the units it was started in (the report uses them too).
         _a.unitSystem ??= context.units.system;
         final steps = _steps();
-        var index = steps.indexOf(_a.screen);
+        // A draft saved on the upkeep question, which is no longer asked (Timi, 2026-11-22), goes on at the priority.
+        var index = steps.indexOf(_a.screen == 'upkeep' ? 'priority' : _a.screen);
         if (index < 0) index = _a.screen == 'followUps' ? steps.length - 2 : 0;
         final id = steps[index];
         final nav = _Nav(
@@ -299,7 +299,6 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
           'spaces' => _SpacesStep(answers: a, nav: nav),
           'sizes' => _SizesStep(answers: a, nav: nav),
           'ownership' => _OwnershipStep(answers: a, nav: nav),
-          'upkeep' => _UpkeepStep(answers: a, nav: nav),
           'priority' => _PriorityStep(answers: a, nav: nav),
           'followUps' => _FollowUpsStep(
               answers: a,
@@ -2566,7 +2565,7 @@ class _SizesStep extends StatelessWidget {
   }
 }
 
-// ---------------------------------------------------------------- 9–11: owner, upkeep, priority
+// ---------------------------------------------------------------- 9–10: owner, priority
 
 class _OwnershipStep extends StatelessWidget {
   const _OwnershipStep({required this.answers, required this.nav});
@@ -2597,37 +2596,6 @@ class _OwnershipStep extends StatelessWidget {
           onSelect: (v) => a.update((x) => x.ownership = v),
         ),
       ],
-    );
-  }
-}
-
-class _UpkeepStep extends StatelessWidget {
-  const _UpkeepStep({required this.answers, required this.nav});
-
-  final HomeAnswers answers;
-  final _Nav nav;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.t;
-    final a = answers;
-    final hands = _Options<HandsOn>(
-      values: HandsOn.values,
-      title: (v) => switch (v) {
-        HandsOn.none => t.handsNone,
-        HandsOn.little => t.handsLittle,
-        HandsOn.regular => t.handsRegular,
-      },
-      selected: a.handsOn,
-      onSelect: (v) => a.update((x) => x.handsOn = v),
-    );
-    return _StepPage(
-      nav: nav,
-      title: t.handsTitle,
-      note: t.noteUpkeep,
-      canContinue: a.handsOn != null,
-      hint: t.fixHint,
-      children: [hands],
     );
   }
 }
