@@ -356,6 +356,9 @@ class HomeAnswers extends ChangeNotifier {
   Map<Space, SpaceSize> sizes = {};
   Facing? facing;
 
+  /// Which way the balcony or wall faces (the panels hang almost upright there); not flat.
+  Facing? balconyFacing;
+
   Ownership? ownership;
   HandsOn? handsOn;
   Priority? priority;
@@ -972,6 +975,7 @@ class HomeAnswers extends ChangeNotifier {
         'spaces': [for (final s in spaces) s.name],
         'sizes': {for (final e in sizes.entries) e.key.name: e.value.toJson()},
         'facing': facing?.name,
+        'balconyFacing': balconyFacing?.name,
         'ownership': ownership?.name,
         'handsOn': handsOn?.name,
         'priority': priority?.name,
@@ -1078,6 +1082,7 @@ class HomeAnswers extends ChangeNotifier {
           if (_enum(Space.values, e.key) case final Space s) s: SpaceSize.fromJson(e.value),
     };
     facing = _enum(Facing.values, j['facing']);
+    balconyFacing = _enum(Facing.values, j['balconyFacing']);
     ownership = _enum(Ownership.values, j['ownership']);
     handsOn = _enum(HandsOn.values, j['handsOn']);
     priority = _enum(Priority.values, j['priority']);

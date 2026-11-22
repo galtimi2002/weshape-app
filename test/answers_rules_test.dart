@@ -285,4 +285,18 @@ void main() {
     a.dispose();
     b.dispose();
   });
+
+  test('the balcony keeps its own direction, apart from the roof', () async {
+    final a = HomeAnswers()
+      ..facing = Facing.south
+      ..balconyFacing = Facing.eastWest;
+    SharedPreferences.setMockInitialValues({'assessment.home.v2': jsonEncode(a.toJson())});
+    final b = HomeAnswers();
+    await b.restore();
+    expect(b.facing, Facing.south);
+    expect(b.balconyFacing, Facing.eastWest);
+    expect(a.toJson()['balconyFacing'], 'eastWest');
+    a.dispose();
+    b.dispose();
+  });
 }

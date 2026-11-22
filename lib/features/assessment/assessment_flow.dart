@@ -2522,6 +2522,20 @@ class _SizesStep extends StatelessWidget {
         sizes(Space.balcony, const [AreaSize.small, AreaSize.large], (v) => v == AreaSize.small
                 ? t.balconySmallFor(context.units.range(1, 2, Measure.length))
                 : t.balconyLargeFor(context.units.round(3, Measure.length))),
+        const SizedBox(height: 18),
+        // The panels hang almost upright there, so the direction matters even more than on a roof.
+        FieldLabel(t.facingQuestion),
+        ChoiceChips<Facing>(
+          values: const [Facing.south, Facing.eastWest, Facing.north],
+          label: (v) => switch (v) {
+            Facing.south => t.faceSouth,
+            Facing.eastWest => t.faceEastWest,
+            Facing.north => t.faceNorth,
+            Facing.flat => t.faceFlat,
+          },
+          selected: a.balconyFacing,
+          onSelect: (v) => a.update((x) => x.balconyFacing = v),
+        ),
       ],
     ];
     final note = [
@@ -2538,7 +2552,8 @@ class _SizesStep extends StatelessWidget {
       if (a.spaces.contains(Space.balcony)) Space.balcony,
     ];
     final complete = shown.every((s) => a.sizeOf(s).size != null || (a.sizeOf(s).exactM2 ?? 0) > 0) &&
-        (!shown.contains(Space.roof) || a.facing != null);
+        (!shown.contains(Space.roof) || a.facing != null) &&
+        (!shown.contains(Space.balcony) || a.balconyFacing != null);
     return _StepPage(
       nav: nav,
       title: t.sizesTitle,
