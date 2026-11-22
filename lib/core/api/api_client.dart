@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
@@ -107,6 +108,12 @@ class ApiClient {
   Future<SubmittedAssessment> submitAssessment(Map<String, dynamic> body) async => SubmittedAssessment.fromJson(
       await _send('POST', '/api/v1/assessments', body: body) as Map<String, dynamic>);
 
+  /// The person's kept assessments, newest first (GET /api/v1/assessments).
+  Future<List<SubmittedAssessment>> assessments() async => [
+        for (final j in await _send('GET', '/api/v1/assessments') as List<dynamic>)
+          SubmittedAssessment.fromJson(j as Map<String, dynamic>),
+      ];
+
   Future<bool> signInHint(String email) async {
     try {
       final r = await _send('POST', '/api/v1/auth/sign-in-hint', body: {'email': email.trim()});
@@ -130,9 +137,27 @@ class ApiClient {
     }
   }
 
-  Future<dynamic> _send(String method, String path, {Map<String, dynamic>? body, bool isRetry = false}) async {
+  /// The PDF report of one of the person's own kept assessments
+  /// (GET /api/v1/assessments/{number}/report.pdf). Making it can take a while, so it gets the
+  /// cold-start budget.
+  Future<Uint8List> reportPdf(String reportNumber) async {
+    final response = await _raw('GET', '/api/v1/assessments/${Uri.encodeComponent(reportNumber)}/report.pdf',
+        accept: 'application/pdf', timeout: AppConfig.coldStartTimeout);
+    return response.bodyBytes;
+  }
+
+  Future<dynamic> _send(String method, String path, {Map<String, dynamic>? body}) async {
+    final response = await _raw(method, path, body: body);
+    if (response.bodyBytes.isEmpty) return null;
+    return jsonDecode(utf8.decode(response.bodyBytes));
+  }
+
+  /// One call with the ID token; a 401 is tried once more with a refreshed token. Returns only a
+  /// successful response; anything else is thrown as an [ApiException].
+  Future<http.Response> _raw(String method, String path,
+      {Map<String, dynamic>? body, String accept = 'application/json', Duration? timeout, bool isRetry = false}) async {
     final token = await _auth.idToken(forceRefresh: isRetry);
-    final request = http.Request(method, Uri.parse('$_baseUrl$path'))..headers['Accept'] = 'application/json';
+    final request = http.Request(method, Uri.parse('$_baseUrl$path'))..headers['Accept'] = accept;
     if (token != null) request.headers['Authorization'] = 'Bearer $token';
     if (body != null) {
       request.headers['Content-Type'] = 'application/json; charset=utf-8';
@@ -141,7 +166,7 @@ class ApiClient {
 
     http.Response response;
     try {
-      response = await http.Response.fromStream(await _http.send(request).timeout(_timeout));
+      response = await http.Response.fromStream(await _http.send(request).timeout(timeout ?? _timeout));
       _serverHasAnswered = true;
     } catch (_) {
       // Socket errors, DNS failures, timeouts and CORS rejections all land here.
@@ -149,12 +174,9 @@ class ApiClient {
     }
 
     if (response.statusCode == 401 && !isRetry && token != null) {
-      return _send(method, path, body: body, isRetry: true);
+      return _raw(method, path, body: body, accept: accept, timeout: timeout, isRetry: true);
     }
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      if (response.bodyBytes.isEmpty) return null;
-      return jsonDecode(utf8.decode(response.bodyBytes));
-    }
+    if (response.statusCode >= 200 && response.statusCode < 300) return response;
     throw _errorFrom(response);
   }
 

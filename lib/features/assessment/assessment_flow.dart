@@ -11,6 +11,7 @@ import '../../core/api/api_exception.dart';
 import '../../core/i18n/app_localizations.dart';
 import '../../core/i18n/app_strings.dart';
 import '../../core/i18n/local_calendars.dart';
+import '../../core/report/report_file.dart';
 import '../../core/settings/settings_controller.dart';
 import '../../core/theme/weshape_palette.dart';
 import '../../core/theme/weshape_theme.dart';
@@ -133,7 +134,7 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
       answers: _a,
       language: settings.languageCode,
       country: widget.countryCode ?? settings.country ?? '',
-      units: context.units.system,
+      units: context.unitsNow.system,
       now: DateTime.now(),
     );
     final navigator = Navigator.of(context, rootNavigator: true);
@@ -158,16 +159,54 @@ class _AssessmentFlowState extends State<AssessmentFlow> {
       final saved = await api.submitAssessment(body);
       navigator.pop();
       if (!mounted) return;
-      await showDialog<void>(
+      final open = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
           title: Text(t.submitDoneTitle),
           content: Text(t.submitDoneBodyFor(saved.reportNumber)),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.close))],
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.close)),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.reportOpen)),
+          ],
         ),
       );
+      if ((open ?? false) && mounted) await _downloadReport(saved.reportNumber);
     } catch (e) {
       // Not kept: the network, the server, or (when the check refuses it) a fault in the app.
+      navigator.pop();
+      if (!mounted) return;
+      final error = e is ApiException ? e : const ApiException(statusCode: 500);
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(error.message(t))));
+    }
+  }
+
+  /// Fetches the PDF report of a kept assessment and saves it under its number (WSE-….pdf).
+  Future<void> _downloadReport(String reportNumber) async {
+    final t = context.t;
+    final api = context.read<ApiClient>();
+    final navigator = Navigator.of(context, rootNavigator: true);
+    unawaited(showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          content: Row(
+            children: [
+              const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5)),
+              const SizedBox(width: 16),
+              Expanded(child: Text(t.reportMaking)),
+            ],
+          ),
+        ),
+      ),
+    ));
+    try {
+      final pdf = await api.reportPdf(reportNumber);
+      navigator.pop();
+      savePdf(pdf, reportFileName(reportNumber));
+    } catch (e) {
       navigator.pop();
       if (!mounted) return;
       final error = e is ApiException ? e : const ApiException(statusCode: 500);

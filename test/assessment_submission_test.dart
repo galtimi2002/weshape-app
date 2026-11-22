@@ -6,6 +6,7 @@ import 'package:http/testing.dart';
 import 'package:weshape_app/core/api/api_client.dart';
 import 'package:weshape_app/core/api/api_exception.dart';
 import 'package:weshape_app/core/auth/demo_auth_service.dart';
+import 'package:weshape_app/core/report/report_file.dart';
 import 'package:weshape_app/core/units/units.dart';
 import 'package:weshape_app/features/assessment/home_answers.dart';
 import 'package:weshape_app/features/assessment/submission.dart';
@@ -87,6 +88,60 @@ void main() {
       expect(saved.reportNumber, 'WSE-2026-11-00417');
       expect(saved.madeOn, DateTime(2026, 11, 14));
       expect(saved.validUntil, DateTime(2027, 10, 31));
+    });
+
+    test('the report: the PDF of a kept assessment, asked for as PDF', () async {
+      late http.Request sent;
+      final pdf = utf8.encode('%PDF-1.7 test');
+      final api = ApiClient(
+        authService: DemoAuthService(),
+        baseUrl: 'http://api.test',
+        httpClient: MockClient((request) async {
+          sent = request;
+          return http.Response.bytes(pdf, 200, headers: {'content-type': 'application/pdf'});
+        }),
+      );
+      final bytes = await api.reportPdf('WSE-2026-11-00417');
+      expect(sent.method, 'GET');
+      expect(sent.url.toString(), 'http://api.test/api/v1/assessments/WSE-2026-11-00417/report.pdf');
+      expect(sent.headers['Accept'], 'application/pdf');
+      expect(bytes, pdf);
+    });
+
+    test('the kept assessments, newest first, with their place', () async {
+      late http.Request sent;
+      final api = ApiClient(
+        authService: DemoAuthService(),
+        baseUrl: 'http://api.test',
+        httpClient: MockClient((request) async {
+          sent = request;
+          return http.Response(
+            jsonEncode([
+              {'reportNumber': 'WSE-2026-11-00002', 'madeOn': '2026-11-22', 'validUntil': '2027-10-31', 'address': 'Amsterdam'},
+              {'reportNumber': 'WSE-2026-11-00001', 'madeOn': '2026-11-14', 'validUntil': '2027-10-31'},
+            ]),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      final list = await api.assessments();
+      expect(sent.method, 'GET');
+      expect(sent.url.toString(), 'http://api.test/api/v1/assessments');
+      expect(list.map((a) => a.reportNumber), ['WSE-2026-11-00002', 'WSE-2026-11-00001']);
+      expect(list.first.address, 'Amsterdam');
+      expect(list.last.address, '');
+      expect(reportFileName(list.first.reportNumber), 'WSE-2026-11-00002.pdf', reason: 'saved under its report number');
+    });
+
+    test('someone else\'s report is not found', () async {
+      final api = ApiClient(
+        authService: DemoAuthService(),
+        baseUrl: 'http://api.test',
+        httpClient: MockClient((_) async => http.Response(jsonEncode({'message': 'No assessment'}), 404)),
+      );
+      await expectLater(api.reportPdf('WSE-2026-11-00001'),
+          throwsA(isA<ApiException>().having((e) => e.statusCode, 'status', 404)));
     });
 
     test('a refused assessment comes back as an error with the faults', () async {

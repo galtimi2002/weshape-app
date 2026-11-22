@@ -165,6 +165,8 @@ class AppStrings {
     required this.submitSaving,
     required this.submitDoneTitle,
     required this.submitDoneBody,
+    required this.reportOpen,
+    required this.reportMaking,
     required this.placeTitle,
     required this.placeHint,
     required this.placePickOnMap,
@@ -719,6 +721,12 @@ class AppStrings {
   /// After it is kept: {number} is the report number (WSE-2026-11-00417).
   final String submitDoneBody;
   String submitDoneBodyFor(String number) => submitDoneBody.replaceAll('{number}', number);
+
+  /// The button that downloads and opens the PDF report of a kept assessment.
+  final String reportOpen;
+
+  /// While the report is being made on the server.
+  final String reportMaking;
   final String placeTitle;
   final String placeHint;
   final String placePickOnMap;
