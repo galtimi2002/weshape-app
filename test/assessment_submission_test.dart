@@ -33,6 +33,7 @@ void main() {
       expect(body['unitSystem'], 'METRIC');
       expect(body['currency'], 'RON', reason: 'no currency picked: the country\'s');
       expect(body['madeOn'], '2026-03-07', reason: 'the local calendar day, two digits for month and day');
+      expect(body['startedOn'], '2026-03-07', reason: 'not known: the same day');
       expect(body['address'], 'Strada X 29, Cluj-Napoca');
       expect(body['answers'], a.toJson());
       expect(jsonDecode(jsonEncode(body)), isA<Map<String, dynamic>>(), reason: 'it must go as JSON');
@@ -46,6 +47,14 @@ void main() {
       final body = submissionBody(answers: a, language: 'en', country: 'RO', units: UnitSystem.us, now: DateTime(2026));
       expect(body['currency'], 'EUR');
       expect(body['unitSystem'], 'US');
+      a.dispose();
+    });
+
+    test('the day the answers were started is sent, and kept with the answers', () {
+      final a = sample()..startedOn = DateTime(2026, 3, 1, 9);
+      final body = submissionBody(answers: a, language: 'en', country: 'RO', units: UnitSystem.metric, now: DateTime(2026, 3, 7));
+      expect(body['startedOn'], '2026-03-01');
+      expect(HomeAnswers.fromJsonForTest(a.toJson()).startedOn, DateTime(2026, 3, 1, 9));
       a.dispose();
     });
 

@@ -253,6 +253,10 @@ class HomeAnswers extends ChangeNotifier {
   /// Something has been answered: switching units would clear it.
   bool get started => screen != 'audience' || audience != null;
 
+  /// When the person first answered, set once and kept with the answers; sent with the finished
+  /// assessment so the report can say when the answers were given, from–to (Timi, 2026-11-22).
+  DateTime? startedOn;
+
   // Every question starts unanswered: nothing is picked for the person, so an answer is
   // always theirs (decided with the team). Null or empty means "not answered yet".
   Audience? audience;
@@ -872,6 +876,7 @@ class HomeAnswers extends ChangeNotifier {
   Timer? _save;
 
   void _scheduleSave() {
+    if (startedOn == null && started) startedOn = DateTime.now();
     _save?.cancel();
     _save = Timer(const Duration(milliseconds: 600), () async {
       try {
@@ -891,6 +896,11 @@ class HomeAnswers extends ChangeNotifier {
     notifyListeners();
     _scheduleSave();
   }
+
+  /// Answers read back from [toJson], as [restore] does with the saved ones.
+  @visibleForTesting
+  static HomeAnswers fromJsonForTest(Map<String, Object?> json) =>
+      HomeAnswers().._fromJson(jsonDecode(jsonEncode(json)) as Map<String, dynamic>);
 
   /// Brings back the answers saved on this device, if any.
   Future<void> restore() async {
@@ -913,6 +923,7 @@ class HomeAnswers extends ChangeNotifier {
 
   Map<String, Object?> toJson() => {
         'screen': screen,
+        'startedOn': startedOn?.toIso8601String(),
         'unitSystem': unitSystem?.name,
         'audience': audience?.name,
         'place': place?.toJson(),
@@ -1005,6 +1016,7 @@ class HomeAnswers extends ChangeNotifier {
 
   void _fromJson(Map<String, dynamic> j) {
     screen = j['screen'] as String? ?? screen;
+    startedOn = j['startedOn'] is String ? DateTime.tryParse(j['startedOn'] as String) : null;
     unitSystem = _enum(UnitSystem.values, j['unitSystem']);
     audience = _enum(Audience.values, j['audience']);
     place = AssessmentPlace.fromJson(j['place']);
