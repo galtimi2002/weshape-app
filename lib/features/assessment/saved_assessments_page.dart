@@ -197,6 +197,8 @@ class _ReportRowState extends State<_ReportRow> {
           Tooltip(
             message: t.reportOpen,
             child: OutlinedButton.icon(
+              // The theme makes outlined buttons full width; here it sits at the end of the row.
+              style: OutlinedButton.styleFrom(minimumSize: const Size(0, 40)),
               onPressed: _busy ? null : _download,
               icon: _busy
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
